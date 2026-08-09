@@ -8,6 +8,7 @@
 import { onTeacherAuth, signInTeacher, signOutTeacher, TeacherSession, ALLOWED_DOMAIN } from './data/adminAuth';
 import { isFirebaseConfigured } from './data/firebase';
 import { ELEMENTS } from './data/elements';
+import { PERIODIC_TABLE, getPeriodicElement, elementLabel } from './data/periodicTable';
 import {
     ClassSettings, loadSettings, saveSettings, DEFAULT_SETTINGS,
     isElementReleased, currentUnitDay, UNIT_LENGTH_DAYS,
@@ -24,6 +25,7 @@ let settings: ClassSettings = { ...DEFAULT_SETTINGS };
 let questions: StoredQuestion[] = [];
 let tab: 'questions' | 'schedule' | 'settings' | 'students' = 'questions';
 let editing: StoredQuestion | null = null;      // question being added/edited
+let pickerQuery = '';                            // element-picker search text (editor)
 
 const esc = (s: string): string =>
     s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
@@ -150,10 +152,18 @@ function renderPanel(): void {
 // ---------------------------------------------------------------- questions
 function renderQuestions(): void {
     const panel = document.getElementById('panel') as HTMLElement;
-    const byElement = ELEMENTS.map(el => ({
-        el,
-        qs: questions.filter(q => q.elementId === el.id),
-    }));
+    // Group by every element that actually has questions (questions can now be
+    // tagged to any of the 118 elements, so we don't render a section per element
+    // — only the ones in use), ordered by atomic number. Unknown ids sort last.
+    const groups = new Map<string, StoredQuestion[]>();
+    questions.forEach(q => {
+        const list = groups.get(q.elementId) ?? [];
+        list.push(q);
+        groups.set(q.elementId, list);
+    });
+    const byElement = Array.from(groups.entries())
+        .map(([id, qs]) => ({ id, num: getPeriodicElement(id)?.number ?? 9999, qs }))
+        .sort((a, b) => a.num - b.num || a.id.localeCompare(b.id));
 
     panel.innerHTML = `
         <div class="row between">
@@ -165,11 +175,11 @@ function renderQuestions(): void {
         </div>
         <div id="qeditor"></div>
         <div class="qlist">
+            ${questions.length === 0 ? `<p class="muted">No questions yet — add one, or import the starter set.</p>` : ''}
             ${byElement.map(g => `
                 <section>
-                    <h3>${esc(g.el.symbol)} · ${esc(g.el.name)}
+                    <h3>${esc(elementLabel(g.id))}
                         <span class="muted">(${g.qs.length})</span></h3>
-                    ${g.qs.length === 0 ? `<p class="muted small">No questions yet.</p>` : ''}
                     ${g.qs.map(q => `
                         <div class="qrow">
                             <div class="qtext">
@@ -196,12 +206,13 @@ function renderQuestions(): void {
     });
     (document.getElementById('add') as HTMLButtonElement).addEventListener('click', () => {
         editing = { id: '', elementId: ELEMENTS[0].id, angle: '', prompt: '', choices: ['', '', '', ''], correctIndex: 0 };
+        pickerQuery = '';
         renderQuestionEditor();
     });
     panel.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach(b =>
         b.addEventListener('click', () => {
             const q = questions.find(x => x.id === b.dataset.edit);
-            if (q) { editing = { ...q, choices: [...q.choices] }; renderQuestionEditor(); }
+            if (q) { editing = { ...q, choices: [...q.choices] }; pickerQuery = ''; renderQuestionEditor(); }
         }));
     panel.querySelectorAll<HTMLButtonElement>('[data-del]').forEach(b =>
         b.addEventListener('click', async () => {
@@ -223,15 +234,18 @@ function renderQuestionEditor(): void {
     const q = editing;
     host.innerHTML = `
         <div class="editor">
-            <div class="grid2">
-                <label>Element
-                    <select id="f-el">${ELEMENTS.map(el =>
-                        `<option value="${el.id}" ${el.id === q.elementId ? 'selected' : ''}>${esc(el.symbol)} · ${esc(el.name)}</option>`).join('')}</select>
-                </label>
-                <label>Angle / topic
-                    <input id="f-angle" value="${esc(q.angle || '')}" placeholder="protons, ion, valence…">
-                </label>
-            </div>
+            <label>Element
+                <div class="elpicker">
+                    <div class="elpicker-selected" id="el-selected"></div>
+                    <input id="el-search" class="elpicker-search" type="text"
+                        placeholder="Search all 118 elements — name, symbol, or number…"
+                        value="${esc(pickerQuery)}" autocomplete="off">
+                    <div class="elpicker-grid" id="el-grid"></div>
+                </div>
+            </label>
+            <label>Angle / topic
+                <input id="f-angle" value="${esc(q.angle || '')}" placeholder="protons, ion, valence…">
+            </label>
             <label>Question prompt
                 <textarea id="f-prompt" rows="2" placeholder="How many protons…">${esc(q.prompt)}</textarea>
             </label>
@@ -251,10 +265,13 @@ function renderQuestionEditor(): void {
             </div>
         </div>`;
 
+    // The element picker writes straight to q.elementId as the teacher clicks, so
+    // it's already set by save time (no <select> to read).
+    wireElementPicker(host, q);
+
     (document.getElementById('q-cancel') as HTMLButtonElement).addEventListener('click', () => { editing = null; renderQuestions(); });
     const saveBtn = document.getElementById('q-save') as HTMLButtonElement;
     saveBtn.addEventListener('click', async () => {
-        q.elementId = (document.getElementById('f-el') as HTMLSelectElement).value;
         q.angle = (document.getElementById('f-angle') as HTMLInputElement).value.trim();
         q.prompt = (document.getElementById('f-prompt') as HTMLTextAreaElement).value.trim();
         q.choices = Array.from(host.querySelectorAll<HTMLInputElement>('.f-choice')).map(i => i.value.trim());
@@ -270,6 +287,56 @@ function renderQuestionEditor(): void {
 
     // Bring the editor into view when opened from a question low in the list.
     host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// The searchable element picker inside the question editor. Any of the 118
+// elements can be chosen — a dropdown of that many is unusable, so this is a
+// filterable grid. Selection writes straight to `q.elementId`; only the grid +
+// the "selected" line re-render on each keystroke, so the search box keeps focus.
+function wireElementPicker(host: HTMLElement, q: StoredQuestion): void {
+    const search = host.querySelector('#el-search') as HTMLInputElement;
+    fillElementPicker(host, q);
+    search.addEventListener('input', () => { pickerQuery = search.value; fillElementPicker(host, q); });
+    // Enter picks the single remaining match — fast keyboard entry for teachers.
+    search.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const matches = filterElements(pickerQuery);
+        if (matches.length >= 1) { q.elementId = matches[0].id; fillElementPicker(host, q); }
+    });
+}
+
+function filterElements(query: string): typeof PERIODIC_TABLE {
+    const term = query.trim().toLowerCase();
+    if (!term) return PERIODIC_TABLE;
+    return PERIODIC_TABLE.filter(el =>
+        el.name.toLowerCase().includes(term) ||
+        el.symbol.toLowerCase() === term ||
+        el.symbol.toLowerCase().startsWith(term) ||
+        String(el.number) === term);
+}
+
+function fillElementPicker(host: HTMLElement, q: StoredQuestion): void {
+    const selectedLine = host.querySelector('#el-selected') as HTMLElement;
+    const grid = host.querySelector('#el-grid') as HTMLElement;
+    const sel = getPeriodicElement(q.elementId);
+    selectedLine.innerHTML = sel
+        ? `Selected: <b>${esc(sel.symbol)} · ${esc(sel.name)}</b> <span class="muted">(#${sel.number})</span>`
+        : `Selected: <b>${esc(q.elementId)}</b>`;
+
+    const matches = filterElements(pickerQuery);
+    grid.innerHTML = matches.length === 0
+        ? `<p class="muted small">No element matches that.</p>`
+        : matches.map(el => `
+            <button type="button" class="elcell${el.id === q.elementId ? ' on' : ''}" data-el="${el.id}"
+                title="${esc(el.name)} (atomic number ${el.number})">
+                <span class="elnum">${el.number}</span>
+                <span class="elsym">${esc(el.symbol)}</span>
+                <span class="elname">${esc(el.name)}</span>
+            </button>`).join('');
+
+    grid.querySelectorAll<HTMLButtonElement>('.elcell').forEach(b =>
+        b.addEventListener('click', () => { q.elementId = b.dataset.el as string; fillElementPicker(host, q); }));
 }
 
 // ---------------------------------------------------------------- schedule
