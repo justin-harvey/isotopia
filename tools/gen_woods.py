@@ -30,7 +30,10 @@ TREE   = dict(sc=16, sr=3, w=2, h=3)   # 2x3 tree, trunk on bottom row
 
 floor = [GRASS] * (W * H)
 walls = [0] * (W * H)
+overhead = [0] * (W * H)   # tree canopies: rendered ABOVE the player (walk-under)
 collide = set()
+hero_trees = []            # grove positions that get a Cainos tree sprite on top
+scenery = []               # object-layer props placed by WoodsScene (name, tx, ty)
 random.seed(7)
 
 def put(layer, tx, ty, g):
@@ -50,13 +53,22 @@ for ty in range(6, H):
 for (tx, ty) in [(20, 12), (21, 12), (22, 12), (22, 11), (22, 10), (21, 10), (20, 10)]:
     put(floor, tx, ty, PATH)
 
-def plant_tree(ox, oy):
+# A tree is a 2x3 block: the bottom (trunk) row stays on `walls` and blocks
+# movement; the upper (canopy) rows go on the `overhead` layer so the player
+# walks UNDER them. "Hero" trees skip the flat modern_exterior canopy — a Cainos
+# tree sprite is drawn on top instead (see the scenery object layer) — but keep
+# the trunk tile for collision.
+def plant_tree(ox, oy, hero=False):
     for dy in range(TREE['h']):
         for dx in range(TREE['w']):
             g = gid(TREE['sc'] + dx, TREE['sr'] + dy)
-            put(walls, ox + dx, oy + dy, g)
-            if dy == TREE['h'] - 1:      # trunk row blocks
+            if dy == TREE['h'] - 1:          # trunk row: collision, ground level
+                put(walls, ox + dx, oy + dy, g)
                 collide.add(g)
+            elif not hero:                    # canopy row: render above the player
+                put(overhead, ox + dx, oy + dy, g)
+    if hero:
+        hero_trees.append((ox, oy))
 
 # --- tree border: enclose the woods on all sides except the south exit gap
 def tree_ok(ox, oy):
@@ -88,7 +100,7 @@ GROVES = [(4, 4), (7, 3), (11, 5), (30, 4), (33, 6), (27, 3),
           (5, 15), (9, 17), (32, 16), (35, 14), (14, 18), (3, 10), (36, 10)]
 for (ox, oy) in GROVES:
     if tree_ok(ox, oy):
-        plant_tree(ox, oy)
+        plant_tree(ox, oy, hero=True)   # interior groves get a Cainos tree sprite
 
 # --- wildflower meadow: swap some grass for the flowering variant in soft blobs
 for (cx, cy, r) in [(15, 9, 5), (25, 11, 5), (18, 15, 4), (30, 12, 3)]:
@@ -125,22 +137,62 @@ SECRET_COL = 20
 for ty in range(0, 6):
     put(floor, SECRET_COL, ty, PATH)
     walls[ty * W + SECRET_COL] = 0        # clear trees/decoration so it's walkable
+    overhead[ty * W + SECRET_COL] = 0     # and clear any canopy hiding the corridor
+
+# --- Cainos ground props: scatter a few in the meadow clearings. These are
+# non-blocking decoration placed as sprites by WoodsScene (see the scenery object
+# layer); we only drop them on open grass, off the trail and off any tree/bush.
+PROP_SPOTS = [
+    ('rock', 13, 10), ('rock', 31, 13), ('rock', 8, 8),
+    ('bush', 27, 8), ('bush', 11, 16), ('bush', 34, 11),
+    ('signpost', 18, 20), ('grass', 24, 12), ('grass', 16, 16), ('grass', 29, 15),
+]
+for (name, tx, ty) in PROP_SPOTS:
+    if 0 <= tx < W and 0 <= ty < H and walls[ty * W + tx] == 0 \
+            and overhead[ty * W + tx] == 0 and floor[ty * W + tx] != PATH:
+        scenery.append((name, tx, ty))
 
 tileset_tiles = [
     {"id": g - 1, "properties": [{"name": "ge_collide", "type": "bool", "value": True}]}
     for g in sorted(collide)
 ]
 
+# Hero-tree groves become 'tree' scenery, sized 2 tiles wide with the base on the
+# trunk row. WoodsScene reads this object layer and drops a Cainos sprite on each.
+for i, (ox, oy) in enumerate(hero_trees):
+    scenery.append(('tree', ox, oy, {'tw': 2, 'variant': i % 3 + 1}))
+
+def scenery_obj(oid, item):
+    name, tx, ty = item[0], item[1], item[2]
+    props = item[3] if len(item) > 3 else {}
+    tw = props.get('tw', 1)
+    obj = {
+        "id": oid, "name": name, "type": name, "rotation": 0, "visible": True,
+        # bottom-centre of the footprint, in pixels (WoodsScene places origin 0.5,1)
+        "x": (tx + tw / 2) * 16, "y": (ty + 1) * 16, "width": 0, "height": 0,
+        "point": True,
+        "properties": [{"name": k, "type": "int" if isinstance(v, int) else "string",
+                        "value": v} for k, v in props.items()],
+    }
+    return obj
+
 def tilelayer(name, data, lid):
     return {"data": data, "height": H, "id": lid, "name": name, "opacity": 1,
             "type": "tilelayer", "visible": True, "width": W, "x": 0, "y": 0}
+
+object_layer = {
+    "id": 5, "name": "scenery", "type": "objectgroup", "opacity": 1,
+    "visible": True, "x": 0, "y": 0, "draworder": "topdown",
+    "objects": [scenery_obj(i + 1, it) for i, it in enumerate(scenery)],
+}
 
 tilemap = {
     "compressionlevel": -1, "infinite": False, "orientation": "orthogonal",
     "renderorder": "right-down", "tiledversion": "1.9.0", "type": "map",
     "version": "1.9", "width": W, "height": H, "tilewidth": 16, "tileheight": 16,
-    "nextlayerid": 4, "nextobjectid": 1,
-    "layers": [tilelayer("floor", floor, 1), tilelayer("walls", walls, 2)],
+    "nextlayerid": 6, "nextobjectid": len(scenery) + 1,
+    "layers": [tilelayer("floor", floor, 1), tilelayer("walls", walls, 2),
+               tilelayer("overhead", overhead, 3), object_layer],
     "tilesets": [{
         "columns": SHEET_COLS, "firstgid": 1,
         "image": "../assets/tiles/modern_exterior.png",
