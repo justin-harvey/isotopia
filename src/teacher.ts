@@ -20,6 +20,13 @@ import { loadClassStudents } from './data/studentAdmin';
 
 const app = document.getElementById('app') as HTMLDivElement;
 
+// Elements that exist as catchable Elementals in the game right now (id -> the
+// creature's display name, from elements.ts). Questions on any OTHER element are
+// still saved, but won't surface in gameplay until that element gets a creature.
+// The portal marks these so the teacher knows which element maps to a real,
+// catchable creature and which questions are just banked for later.
+const PLAYABLE = new Map(ELEMENTS.map(e => [e.id, e.monster] as const));
+
 let session: TeacherSession | null = null;
 let settings: ClassSettings = { ...DEFAULT_SETTINGS };
 let questions: StoredQuestion[] = [];
@@ -179,7 +186,10 @@ function renderQuestions(): void {
             ${byElement.map(g => `
                 <section>
                     <h3>${esc(elementLabel(g.id))}
-                        <span class="muted">(${g.qs.length})</span></h3>
+                        <span class="muted">(${g.qs.length})</span>
+                        ${PLAYABLE.get(g.id)
+                            ? `<span class="badge ok">● ${esc(PLAYABLE.get(g.id) as string)}</span>`
+                            : `<span class="badge neutral">no creature yet</span>`}</h3>
                     ${g.qs.map(q => `
                         <div class="qrow">
                             <div class="qtext">
@@ -240,6 +250,9 @@ function renderQuestionEditor(): void {
                     <input id="el-search" class="elpicker-search" type="text"
                         placeholder="Search all 118 elements — name, symbol, or number…"
                         value="${esc(pickerQuery)}" autocomplete="off">
+                    <div class="elpicker-hint muted small">● = has a creature in the game
+                        (${PLAYABLE.size} elements, shown first). Questions on other elements
+                        are saved, but won't appear in gameplay until that element gets a creature.</div>
                     <div class="elpicker-grid" id="el-grid"></div>
                 </div>
             </label>
@@ -320,20 +333,27 @@ function fillElementPicker(host: HTMLElement, q: StoredQuestion): void {
     const selectedLine = host.querySelector('#el-selected') as HTMLElement;
     const grid = host.querySelector('#el-grid') as HTMLElement;
     const sel = getPeriodicElement(q.elementId);
-    selectedLine.innerHTML = sel
-        ? `Selected: <b>${esc(sel.symbol)} · ${esc(sel.name)}</b> <span class="muted">(#${sel.number})</span>`
-        : `Selected: <b>${esc(q.elementId)}</b>`;
+    const monster = PLAYABLE.get(q.elementId);
+    const selName = sel ? `${esc(sel.symbol)} · ${esc(sel.name)}` : esc(q.elementId);
+    selectedLine.innerHTML = monster
+        ? `Selected: <b>${selName}</b> — creature <b>${esc(monster)}</b> <span class="badge ok">catchable now</span>`
+        : `Selected: <b>${selName}</b> <span class="badge neutral">no creature yet · banked</span>`;
 
-    const matches = filterElements(pickerQuery);
+    // Catchable elements first (so the "real" ones are easy to find), then by
+    // atomic number.
+    const matches = filterElements(pickerQuery).slice().sort((a, b) =>
+        (PLAYABLE.has(a.id) ? 0 : 1) - (PLAYABLE.has(b.id) ? 0 : 1) || a.number - b.number);
     grid.innerHTML = matches.length === 0
         ? `<p class="muted small">No element matches that.</p>`
-        : matches.map(el => `
-            <button type="button" class="elcell${el.id === q.elementId ? ' on' : ''}" data-el="${el.id}"
-                title="${esc(el.name)} (atomic number ${el.number})">
-                <span class="elnum">${el.number}</span>
+        : matches.map(el => {
+            const mon = PLAYABLE.get(el.id);
+            return `<button type="button" class="elcell${el.id === q.elementId ? ' on' : ''}${mon ? ' playable' : ''}" data-el="${el.id}"
+                title="${esc(el.name)} · atomic number ${el.number}${mon ? ` — creature ${esc(mon)}` : ' — no creature yet'}">
+                <span class="elnum">${mon ? '● ' : ''}${el.number}</span>
                 <span class="elsym">${esc(el.symbol)}</span>
                 <span class="elname">${esc(el.name)}</span>
-            </button>`).join('');
+            </button>`;
+        }).join('');
 
     grid.querySelectorAll<HTMLButtonElement>('.elcell').forEach(b =>
         b.addEventListener('click', () => { q.elementId = b.dataset.el as string; fillElementPicker(host, q); }));

@@ -99,6 +99,7 @@ table.sched { width: 100%; border-collapse: collapse; margin-top: 12px; }
 .badge { padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .badge.ok { background: #e3f5e9; color: #1f7a3d; }
 .badge.lock { background: #f1e3e3; color: var(--brand); }
+.badge.neutral { background: #eef1f7; color: var(--muted); font-weight: 500; }
 
 /* Stronger active-tab indicator (the highlight now also moves on click). */
 .tabs button.on { box-shadow: inset 0 -3px 0 var(--primary); }
@@ -167,6 +168,10 @@ table.sched { width: 100%; border-collapse: collapse; margin-top: 12px; }
 }
 .elcell:hover { background: #f0f3f9; }
 .elcell.on { border-color: var(--primary); background: #eaf1fb; box-shadow: inset 0 0 0 1px var(--primary); }
+.elcell.playable { border-color: #bfe3c9; }
+.elcell.playable .elnum { color: #1f7a3d; font-weight: 700; }
+.elcell.playable.on { border-color: var(--primary); }
+.elpicker-hint { margin: -2px 0 10px; }
 .elcell .elnum { font-size: 10px; color: var(--muted); }
 .elcell .elsym { font-size: 16px; font-weight: 700; line-height: 1.1; }
 .elcell .elname { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
