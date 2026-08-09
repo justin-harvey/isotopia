@@ -3,7 +3,7 @@
 // Re-run after regenerating any map: node tools/embed-maps.mjs
 import { readFileSync, writeFileSync } from 'fs';
 
-const maps = ['test_map', 'woods_map', 'interior_room', 'city_map'];
+const maps = ['test_map', 'woods_map', 'interior_room', 'city_map', 'city_interior'];
 const entries = maps.map(m => {
     // Normalize the (unused) tileset image paths so the bundle has no ../assets.
     const json = readFileSync(`src/assets/tilemap/${m}.json`, 'utf8').trim()

@@ -38,11 +38,11 @@ def art_aspect(name):
 # 66. power-tower, large-church and power-station are 2x their old width.
 PLACEMENTS = [
     ('power-tower',     12, 24, 10.0),
-    ('finance-tower',   28, 24,  5.0),
+    ('finance-tower',   28, 24, 10.0),
     ('large-tower',     44, 24,  6.0),
-    ('museum',          12, 50,  5.0),
+    ('museum',          12, 50, 10.0),
     ('large-church',    28, 50, 11.0),
-    ('fashion-district',44, 50,  5.0),
+    ('fashion-district',44, 50, 10.0),
     ('radio-tower',     12, 66,  3.5),
     ('power-station',   28, 66, 16.0),
     ('radio-tower-2',   44, 66,  3.5),

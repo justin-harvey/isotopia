@@ -11,22 +11,37 @@ import { MAPS } from '../data/maps';
 // The walkable City across the bridge — reached from the woods lookout via the
 // city-reveal cutscene. Paved streets with the nine city buildings laid out in
 // three rows: overlay art over invisible collision footprints, the same pattern
-// as the town. Buildings are decorative for now (not enterable). A glowing
-// "WOODS ▼" pad at the bottom returns you to the woods.
+// as the town. Each building is enterable via a door on its front (see
+// INTERIORS + CityInteriors.ts); the museum opens into a chain of basement
+// levels. A glowing "WOODS ▼" pad at the bottom returns you to the woods.
 //
 // Keep BUILDINGS in sync with tools/gen_city.py PLACEMENTS (the collision
 // footprints in city_map.json are generated from the same numbers).
 const BUILDINGS: { id: string; centerCol: number; baseRow: number; widthTiles: number }[] = [
     { id: 'power-tower',      centerCol: 12, baseRow: 24, widthTiles: 10.0 },
-    { id: 'finance-tower',    centerCol: 28, baseRow: 24, widthTiles: 5.0 },
+    { id: 'finance-tower',    centerCol: 28, baseRow: 24, widthTiles: 10.0 },
     { id: 'large-tower',      centerCol: 44, baseRow: 24, widthTiles: 6.0 },
-    { id: 'museum',           centerCol: 12, baseRow: 50, widthTiles: 5.0 },
+    { id: 'museum',           centerCol: 12, baseRow: 50, widthTiles: 10.0 },
     { id: 'large-church',     centerCol: 28, baseRow: 50, widthTiles: 11.0 },
-    { id: 'fashion-district', centerCol: 44, baseRow: 50, widthTiles: 5.0 },
+    { id: 'fashion-district', centerCol: 44, baseRow: 50, widthTiles: 10.0 },
     { id: 'radio-tower',      centerCol: 12, baseRow: 66, widthTiles: 3.5 },
     { id: 'power-station',    centerCol: 28, baseRow: 66, widthTiles: 16.0 },
     { id: 'radio-tower-2',    centerCol: 44, baseRow: 66, widthTiles: 3.5 },
 ];
+
+// Which interior scene each building opens into. The museum leads to a chain of
+// basement levels (see CityInteriors.ts).
+const INTERIORS: Record<string, SceneName> = {
+    'power-tower':      SceneName.CityPowerTower,
+    'finance-tower':    SceneName.CityFinance,
+    'large-tower':      SceneName.CityLargeTower,
+    'museum':           SceneName.CityMuseum,
+    'large-church':     SceneName.CityChurch,
+    'fashion-district': SceneName.CityFashion,
+    'radio-tower':      SceneName.CityRadioTower,
+    'power-station':    SceneName.CityPowerStation,
+    'radio-tower-2':    SceneName.CityRadioTower2,
+};
 
 export default class CityScene extends GameScene {
     private static readonly START = { x: 24, y: 70 };
@@ -75,6 +90,17 @@ export default class CityScene extends GameScene {
 
         // Real building art over the invisible collision footprints.
         BUILDINGS.forEach(b => this.drawBuilding(b));
+
+        // A door on each building's front (its base row); step onto the walkable
+        // road tile just south of it to go inside. A glowing "ENTER ▲" pad marks
+        // each entrance, matching the town.
+        BUILDINGS.forEach(b => {
+            new Door({
+                scene: this, xPosition: b.centerCol, yPosition: b.baseRow,
+                nextScene: INTERIORS[b.id],
+            });
+            drawDoorCue(this, b.centerCol, b.baseRow + 1, 'ENTER', '▲');
+        });
 
         // Plaza dressing: lit lamps (glow at dusk) + benches around the centre.
         this.drawProp('city_lamp', 26, 56, 1.4);
