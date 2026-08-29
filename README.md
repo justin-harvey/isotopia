@@ -13,6 +13,19 @@ teacher admin portal, and per-student progress sync.
 Built on [Phaser 3](https://phaser.io/) with grid-based movement via
 [grid-engine](https://github.com/Annoraaq/grid-engine).
 
+### Why offline-first
+
+The constraint that shaped everything else: a classroom cannot depend on the
+network, a login, or a device the school does not already have. So the whole
+game runs from a built-in question bank with no account and no install — a
+teacher can hand a kid a laptop and it works.
+
+Firebase is strictly additive. `src/data/questionSource.ts` picks the live bank
+when it is configured and falls back to the local seed when it is not, so the
+online path is an enhancement rather than a dependency, and a fork with no
+credentials still plays. That is also why the `FIREBASE_*` variables are left
+unset by default rather than shipped with a project id.
+
 ## Play
 
 - **Tap / click** where you want to walk (arrow keys also work on desktop).
@@ -28,7 +41,7 @@ Built on [Phaser 3](https://phaser.io/) with grid-based movement via
 The game is fully offline — no internet, accounts, or install required.
 
 1. Download **`isotopia-offline.zip`** from the
-   [Releases](https://github.com/G00DTECH/isotopia/releases) page.
+   [Releases](https://github.com/justin-harvey/isotopia/releases) page.
 2. Unzip it.
 3. Open **`index.html`** inside the unzipped folder in a web browser.
 

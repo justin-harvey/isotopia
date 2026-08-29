@@ -17,7 +17,7 @@ Maine)** — the town is themed on Gray, Maine.
 | Thing | Value |
 |---|---|
 | Local path | `/home/nah/Claudia/elemonsters` (folder name predates the rename to Isotopia) |
-| GitHub | https://github.com/G00DTECH/isotopia (branch `main`, public) |
+| GitHub | https://github.com/justin-harvey/isotopia (branch `main`, public) |
 | Live game | https://is0topia.netlify.app/ (note the **zero**). Teacher portal: `/teacher.html` |
 | Firebase project | `isotopia-2809c` (Realtime Database) |
 | Deploy | Netlify auto-builds from `main` (`npm run build` → publish `dist/`). **Requires the 8 `FIREBASE_*` env vars set in Netlify** (see `.env.example`) or online features silently go offline |
