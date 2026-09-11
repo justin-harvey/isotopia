@@ -21,6 +21,8 @@ export abstract class InteriorScene extends GameScene {
     private static readonly SPAWN_TILES = [
         { x: 4, y: 11 },
         { x: 10, y: 11 },
+        { x: 5, y: 12 },
+        { x: 9, y: 12 },
     ];
 
     private readonly elementIds: string[];

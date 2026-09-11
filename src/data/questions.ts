@@ -66,6 +66,36 @@ export const QUESTIONS: Question[] = [
     { elementId: 'uranium', angle: 'protons',  prompt: 'How many protons does uranium have?', choices: ['46', '92', '146', '238'], correctIndex: 1, quarterTheme: 'starter' },
     { elementId: 'uranium', angle: 'neutrons', prompt: 'Uranium-238 has 92 protons. How many neutrons does it have?', choices: ['92', '146', '238', '330'], correctIndex: 1, quarterTheme: 'starter' },
     { elementId: 'uranium', angle: 'symbol',   prompt: "What is uranium's chemical symbol?", choices: ['Ur', 'U', 'Un', 'Ux'], correctIndex: 1, quarterTheme: 'starter' },
+
+    // --- Beryllia — Beryllium (Be) ---
+    { elementId: 'beryllium', angle: 'protons', prompt: "Beryllium's atomic number is 4. How many protons does it have?", choices: ['2', '4', '8', '9'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'beryllium', angle: 'valence', prompt: 'How many valence electrons does beryllium have?', choices: ['1', '2', '4', '8'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'beryllium', angle: 'ion',     prompt: 'Beryllium loses 2 electrons. Which ion does it form?', choices: ['Be⁻', 'Be⁺', 'Be²⁺', 'Be²⁻'], correctIndex: 2, quarterTheme: 'starter' },
+
+    // --- Borolith — Boron (B) ---
+    { elementId: 'boron', angle: 'symbol',  prompt: "What is boron's chemical symbol?", choices: ['Br', 'Bo', 'B', 'Be'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'boron', angle: 'protons', prompt: 'How many protons does boron have?', choices: ['3', '5', '10', '11'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'boron', angle: 'valence', prompt: 'How many valence electrons does boron have?', choices: ['2', '3', '5', '8'], correctIndex: 1, quarterTheme: 'starter' },
+
+    // --- Fluorvex — Fluorine (F) ---
+    { elementId: 'fluorine', angle: 'symbol',  prompt: "What is fluorine's chemical symbol?", choices: ['Fl', 'F', 'Fe', 'Fr'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'fluorine', angle: 'ion',     prompt: 'Fluorine gains one electron to form which ion?', choices: ['F⁺', 'F⁻', 'F²⁻', 'F (no charge)'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'fluorine', angle: 'valence', prompt: 'How many valence electrons does fluorine have?', choices: ['1', '5', '7', '8'], correctIndex: 2, quarterTheme: 'starter' },
+
+    // --- Aluminio — Aluminum (Al) ---
+    { elementId: 'aluminum', angle: 'protons', prompt: "Aluminum's atomic number is 13. How many protons does it have?", choices: ['3', '13', '14', '27'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'aluminum', angle: 'ion',     prompt: 'Aluminum loses 3 electrons. Which ion does it form?', choices: ['Al⁻', 'Al³⁻', 'Al³⁺', 'Al⁺'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'aluminum', angle: 'valence', prompt: 'How many valence electrons does aluminum have?', choices: ['1', '2', '3', '8'], correctIndex: 2, quarterTheme: 'starter' },
+
+    // --- Brimora — Sulfur (S) ---
+    { elementId: 'sulfur', angle: 'protons',  prompt: "Sulfur's atomic number is 16. How many protons does it have?", choices: ['6', '8', '16', '32'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'sulfur', angle: 'ion',      prompt: 'Sulfur gains 2 electrons to form the sulfide ion. What is its charge?', choices: ['+2', '−1', '−2', '+6'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'sulfur', angle: 'valence',  prompt: 'How many valence electrons does sulfur have?', choices: ['2', '4', '6', '8'], correctIndex: 2, quarterTheme: 'starter' },
+
+    // --- Scandion — Scandium (Sc) ---
+    { elementId: 'scandium', angle: 'symbol',  prompt: "What is scandium's chemical symbol?", choices: ['S', 'Sc', 'Sd', 'Sn'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'scandium', angle: 'protons', prompt: "Scandium's atomic number is 21. How many protons does it have?", choices: ['11', '20', '21', '45'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'scandium', angle: 'ion',     prompt: 'Scandium commonly forms an ion with what charge?', choices: ['+1', '+2', '+3', '−3'], correctIndex: 2, quarterTheme: 'starter' },
 ];
 
 /** All seed questions for one element. */

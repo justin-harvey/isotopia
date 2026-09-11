@@ -4,6 +4,8 @@
 const ART_IDS = new Set<string>([
     'hydrogen', 'carbon', 'oxygen', 'sodium',
     'iron', 'neon', 'uranium', 'magnesium', 'nitrogen',
+    // 2026-09 art drop
+    'helium', 'beryllium', 'boron', 'fluorine', 'aluminum', 'sulfur', 'scandium',
 ]);
 
 /** Texture cache key for an Elemental's art, or undefined if it has no art. */

@@ -23,6 +23,14 @@ export const ELEMENTS: ElementInfo[] = [
     { id: 'iron',      symbol: 'Fe', name: 'Iron',      monster: 'Ironclank', number: 26, tint: 0x8d6e63 },
     { id: 'neon',      symbol: 'Ne', name: 'Neon',      monster: 'Neonglow',  number: 10, tint: 0xff7043 },
     { id: 'uranium',   symbol: 'U',  name: 'Uranium',   monster: 'Glowbun',   number: 92, tint: 0x7cb342 },
+    // 2026-09 art drop: 7 new Elementals (real pixel art in src/assets/elementals).
+    { id: 'helium',    symbol: 'He', name: 'Helium',    monster: 'Helior',    number: 2,  tint: 0xcfd8dc },
+    { id: 'beryllium', symbol: 'Be', name: 'Beryllium', monster: 'Beryllia',  number: 4,  tint: 0xbdbdbd },
+    { id: 'boron',     symbol: 'B',  name: 'Boron',     monster: 'Borolith',  number: 5,  tint: 0x5c9ce6 },
+    { id: 'fluorine',  symbol: 'F',  name: 'Fluorine',  monster: 'Fluorvex',  number: 9,  tint: 0xaed581 },
+    { id: 'aluminum',  symbol: 'Al', name: 'Aluminum',  monster: 'Aluminio',  number: 13, tint: 0xb0bec5 },
+    { id: 'sulfur',    symbol: 'S',  name: 'Sulfur',    monster: 'Brimora',   number: 16, tint: 0xffca28 },
+    { id: 'scandium',  symbol: 'Sc', name: 'Scandium',  monster: 'Scandion',  number: 21, tint: 0x4a7c7c },
 ];
 
 export const ELEMENTS_BY_ID: Record<string, ElementInfo> =
