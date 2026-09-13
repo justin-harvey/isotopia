@@ -12,6 +12,7 @@ import {
     CityPowerTowerScene, CityFinanceScene, CityLargeTowerScene, CityChurchScene,
     CityFashionScene, CityRadioTowerScene, CityPowerStationScene, CityRadioTower2Scene,
     CityMuseumScene, CityMuseumB1Scene, CityMuseumB2Scene, CityMuseumB3Scene, CityMuseumB4Scene,
+    CloudCityScene,
 } from "./Scenes/CityInteriors";
 import { ensureSignedIn } from "./data/auth";
 import { initStudentAuth } from "./data/studentAuth";
@@ -58,6 +59,7 @@ const config = {
         CityPowerTowerScene, CityFinanceScene, CityLargeTowerScene, CityChurchScene,
         CityFashionScene, CityRadioTowerScene, CityPowerStationScene, CityRadioTower2Scene,
         CityMuseumScene, CityMuseumB1Scene, CityMuseumB2Scene, CityMuseumB3Scene, CityMuseumB4Scene,
+        CloudCityScene,
     ],
     plugins: {
         scene: [

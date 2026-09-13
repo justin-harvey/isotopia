@@ -22,5 +22,8 @@ export enum SceneName {
     CityMuseumB1 = 'city-museum-b1',
     CityMuseumB2 = 'city-museum-b2',
     CityMuseumB3 = 'city-museum-b3',
-    CityMuseumB4 = 'city-museum-b4'
+    CityMuseumB4 = 'city-museum-b4',
+
+    // Reached from the museum B3 "custom" (purple) portal. Placeholder art for now.
+    CloudCity = 'cloud-city'
 }
