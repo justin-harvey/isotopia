@@ -102,6 +102,14 @@ export abstract class InteriorScene extends GameScene {
         if (exitTiles.length) {
             new Portal(this, exitTiles, SceneName.Test,
                 { color: 0x39d353, symbol: '▲', label: 'EXIT' });
+            // Re-entering (wake) leaves the dog on the exit portal it left by; put it
+            // back on the safe start tile so it never wakes sitting on a trigger.
+            this.events.on('wake', () => {
+                try {
+                    this.gridEngine.setPosition(this.playerName, this.nav!.start);
+                    this.characterMoved = false;
+                } catch { /* non-fatal */ }
+            });
         } else {
             // The room's walkable floor is above the exit, so the entrance pad is
             // the tile to the north — step onto it to leave. A glowing "EXIT ▼" mat

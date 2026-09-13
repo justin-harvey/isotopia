@@ -126,8 +126,10 @@ abstract class CityInteriorScene extends GameScene {
         if (this.nav) {
             this.createPortals();
             // Re-entering an already-built (sleeping) floor doesn't re-run create,
-            // so reposition on wake instead.
-            this.events.on('wake', () => this.applyArrivalOnWake());
+            // and the dog is left standing on whatever portal it exited by. Put it
+            // back on the arrival portal (museum hops) or the safe start tile
+            // (door re-entry) so it never wakes up sitting on a trigger.
+            this.events.on('wake', () => this.repositionOnWake());
         } else {
             this.createDoors();
         }
@@ -208,14 +210,16 @@ abstract class CityInteriorScene extends GameScene {
         if (tile) this.gridEngineSettings.startPosition = tile;
     }
 
-    // Revisiting an already-built (sleeping) floor: reposition safely (the scene
-    // is fully active here). Guarded so a bad tile can never freeze the scene.
-    private applyArrivalOnWake(): void {
-        const tile = this.takeArrivalTile();
+    // Revisiting an already-built (sleeping) floor: land on the arrival portal if we
+    // came via a portal, otherwise reset to the safe start tile (door re-entry —
+    // never leave the dog on the exit portal it left by). Guarded so a bad tile
+    // can never freeze the scene.
+    private repositionOnWake(): void {
+        const tile = this.takeArrivalTile() ?? this.nav?.start;
         if (!tile) return;
         try {
-            this.gridEngine.setPosition(this.playerName, tile);
-            this.characterMoved = false;   // don't instantly re-trigger the portal
+            this.gridEngine.setPosition(this.playerName, { x: tile.x, y: tile.y });
+            this.characterMoved = false;   // don't instantly re-trigger a portal
         } catch { /* non-fatal: leave the player where they were */ }
     }
 
