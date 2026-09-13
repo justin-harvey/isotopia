@@ -6,6 +6,6 @@ import { SceneName } from './enums/SceneNames';
 // (Helior — birthday balloons), Beryllium (Beryllia), and Sulfur (Brimora).
 export default class HomeScene extends InteriorScene {
     constructor() {
-        super(SceneName.Home, 'home-interior.png', ['helium', 'beryllium', 'sulfur']);
+        super(SceneName.Home, 'home-interior.png', ['helium', 'beryllium', 'sulfur'], 'room_home');
     }
 }

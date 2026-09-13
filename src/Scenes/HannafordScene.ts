@@ -6,6 +6,6 @@ import { SceneName } from './enums/SceneNames';
 // fluoride toothpaste / bottled water). Chlorine has been retired.
 export default class HannafordScene extends InteriorScene {
     constructor() {
-        super(SceneName.Hannaford, 'cafe-interior.png', ['sodium', 'fluorine']);
+        super(SceneName.Hannaford, 'cafe-interior.png', ['sodium', 'fluorine'], 'room_cafe');
     }
 }

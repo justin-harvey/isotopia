@@ -4,7 +4,9 @@
 import { readFileSync, writeFileSync } from 'fs';
 
 const maps = ['test_map', 'woods_map', 'interior_room', 'city_map', 'city_interior',
-    'museum_ground', 'museum_b1', 'museum_b2', 'museum_b3', 'museum_b4'];
+    'museum_ground', 'museum_b1', 'museum_b2', 'museum_b3', 'museum_b4',
+    'room_finance', 'room_large_tower', 'room_church', 'room_fashion',
+    'room_cafe', 'room_library', 'room_home'];
 const entries = maps.map(m => {
     // Normalize the (unused) tileset image paths so the bundle has no ../assets.
     const json = readFileSync(`src/assets/tilemap/${m}.json`, 'utf8').trim()

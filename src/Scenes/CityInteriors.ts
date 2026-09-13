@@ -9,7 +9,7 @@ import { SceneName } from './enums/SceneNames';
 import { showLeaveButton, hideLeaveButton } from '../ui/LeaveButton';
 import { drawDoorCue } from './components/DoorCue';
 import { MAPS } from '../data/maps';
-import { MUSEUM_NAV, MuseumFloorNav } from '../data/museumNav';
+import { INTERIOR_NAV, InteriorFloorNav } from '../data/interiorNav';
 
 // The interiors of the City buildings (reached by stepping onto a building's
 // door in CityScene). Unlike the square Luna-Town rooms, the city interior art
@@ -52,11 +52,11 @@ abstract class CityInteriorScene extends GameScene {
     private readonly cfg: CityRoomConfig;
     private readonly bgKey: string;
     private readonly elementIds: string[];
-    private readonly nav?: MuseumFloorNav;   // set for museum floors (portal nav)
+    private readonly nav?: InteriorFloorNav;   // set for painted rooms (portal nav)
     private readonly sceneKey: SceneName;
 
     constructor(sceneName: SceneName, cfg: CityRoomConfig) {
-        const nav = cfg.collisionMap ? MUSEUM_NAV[cfg.collisionMap] : undefined;
+        const nav = cfg.collisionMap ? INTERIOR_NAV[cfg.collisionMap] : undefined;
         const start = nav?.start ?? CityInteriorScene.START;
         super(sceneName, start.x, start.y, [LayerType.Floor, LayerType.Walls]);
         this.cfg = cfg;
@@ -106,6 +106,11 @@ abstract class CityInteriorScene extends GameScene {
     }
 
     create(): void {
+        // Resolve a pending portal arrival BEFORE the scene is built, so the player
+        // is created directly on the arrival portal. (Teleporting with setPosition
+        // mid-create was fragile and could abort create → white screen.)
+        if (this.nav) this.resolveArrivalStart();
+
         super.create();
 
         // Room art stretched over the whole grid, behind every sprite. The grid
@@ -120,10 +125,9 @@ abstract class CityInteriorScene extends GameScene {
 
         if (this.nav) {
             this.createPortals();
-            this.applyArrival();
-            // Re-apply on wake: switching back to this floor should land the player
-            // at the portal matching how they returned.
-            this.events.on('wake', () => this.applyArrival());
+            // Re-entering an already-built (sleeping) floor doesn't re-run create,
+            // so reposition on wake instead.
+            this.events.on('wake', () => this.applyArrivalOnWake());
         } else {
             this.createDoors();
         }
@@ -166,6 +170,13 @@ abstract class CityInteriorScene extends GameScene {
         if (ascend.length) {
             new Portal(this, ascend, this.cfg.up,
                 { color: 0x39d353, symbol: '▲', label: this.cfg.upLabel }, 'descend');
+        } else {
+            // No painted exit portal — keep the fixed centre exit door as a safety net.
+            new Door({
+                scene: this, xPosition: CityInteriorScene.EXIT.x, yPosition: CityInteriorScene.EXIT.y,
+                nextScene: this.cfg.up, entryOffset: { dx: 0, dy: -1 },
+            });
+            drawDoorCue(this, CityInteriorScene.EXIT.x, CityInteriorScene.EXIT.y - 1, this.cfg.upLabel, '▼');
         }
         const descend = tilesOf('descend');
         if (descend.length && this.cfg.down) {
@@ -179,17 +190,33 @@ abstract class CityInteriorScene extends GameScene {
         }
     }
 
-    // On entering via a portal, move the player onto the matching portal tile.
-    private applyArrival(): void {
-        if (!this.nav) return;
+    // Pending portal arrival tile for this floor, or undefined. Consumes the
+    // MUSEUM_ARRIVAL handoff set by the portal that sent us here.
+    private takeArrivalTile(): { x: number; y: number } | undefined {
+        if (!this.nav) return undefined;
         const want = MUSEUM_ARRIVAL[this.sceneKey];
-        if (!want) return;
+        if (!want) return undefined;
         delete MUSEUM_ARRIVAL[this.sceneKey];
         const p = this.nav.portals.find(pt => pt.type === want);
-        if (p) {
-            this.gridEngine.setPosition(this.playerName, { x: p.x, y: p.y });
+        return p ? { x: p.x, y: p.y } : undefined;
+    }
+
+    // First visit: bias the player's spawn onto the arrival portal before the
+    // scene (and grid-engine) are built, so no mid-create teleport is needed.
+    private resolveArrivalStart(): void {
+        const tile = this.takeArrivalTile();
+        if (tile) this.gridEngineSettings.startPosition = tile;
+    }
+
+    // Revisiting an already-built (sleeping) floor: reposition safely (the scene
+    // is fully active here). Guarded so a bad tile can never freeze the scene.
+    private applyArrivalOnWake(): void {
+        const tile = this.takeArrivalTile();
+        if (!tile) return;
+        try {
+            this.gridEngine.setPosition(this.playerName, tile);
             this.characterMoved = false;   // don't instantly re-trigger the portal
-        }
+        } catch { /* non-fatal: leave the player where they were */ }
     }
 
     // Place each assigned Elemental on a spawn tile. Rooms with no elementIds
@@ -218,16 +245,16 @@ export class CityPowerTowerScene extends CityInteriorScene {
     constructor() { super(SceneName.CityPowerTower, { background: 'power-tower-interior.png', up: SceneName.City, upLabel: 'EXIT' }); }
 }
 export class CityFinanceScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityFinance, { background: 'finance-interior.png', up: SceneName.City, upLabel: 'EXIT' }); }
+    constructor() { super(SceneName.CityFinance, { background: 'finance-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_finance' }); }
 }
 export class CityLargeTowerScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityLargeTower, { background: 'large-tower-interior.png', up: SceneName.City, upLabel: 'EXIT' }); }
+    constructor() { super(SceneName.CityLargeTower, { background: 'large-tower-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_large_tower' }); }
 }
 export class CityChurchScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityChurch, { background: 'church-interior.png', up: SceneName.City, upLabel: 'EXIT' }); }
+    constructor() { super(SceneName.CityChurch, { background: 'church-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_church' }); }
 }
 export class CityFashionScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityFashion, { background: 'fashion-interior.png', up: SceneName.City, upLabel: 'EXIT' }); }
+    constructor() { super(SceneName.CityFashion, { background: 'fashion-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_fashion' }); }
 }
 export class CityRadioTowerScene extends CityInteriorScene {
     constructor() { super(SceneName.CityRadioTower, { background: 'radio-tower-interior.png', up: SceneName.City, upLabel: 'EXIT' }); }
