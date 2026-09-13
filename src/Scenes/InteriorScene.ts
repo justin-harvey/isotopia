@@ -130,21 +130,36 @@ export abstract class InteriorScene extends GameScene {
         });
     }
 
-    // For painted rooms: walkable, non-portal, non-start tiles spaced >=3 apart so
-    // Elementals don't crowd or land in scenery / on the exit.
+    // For painted rooms: walkable, non-portal tiles that are actually REACHABLE
+    // from the start, spaced >=3 apart. The reachability flood-fill is the key fix
+    // for Elementals appearing outside the room — painting the collision boundary
+    // can leave stray walkable tiles beyond it, and those must never host a monster.
     private walkableSpawnTiles(): { x: number; y: number }[] {
         const portals = new Set((this.nav?.portals ?? []).map(p => `${p.x},${p.y}`));
         const start = this.nav!.start;
-        const chosen: { x: number; y: number }[] = [];
-        for (let y = 0; y < this.map.height; y++) {
-            for (let x = 0; x < this.map.width; x++) {
-                if (this.map.getTileAt(x, y, false, LayerType.Walls)) continue;   // wall
-                if (portals.has(`${x},${y}`) || (x === start.x && y === start.y)) continue;
-                if (chosen.every(c => Math.max(Math.abs(c.x - x), Math.abs(c.y - y)) >= 3)) {
-                    chosen.push({ x, y });
-                }
+        const free = (x: number, y: number): boolean =>
+            x >= 0 && y >= 0 && x < this.map.width && y < this.map.height &&
+            !this.map.getTileAt(x, y, false, LayerType.Walls);
+
+        const seen = new Set<string>([`${start.x},${start.y}`]);
+        const reachable: { x: number; y: number }[] = [];
+        const stack = [start];
+        while (stack.length) {
+            const { x, y } = stack.pop()!;
+            const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+            for (let i = 0; i < dirs.length; i++) {
+                const nx = x + dirs[i][0], ny = y + dirs[i][1], k = `${nx},${ny}`;
+                if (free(nx, ny) && !seen.has(k)) { seen.add(k); reachable.push({ x: nx, y: ny }); stack.push({ x: nx, y: ny }); }
             }
         }
+
+        const chosen: { x: number; y: number }[] = [];
+        reachable.forEach(({ x, y }) => {
+            if (portals.has(`${x},${y}`)) return;
+            if (chosen.every(c => Math.max(Math.abs(c.x - x), Math.abs(c.y - y)) >= 3)) {
+                chosen.push({ x, y });
+            }
+        });
         return chosen;
     }
 

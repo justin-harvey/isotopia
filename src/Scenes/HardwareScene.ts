@@ -7,6 +7,6 @@ import { SceneName } from './enums/SceneNames';
 // Woods instead.
 export default class HardwareScene extends InteriorScene {
     constructor() {
-        super(SceneName.Hardware, 'treats-interior.png', ['iron', 'aluminum']);
+        super(SceneName.Hardware, 'treats-interior.png', ['iron']);
     }
 }

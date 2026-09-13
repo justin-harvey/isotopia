@@ -6,6 +6,6 @@ import { SceneName } from './enums/SceneNames';
 // reactor control rods, borosilicate lab glass).
 export default class LibraryScene extends InteriorScene {
     constructor() {
-        super(SceneName.Library, 'library-interior.png', ['uranium', 'boron'], 'room_library');
+        super(SceneName.Library, 'library-interior.png', ['uranium'], 'room_library');
     }
 }

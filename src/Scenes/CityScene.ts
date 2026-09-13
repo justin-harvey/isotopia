@@ -43,6 +43,15 @@ const INTERIORS: Record<string, SceneName> = {
     'radio-tower-2':    SceneName.CityRadioTower2,
 };
 
+// Elementals relocated out of the town interiors (one monster per interior now) —
+// they roam the city streets instead of crowding a room. Each tile is a
+// guaranteed-walkable open avenue cell (empty walls layer), clear of buildings,
+// doors, props and pedestrians.
+const CITY_ELEMENTALS: [string, number, number][] = [
+    ['aluminum', 6, 28], ['fluorine', 36, 40], ['scandium', 6, 44],
+    ['boron', 46, 58], ['beryllium', 16, 60], ['sulfur', 36, 60],
+];
+
 export default class CityScene extends GameScene {
     private static readonly START = { x: 24, y: 70 };
     private static readonly EXIT = { x: 30, y: 71 };
@@ -83,6 +92,8 @@ export default class CityScene extends GameScene {
         // Plaza props.
         this.load.image('city_lamp', 'assets/city/lamp.png');
         this.load.image('city_bench', 'assets/city/bench.png');
+        // Art for the Elementals now roaming the city.
+        this.loadElementalArt(CITY_ELEMENTALS.map(e => e[0]));
     }
 
     create(): void {
@@ -168,6 +179,10 @@ export default class CityScene extends GameScene {
             'Whoa, a dog downtown!',
             'Did you see the towers? They are HUGE.',
         ]);
+
+        // Elementals relocated from the town interiors now roam the streets. Walk
+        // up to one to start its quiz (proximity trigger, same as everywhere).
+        CITY_ELEMENTALS.forEach(([id, x, y]) => this.spawnElemental(id, x, y));
     }
 
     update(): void {

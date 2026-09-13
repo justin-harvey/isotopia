@@ -7,6 +7,6 @@ import { SceneName } from './enums/SceneNames';
 // wild in the North Woods.
 export default class AutoScene extends InteriorScene {
     constructor() {
-        super(SceneName.Auto, 'treats-interior.png', ['magnesium', 'scandium']);
+        super(SceneName.Auto, 'treats-interior.png', ['magnesium']);
     }
 }
