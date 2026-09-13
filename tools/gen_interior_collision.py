@@ -49,10 +49,15 @@ ROOMS = {
     'room_large_tower': ('large-tower-interior', paint(INTERIOR_PAINT, 'large-tower-interior'), (22, 12)),
     'room_church': ('church-interior', paint(INTERIOR_PAINT, 'church-interior'), (22, 12)),
     'room_fashion': ('fashion-interior', paint(INTERIOR_PAINT, 'fashion-interior'), (22, 12)),
+    'room_power_tower': ('power-tower-interior', paint(INTERIOR_PAINT, 'power-tower-interior'), (22, 12)),
+    'room_radio_tower': ('radio-tower-interior', paint(INTERIOR_PAINT, 'radio-tower-interior'), (22, 12)),
+    'room_power_station': ('power-station-interior', paint(INTERIOR_PAINT, 'power-station-interior'), (22, 12)),
+    'room_radio_tower2': ('radio-tower-2-interior', paint(INTERIOR_PAINT, 'radio-tower-2-interior'), (22, 12)),
     # Town shops (square)
     'room_cafe': ('cafe-interior', paint(INTERIOR_PAINT, 'cafe-interior'), (16, 16)),
     'room_library': ('library-interior', paint(INTERIOR_PAINT, 'library-interior'), (16, 16)),
     'room_home': ('home-interior', paint(INTERIOR_PAINT, 'home-interior'), (16, 16)),
+    'room_treats': ('treats-interior', paint(INTERIOR_PAINT, 'treats-interior'), (16, 16)),
 }
 
 

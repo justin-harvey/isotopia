@@ -246,7 +246,7 @@ abstract class CityInteriorScene extends GameScene {
 
 // ---- Standalone building interiors (bottom door → back out to the city) ----
 export class CityPowerTowerScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityPowerTower, { background: 'power-tower-interior.png', up: SceneName.City, upLabel: 'EXIT' }); }
+    constructor() { super(SceneName.CityPowerTower, { background: 'power-tower-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_power_tower' }); }
 }
 export class CityFinanceScene extends CityInteriorScene {
     constructor() { super(SceneName.CityFinance, { background: 'finance-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_finance' }); }
@@ -261,13 +261,13 @@ export class CityFashionScene extends CityInteriorScene {
     constructor() { super(SceneName.CityFashion, { background: 'fashion-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_fashion' }); }
 }
 export class CityRadioTowerScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityRadioTower, { background: 'radio-tower-interior.png', up: SceneName.City, upLabel: 'EXIT' }); }
+    constructor() { super(SceneName.CityRadioTower, { background: 'radio-tower-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_radio_tower' }); }
 }
 export class CityPowerStationScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityPowerStation, { background: 'power-station-interior.png', up: SceneName.City, upLabel: 'EXIT' }); }
+    constructor() { super(SceneName.CityPowerStation, { background: 'power-station-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_power_station' }); }
 }
 export class CityRadioTower2Scene extends CityInteriorScene {
-    constructor() { super(SceneName.CityRadioTower2, { background: 'radio-tower-2-interior.png', up: SceneName.City, upLabel: 'EXIT' }); }
+    constructor() { super(SceneName.CityRadioTower2, { background: 'radio-tower-2-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_radio_tower2' }); }
 }
 
 // ---- Museum: ground floor + four basement levels, each deeper ----
