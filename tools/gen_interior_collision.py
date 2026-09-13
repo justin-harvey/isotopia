@@ -86,6 +86,37 @@ def build_mask(paint_path, W, H):
     return walk, portals
 
 
+def collapse_and_land(portals, walk, W, H):
+    """Reduce each portal TYPE to a single trigger tile (nearest the type's
+    centroid) and precompute a walkable, non-portal landing tile beside it — where
+    the dog spawns on arrival so it never sits on a trigger (which caused an
+    infinite portal loop). Other painted portal cells stay walkable floor."""
+    portal_cells = {(c, r) for (_, c, r) in portals}
+    by_kind = {}
+    for (k, c, r) in portals:
+        by_kind.setdefault(k, []).append((c, r))
+    result = []
+    for k, cells in by_kind.items():
+        cx = sum(c for c, r in cells) / len(cells)
+        cy = sum(r for c, r in cells) / len(cells)
+        px, py = min(cells, key=lambda p: (p[0] - cx) ** 2 + (p[1] - cy) ** 2)
+        # BFS over walkable tiles from the portal to the nearest walkable
+        # NON-portal tile — the dog's landing spot, guaranteed off any trigger.
+        seen = {(px, py)}
+        q = deque([(px, py)])
+        land = (px, py)   # fallback: the portal itself if truly boxed in
+        while q:
+            x, y = q.popleft()
+            if (x, y) not in portal_cells:
+                land = (x, y); break
+            for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < W and 0 <= ny < H and (nx, ny) not in seen and walk[ny, nx]:
+                    seen.add((nx, ny)); q.append((nx, ny))
+        result.append({"type": k, "x": px, "y": py, "land": {"x": land[0], "y": land[1]}})
+    return result
+
+
 def open_room_mask(W, H):
     walk = np.zeros((H, W), bool)
     for r in range(H):
@@ -172,12 +203,15 @@ def emit_nav_module(nav):
         "// Do not edit by hand. Portal `type` -> target is resolved in the scene:",
         "// ascend=exit/up, descend=down, custom=Cloud City.",
         "/* eslint-disable */",
-        "export interface InteriorPortal { type: 'ascend' | 'descend' | 'custom'; x: number; y: number; }",
+        "export interface InteriorPortal { type: 'ascend' | 'descend' | 'custom'; x: number; y: number; land: { x: number; y: number }; }",
         "export interface InteriorFloorNav { start: { x: number; y: number }; portals: InteriorPortal[]; }",
         "export const INTERIOR_NAV: Record<string, InteriorFloorNav> = {",
     ]
     for key, data in nav.items():
-        ps = ", ".join(f"{{ type: '{p['type']}', x: {p['x']}, y: {p['y']} }}" for p in data['portals'])
+        ps = ", ".join(
+            f"{{ type: '{p['type']}', x: {p['x']}, y: {p['y']}, "
+            f"land: {{ x: {p['land']['x']}, y: {p['land']['y']} }} }}"
+            for p in data['portals'])
         lines.append(f"    {key}: {{ start: {{ x: {data['start']['x']}, y: {data['start']['y']} }}, "
                      f"portals: [{ps}] }},")
     lines.append("};")
@@ -198,14 +232,18 @@ def main():
         walk[start['y'], start['x']] = True
         with open(os.path.join(TILEMAP_DIR, f'{key}.json'), 'w') as f:
             json.dump(tilemap(walk, W, H), f)
-        nav[key] = {"start": start, "portals": [{"type": t, "x": c, "y": r} for (t, c, r) in portals]}
+        collapsed = collapse_and_land(portals, walk, W, H)
+        nav[key] = {"start": start, "portals": collapsed}
         tag = "painted" if painted else "OPEN ROOM (not painted)"
-        pc = [(c, r) for (_, c, r) in portals]
-        reach = sum(1 for c in pc if c in region)
+        reach = sum(1 for p in collapsed if (p['x'], p['y']) in region)
+        summary = ", ".join(f"{p['type']}@({p['x']},{p['y']})→land({p['land']['x']},{p['land']['y']})"
+                            for p in collapsed)
         print(f"- {key}.json [{tag}] walkable={int(walk.sum()):>3} start={start} "
-              f"portals={len(pc)} reachable={reach}/{len(pc)}")
-        if pc and reach < len(pc):
-            print(f"    !! WARNING: {len(pc)-reach} portal tile(s) stranded off the start region on {key}.")
+              f"portals={len(collapsed)} reachable={reach}/{len(collapsed)}")
+        if collapsed:
+            print(f"    {summary}")
+        if collapsed and reach < len(collapsed):
+            print(f"    !! WARNING: {len(collapsed)-reach} portal(s) stranded off the start region on {key}.")
         if painted:
             print(f"    verify: {save_overlay(art, walk, portals, W, H)}")
     emit_nav_module(nav)

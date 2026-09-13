@@ -2,19 +2,19 @@
 // Do not edit by hand. Portal `type` -> target is resolved in the scene:
 // ascend=exit/up, descend=down, custom=Cloud City.
 /* eslint-disable */
-export interface InteriorPortal { type: 'ascend' | 'descend' | 'custom'; x: number; y: number; }
+export interface InteriorPortal { type: 'ascend' | 'descend' | 'custom'; x: number; y: number; land: { x: number; y: number }; }
 export interface InteriorFloorNav { start: { x: number; y: number }; portals: InteriorPortal[]; }
 export const INTERIOR_NAV: Record<string, InteriorFloorNav> = {
-    museum_ground: { start: { x: 11, y: 6 }, portals: [{ type: 'descend', x: 4, y: 0 }, { type: 'descend', x: 5, y: 0 }, { type: 'descend', x: 16, y: 0 }, { type: 'descend', x: 17, y: 0 }, { type: 'descend', x: 4, y: 1 }, { type: 'descend', x: 5, y: 1 }, { type: 'descend', x: 16, y: 1 }, { type: 'descend', x: 17, y: 1 }, { type: 'descend', x: 4, y: 2 }, { type: 'descend', x: 5, y: 2 }, { type: 'descend', x: 16, y: 2 }, { type: 'descend', x: 17, y: 2 }, { type: 'ascend', x: 10, y: 10 }, { type: 'ascend', x: 11, y: 10 }, { type: 'ascend', x: 10, y: 11 }, { type: 'ascend', x: 11, y: 11 }] },
-    museum_b1: { start: { x: 11, y: 6 }, portals: [{ type: 'ascend', x: 0, y: 0 }, { type: 'ascend', x: 1, y: 0 }, { type: 'ascend', x: 0, y: 1 }, { type: 'ascend', x: 1, y: 1 }, { type: 'descend', x: 10, y: 1 }, { type: 'descend', x: 11, y: 1 }, { type: 'descend', x: 10, y: 2 }, { type: 'descend', x: 11, y: 2 }, { type: 'descend', x: 10, y: 3 }, { type: 'descend', x: 11, y: 3 }] },
-    museum_b2: { start: { x: 11, y: 6 }, portals: [{ type: 'descend', x: 17, y: 1 }, { type: 'descend', x: 18, y: 1 }, { type: 'descend', x: 17, y: 2 }, { type: 'descend', x: 18, y: 2 }, { type: 'descend', x: 17, y: 3 }, { type: 'descend', x: 18, y: 3 }, { type: 'descend', x: 17, y: 4 }, { type: 'descend', x: 18, y: 4 }, { type: 'ascend', x: 0, y: 10 }, { type: 'ascend', x: 1, y: 10 }, { type: 'ascend', x: 0, y: 11 }, { type: 'ascend', x: 1, y: 11 }] },
-    museum_b3: { start: { x: 11, y: 6 }, portals: [{ type: 'descend', x: 17, y: 1 }, { type: 'descend', x: 18, y: 1 }, { type: 'custom', x: 4, y: 2 }, { type: 'custom', x: 5, y: 2 }, { type: 'descend', x: 17, y: 2 }, { type: 'descend', x: 18, y: 2 }, { type: 'custom', x: 4, y: 3 }, { type: 'custom', x: 5, y: 3 }, { type: 'descend', x: 17, y: 3 }, { type: 'descend', x: 18, y: 3 }, { type: 'descend', x: 17, y: 4 }, { type: 'descend', x: 18, y: 4 }, { type: 'ascend', x: 0, y: 10 }, { type: 'ascend', x: 1, y: 10 }, { type: 'ascend', x: 0, y: 11 }, { type: 'ascend', x: 1, y: 11 }] },
-    museum_b4: { start: { x: 11, y: 7 }, portals: [{ type: 'ascend', x: 0, y: 10 }, { type: 'ascend', x: 1, y: 10 }, { type: 'ascend', x: 0, y: 11 }, { type: 'ascend', x: 1, y: 11 }] },
-    room_finance: { start: { x: 11, y: 3 }, portals: [{ type: 'ascend', x: 10, y: 11 }, { type: 'ascend', x: 11, y: 11 }] },
-    room_large_tower: { start: { x: 11, y: 4 }, portals: [{ type: 'ascend', x: 5, y: 10 }, { type: 'ascend', x: 16, y: 10 }] },
-    room_church: { start: { x: 11, y: 6 }, portals: [{ type: 'ascend', x: 10, y: 11 }, { type: 'ascend', x: 11, y: 11 }] },
-    room_fashion: { start: { x: 11, y: 6 }, portals: [{ type: 'ascend', x: 16, y: 11 }, { type: 'ascend', x: 17, y: 11 }] },
-    room_cafe: { start: { x: 8, y: 8 }, portals: [{ type: 'ascend', x: 7, y: 14 }, { type: 'ascend', x: 8, y: 14 }, { type: 'ascend', x: 7, y: 15 }, { type: 'ascend', x: 8, y: 15 }] },
+    museum_ground: { start: { x: 11, y: 6 }, portals: [{ type: 'descend', x: 5, y: 1, land: { x: 5, y: 3 } }, { type: 'ascend', x: 10, y: 10, land: { x: 10, y: 9 } }] },
+    museum_b1: { start: { x: 11, y: 6 }, portals: [{ type: 'ascend', x: 0, y: 0, land: { x: 1, y: 2 } }, { type: 'descend', x: 10, y: 2, land: { x: 10, y: 4 } }] },
+    museum_b2: { start: { x: 11, y: 6 }, portals: [{ type: 'descend', x: 17, y: 2, land: { x: 16, y: 2 } }, { type: 'ascend', x: 0, y: 10, land: { x: 1, y: 9 } }] },
+    museum_b3: { start: { x: 11, y: 6 }, portals: [{ type: 'descend', x: 17, y: 2, land: { x: 17, y: 5 } }, { type: 'custom', x: 4, y: 2, land: { x: 4, y: 4 } }, { type: 'ascend', x: 0, y: 10, land: { x: 1, y: 9 } }] },
+    museum_b4: { start: { x: 11, y: 7 }, portals: [{ type: 'ascend', x: 0, y: 10, land: { x: 1, y: 9 } }] },
+    room_finance: { start: { x: 11, y: 3 }, portals: [{ type: 'ascend', x: 10, y: 11, land: { x: 10, y: 10 } }] },
+    room_large_tower: { start: { x: 11, y: 4 }, portals: [{ type: 'ascend', x: 5, y: 10, land: { x: 5, y: 9 } }] },
+    room_church: { start: { x: 11, y: 6 }, portals: [{ type: 'ascend', x: 10, y: 11, land: { x: 10, y: 10 } }] },
+    room_fashion: { start: { x: 11, y: 6 }, portals: [{ type: 'ascend', x: 16, y: 11, land: { x: 16, y: 10 } }] },
+    room_cafe: { start: { x: 8, y: 8 }, portals: [{ type: 'ascend', x: 7, y: 14, land: { x: 7, y: 13 } }] },
     room_library: { start: { x: 8, y: 8 }, portals: [] },
-    room_home: { start: { x: 8, y: 8 }, portals: [{ type: 'ascend', x: 7, y: 14 }, { type: 'ascend', x: 8, y: 14 }, { type: 'ascend', x: 7, y: 15 }, { type: 'ascend', x: 8, y: 15 }] },
+    room_home: { start: { x: 8, y: 8 }, portals: [{ type: 'ascend', x: 7, y: 14, land: { x: 7, y: 13 } }] },
 };

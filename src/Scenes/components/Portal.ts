@@ -46,18 +46,27 @@ export class Portal {
             });
         }
 
-        // Warp when the player comes to rest on any tile of this portal. The
-        // characterMoved guard means arriving on a portal (e.g. spawning next to
-        // one) won't instantly re-trigger — the player must move onto it.
+        // Fire only when the player STEPS ONTO the portal — i.e. it must first be
+        // "armed" by the player being off it. Spawning next to (or on) a portal
+        // therefore never triggers it, which is what previously caused an infinite
+        // switch loop (white screen / unresponsive). Re-arm on wake, since arriving
+        // repositions the dog beside the portal.
+        const onPortal = (): boolean => {
+            const p = scene.gridEngine.getPosition(scene.playerName);
+            return key.includes(`${p.x},${p.y}`);
+        };
+        let armed = !onPortal();
+        const reArm = (): void => { armed = !onPortal(); };
+        scene.events.on('wake', reArm);
+
         const sub = scene.gridEngine.movementStopped().subscribe(({ charId }) => {
             if (charId !== scene.playerName) return;
-            const p = scene.gridEngine.getPosition(scene.playerName);
-            if (key.includes(`${p.x},${p.y}`) && scene.characterMoved) {
-                scene.characterMoved = false;
-                if (arriveAt) MUSEUM_ARRIVAL[target] = arriveAt;
-                scene.switch(target);
-            }
+            if (!onPortal()) { armed = true; return; }   // stepped off → ready to fire next time
+            if (!armed) return;                          // arrived/spawned on it → ignore
+            armed = false;
+            if (arriveAt) MUSEUM_ARRIVAL[target] = arriveAt;
+            scene.switch(target);
         });
-        scene.events.once('shutdown', () => sub.unsubscribe());
+        scene.events.once('shutdown', () => { sub.unsubscribe(); scene.events.off('wake', reArm); });
     }
 }

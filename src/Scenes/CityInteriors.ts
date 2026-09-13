@@ -198,7 +198,7 @@ abstract class CityInteriorScene extends GameScene {
         if (!want) return undefined;
         delete MUSEUM_ARRIVAL[this.sceneKey];
         const p = this.nav.portals.find(pt => pt.type === want);
-        return p ? { x: p.x, y: p.y } : undefined;
+        return p ? { x: p.land.x, y: p.land.y } : undefined;   // land beside, not on, the portal
     }
 
     // First visit: bias the player's spawn onto the arrival portal before the
