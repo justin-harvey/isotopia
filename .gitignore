@@ -25,3 +25,6 @@ firebase/seed/serviceAccount.json
 
 # Packaged offline build (npm run package)
 isotopia-offline.zip
+
+# Local dev preview page (not part of the game)
+cutscene-preview.html

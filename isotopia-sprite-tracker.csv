@@ -1,0 +1,119 @@
+Atomic #,Symbol,Element,Monster Name,In Playable Roster,Has Sprite,Sprite File,Status
+1,H,Hydrogen,Hydrohop,Yes,Yes,src/assets/elementals/hydrogen.png,Done
+2,He,Helium,Helior,Yes,Yes,src/assets/elementals/helium.png,Done
+3,Li,Lithium,,No,No,,Needs monster design + sprite
+4,Be,Beryllium,Beryllia,Yes,Yes,src/assets/elementals/beryllium.png,Done
+5,B,Boron,Borolith,Yes,Yes,src/assets/elementals/boron.png,Done
+6,C,Carbon,Carbocrunch,Yes,Yes,src/assets/elementals/carbon.png,Done
+7,N,Nitrogen,Nitronoodle,Yes,Yes,src/assets/elementals/nitrogen.png,Done
+8,O,Oxygen,Oxypuff,Yes,Yes,src/assets/elementals/oxygen.png,Done
+9,F,Fluorine,Fluorvex,Yes,Yes,src/assets/elementals/fluorine.png,Done
+10,Ne,Neon,Neonglow,Yes,Yes,src/assets/elementals/neon.png,Done
+11,Na,Sodium,Sodazoom,Yes,Yes,src/assets/elementals/sodium.png,Done
+12,Mg,Magnesium,Magflash,Yes,Yes,src/assets/elementals/magnesium.png,Done
+13,Al,Aluminum,Aluminio,Yes,Yes,src/assets/elementals/aluminum.png,Done
+14,Si,Silicon,,No,No,,Needs monster design + sprite
+15,P,Phosphorus,,No,No,,Needs monster design + sprite
+16,S,Sulfur,Brimora,Yes,Yes,src/assets/elementals/sulfur.png,Done
+17,Cl,Chlorine,,No,No,,Needs monster design + sprite
+18,Ar,Argon,,No,No,,Needs monster design + sprite
+19,K,Potassium,,No,No,,Needs monster design + sprite
+20,Ca,Calcium,,No,No,,Needs monster design + sprite
+21,Sc,Scandium,Scandion,Yes,Yes,src/assets/elementals/scandium.png,Done
+22,Ti,Titanium,,No,No,,Needs monster design + sprite
+23,V,Vanadium,,No,No,,Needs monster design + sprite
+24,Cr,Chromium,,No,No,,Needs monster design + sprite
+25,Mn,Manganese,,No,No,,Needs monster design + sprite
+26,Fe,Iron,Ironclank,Yes,Yes,src/assets/elementals/iron.png,Done
+27,Co,Cobalt,,No,No,,Needs monster design + sprite
+28,Ni,Nickel,,No,No,,Needs monster design + sprite
+29,Cu,Copper,,No,No,,Needs monster design + sprite
+30,Zn,Zinc,,No,No,,Needs monster design + sprite
+31,Ga,Gallium,,No,No,,Needs monster design + sprite
+32,Ge,Germanium,,No,No,,Needs monster design + sprite
+33,As,Arsenic,,No,No,,Needs monster design + sprite
+34,Se,Selenium,,No,No,,Needs monster design + sprite
+35,Br,Bromine,,No,No,,Needs monster design + sprite
+36,Kr,Krypton,,No,No,,Needs monster design + sprite
+37,Rb,Rubidium,,No,No,,Needs monster design + sprite
+38,Sr,Strontium,,No,No,,Needs monster design + sprite
+39,Y,Yttrium,,No,No,,Needs monster design + sprite
+40,Zr,Zirconium,,No,No,,Needs monster design + sprite
+41,Nb,Niobium,,No,No,,Needs monster design + sprite
+42,Mo,Molybdenum,,No,No,,Needs monster design + sprite
+43,Tc,Technetium,,No,No,,Needs monster design + sprite
+44,Ru,Ruthenium,,No,No,,Needs monster design + sprite
+45,Rh,Rhodium,,No,No,,Needs monster design + sprite
+46,Pd,Palladium,,No,No,,Needs monster design + sprite
+47,Ag,Silver,,No,No,,Needs monster design + sprite
+48,Cd,Cadmium,,No,No,,Needs monster design + sprite
+49,In,Indium,,No,No,,Needs monster design + sprite
+50,Sn,Tin,,No,No,,Needs monster design + sprite
+51,Sb,Antimony,,No,No,,Needs monster design + sprite
+52,Te,Tellurium,,No,No,,Needs monster design + sprite
+53,I,Iodine,,No,No,,Needs monster design + sprite
+54,Xe,Xenon,,No,No,,Needs monster design + sprite
+55,Cs,Cesium,,No,No,,Needs monster design + sprite
+56,Ba,Barium,,No,No,,Needs monster design + sprite
+57,La,Lanthanum,,No,No,,Needs monster design + sprite
+58,Ce,Cerium,,No,No,,Needs monster design + sprite
+59,Pr,Praseodymium,,No,No,,Needs monster design + sprite
+60,Nd,Neodymium,,No,No,,Needs monster design + sprite
+61,Pm,Promethium,,No,No,,Needs monster design + sprite
+62,Sm,Samarium,,No,No,,Needs monster design + sprite
+63,Eu,Europium,,No,No,,Needs monster design + sprite
+64,Gd,Gadolinium,,No,No,,Needs monster design + sprite
+65,Tb,Terbium,,No,No,,Needs monster design + sprite
+66,Dy,Dysprosium,,No,No,,Needs monster design + sprite
+67,Ho,Holmium,,No,No,,Needs monster design + sprite
+68,Er,Erbium,,No,No,,Needs monster design + sprite
+69,Tm,Thulium,,No,No,,Needs monster design + sprite
+70,Yb,Ytterbium,,No,No,,Needs monster design + sprite
+71,Lu,Lutetium,,No,No,,Needs monster design + sprite
+72,Hf,Hafnium,,No,No,,Needs monster design + sprite
+73,Ta,Tantalum,,No,No,,Needs monster design + sprite
+74,W,Tungsten,,No,No,,Needs monster design + sprite
+75,Re,Rhenium,,No,No,,Needs monster design + sprite
+76,Os,Osmium,,No,No,,Needs monster design + sprite
+77,Ir,Iridium,,No,No,,Needs monster design + sprite
+78,Pt,Platinum,,No,No,,Needs monster design + sprite
+79,Au,Gold,,No,No,,Needs monster design + sprite
+80,Hg,Mercury,,No,No,,Needs monster design + sprite
+81,Tl,Thallium,,No,No,,Needs monster design + sprite
+82,Pb,Lead,,No,No,,Needs monster design + sprite
+83,Bi,Bismuth,,No,No,,Needs monster design + sprite
+84,Po,Polonium,,No,No,,Needs monster design + sprite
+85,At,Astatine,,No,No,,Needs monster design + sprite
+86,Rn,Radon,,No,No,,Needs monster design + sprite
+87,Fr,Francium,,No,No,,Needs monster design + sprite
+88,Ra,Radium,,No,No,,Needs monster design + sprite
+89,Ac,Actinium,,No,No,,Needs monster design + sprite
+90,Th,Thorium,,No,No,,Needs monster design + sprite
+91,Pa,Protactinium,,No,No,,Needs monster design + sprite
+92,U,Uranium,Glowbun,Yes,Yes,src/assets/elementals/uranium.png,Done
+93,Np,Neptunium,,No,No,,Needs monster design + sprite
+94,Pu,Plutonium,,No,No,,Needs monster design + sprite
+95,Am,Americium,,No,No,,Needs monster design + sprite
+96,Cm,Curium,,No,No,,Needs monster design + sprite
+97,Bk,Berkelium,,No,No,,Needs monster design + sprite
+98,Cf,Californium,,No,No,,Needs monster design + sprite
+99,Es,Einsteinium,,No,No,,Needs monster design + sprite
+100,Fm,Fermium,,No,No,,Needs monster design + sprite
+101,Md,Mendelevium,,No,No,,Needs monster design + sprite
+102,No,Nobelium,,No,No,,Needs monster design + sprite
+103,Lr,Lawrencium,,No,No,,Needs monster design + sprite
+104,Rf,Rutherfordium,,No,No,,Needs monster design + sprite
+105,Db,Dubnium,,No,No,,Needs monster design + sprite
+106,Sg,Seaborgium,,No,No,,Needs monster design + sprite
+107,Bh,Bohrium,,No,No,,Needs monster design + sprite
+108,Hs,Hassium,,No,No,,Needs monster design + sprite
+109,Mt,Meitnerium,,No,No,,Needs monster design + sprite
+110,Ds,Darmstadtium,,No,No,,Needs monster design + sprite
+111,Rg,Roentgenium,,No,No,,Needs monster design + sprite
+112,Cn,Copernicium,,No,No,,Needs monster design + sprite
+113,Nh,Nihonium,,No,No,,Needs monster design + sprite
+114,Fl,Flerovium,,No,No,,Needs monster design + sprite
+115,Mc,Moscovium,,No,No,,Needs monster design + sprite
+116,Lv,Livermorium,,No,No,,Needs monster design + sprite
+117,Ts,Tennessine,,No,No,,Needs monster design + sprite
+118,Og,Oganesson,,No,No,,Needs monster design + sprite
