@@ -1,4 +1,4 @@
-# Isotopia
+# Isotopia (https://is0topia.netlify.app/)
 
 A Pokémon-style pixel game for learning the periodic table. Play as a dog
 exploring a small town, meet friendly element creatures called **Elementals**,
