@@ -14,6 +14,7 @@ import { PERIODIC_TABLE, getPeriodicElement, elementLabel } from './data/periodi
 import {
     ClassSettings, loadSettings, saveSettings, DEFAULT_SETTINGS,
     isElementReleased, currentUnitDay, UNIT_LENGTH_DAYS,
+    ClassMeta, loadClassMeta, saveClassMeta, DEFAULT_CLASS_COLOR,
 } from './data/classConfig';
 import {
     StoredQuestion, loadAllQuestions, saveQuestion, deleteQuestion, importStarterQuestions,
@@ -34,7 +35,12 @@ const PLAYABLE = new Map(ELEMENTS.map(e => [e.id, e.monster] as const));
 let session: TeacherSession | null = null;
 let settings: ClassSettings = { ...DEFAULT_SETTINGS };
 let questions: StoredQuestion[] = [];
-let tab: 'questions' | 'schedule' | 'settings' | 'students' | 'admins' = 'questions';
+let tab: 'questions' | 'schedule' | 'settings' | 'students' | 'admins' | 'class' = 'questions';
+let classMeta: ClassMeta | null = null;         // the logged-in staff member's class
+
+// This staff member owns one class, keyed by their own uid.
+function myClassId(): string { return session?.user.uid || ''; }
+function myClassName(): string { return classMeta?.name?.trim() || 'My Class'; }
 let editing: StoredQuestion | null = null;      // question being added/edited
 let rosterRows: StudentRow[] = [];              // cached roster (filtered client-side)
 let rosterFilter = '';
@@ -89,7 +95,15 @@ function boot(): void {
     onTeacherAuth(async (s) => {
         session = s;
         if (s?.isStaff) {
-            [settings, questions] = await Promise.all([loadSettings(), loadAllQuestions()]);
+            const cid = s.user.uid;
+            [settings, questions, classMeta] = await Promise.all([
+                loadSettings(cid), loadAllQuestions(), loadClassMeta(cid),
+            ]);
+            // First time this staff member opens the portal: create their class.
+            if (!classMeta) {
+                classMeta = { name: 'My Class', color: DEFAULT_CLASS_COLOR, ownerUid: cid };
+                try { await saveClassMeta(cid, classMeta); } catch { /* rules/offline — retry on Class tab */ }
+            }
         }
         render();
     });
@@ -140,6 +154,7 @@ function renderNotAuthorized(): void {
 // Tabs available in the portal. The Admins tab (role management) is super-only.
 function portalTabs(): [typeof tab, string][] {
     const tabs: [typeof tab, string][] = [
+        ['class', 'Class'],
         ['questions', 'Questions'],
         ['schedule', 'Schedule'],
         ['settings', 'Settings'],
@@ -153,6 +168,7 @@ function renderPortal(): void {
     app.innerHTML = `
         <header class="topbar">
             <span class="brand">Isotopia Teacher</span>
+            <span class="class-chip"><span class="class-swatch" style="background:${esc(classMeta?.color || DEFAULT_CLASS_COLOR)}"></span>${esc(myClassName())}</span>
             <nav class="tabs" role="tablist">
                 ${portalTabs().map(([t, label]) => {
                     const on = tab === t;
@@ -184,6 +200,7 @@ function renderPortal(): void {
 
 function renderPanel(): void {
     if (tab === 'questions') return renderQuestions();
+    if (tab === 'class') return renderClass();
     if (tab === 'schedule') return renderSchedule();
     if (tab === 'students') { void renderStudents(); return; }
     if (tab === 'admins') { void renderAdmins(); return; }
@@ -440,7 +457,7 @@ function renderSchedule(): void {
         });
         settings.release = release;
         // Re-render on success so the status badges + any clamped day values refresh.
-        const ok = await withBusy(schedSaveBtn, 'Saving…', async () => { await saveSettings(settings); }, 'Schedule saved.');
+        const ok = await withBusy(schedSaveBtn, 'Saving…', async () => { await saveSettings(myClassId(), settings); }, 'Schedule saved.');
         if (ok) renderSchedule();
     });
 }
@@ -461,8 +478,46 @@ function renderSettings(): void {
     setSaveBtn.addEventListener('click', async () => {
         const v = parseInt((document.getElementById('g-catch') as HTMLInputElement).value, 10);
         settings.questionsToCatch = Math.max(1, Math.min(5, Number.isNaN(v) ? 1 : v));
-        const ok = await withBusy(setSaveBtn, 'Saving…', async () => { await saveSettings(settings); }, 'Settings saved.');
+        const ok = await withBusy(setSaveBtn, 'Saving…', async () => { await saveSettings(myClassId(), settings); }, 'Settings saved.');
         if (ok) renderSettings();
+    });
+}
+
+// ---------------------------------------------------------------- class
+// Each staff member names + colors their own class (classId === their own uid).
+// Color is portal-only (students never see it).
+const CLASS_COLORS = ['#3a7afe', '#e2584d', '#2f9e57', '#8b5cf6', '#f59e0b', '#ec4899', '#0ea5e9', '#64748b'];
+
+function renderClass(): void {
+    const panel = document.getElementById('panel') as HTMLElement;
+    const meta = classMeta || { name: '', color: DEFAULT_CLASS_COLOR, ownerUid: myClassId() };
+    let chosen = meta.color;
+    panel.innerHTML = `<h2>Class</h2>
+        <p class="muted small">Name your class and pick a color — this is how your
+            class shows in the portal. Students never see the color.</p>
+        <form id="class-form" class="stack" style="max-width:360px;margin:14px 0 0">
+            <label class="fld">Class name
+                <input id="class-name" type="text" maxlength="60" placeholder="e.g. AP Chem — Period 3" value="${esc(meta.name)}">
+            </label>
+            <div class="fld">Color
+                <div class="swatches">
+                    ${CLASS_COLORS.map(c => `<button type="button" class="swatch-pick${c.toLowerCase() === meta.color.toLowerCase() ? ' on' : ''}" data-color="${c}" style="background:${c}" aria-label="${c}"></button>`).join('')}
+                </div>
+            </div>
+            <button type="submit" class="btn primary" id="class-save">Save class</button>
+        </form>`;
+    const swatches = panel.querySelectorAll<HTMLButtonElement>('.swatch-pick');
+    swatches.forEach(b => b.addEventListener('click', () => {
+        chosen = b.dataset.color as string;
+        swatches.forEach(x => x.classList.toggle('on', x === b));
+    }));
+    (panel.querySelector('#class-form') as HTMLFormElement).addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = (panel.querySelector('#class-name') as HTMLInputElement).value.trim();
+        const saveBtn = panel.querySelector('#class-save') as HTMLButtonElement;
+        const next: ClassMeta = { name, color: chosen, ownerUid: myClassId() };
+        const ok = await withBusy(saveBtn, 'Saving…', async () => { await saveClassMeta(myClassId(), next); }, 'Class saved.');
+        if (ok) { classMeta = next; renderPortal(); }   // refresh header chip, stay on tab
     });
 }
 
@@ -472,14 +527,15 @@ function renderSettings(): void {
 // Registrants who aren't added just sit here harmlessly.
 async function renderStudents(): Promise<void> {
     const panel = document.getElementById('panel') as HTMLElement;
-    const intro = `<p class="muted small">Tick students and use the bulk buttons, or
-        the per-row button. Only class members count toward progress tracking.</p>`;
+    const intro = `<p class="muted small">Registrants for <b>${esc(myClassName())}</b>.
+        Tick students and use the bulk buttons, or the per-row button. Students
+        already in another class can't be claimed${session?.isSuper ? '' : ' (ask a super admin to move them)'}.</p>`;
     panel.innerHTML = `<div class="row between"><h2>Roster</h2>
         <button id="stu-refresh" class="btn">Refresh</button></div>${intro}
         <p class="muted">Loading…</p>`;
     document.getElementById('stu-refresh')?.addEventListener('click', () => void renderStudents());
 
-    rosterRows = await loadRoster().catch(() => []);
+    rosterRows = await loadRoster(myClassId()).catch(() => []);
     if (rosterRows.length === 0) {
         panel.innerHTML = `<div class="row between"><h2>Roster</h2>
             <button id="stu-refresh" class="btn">Refresh</button></div>${intro}
@@ -529,10 +585,17 @@ function paintRoster(): void {
             (Object.values(r.stats) as { attempts: number; correct: number }[])
                 .forEach(s => { if (s && typeof s === 'object') { att += s.attempts || 0; cor += s.correct || 0; } });
             const acc = att ? Math.round((cor / att) * 100) : 0;
+            // "Assigned elsewhere" is only claimable by a super (rules block admins).
+            const locked = r.assignedElsewhere && !session?.isSuper;
+            const rosterCell = r.inClass
+                ? `<span class="pill">in class</span> <button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="1">Remove</button>`
+                : r.assignedElsewhere
+                    ? `<span class="muted small">another class</span>${locked ? '' : ` <button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="0">Claim</button>`}`
+                    : `<button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="0">Add</button>`;
             return `<tr>
-                <td><input type="checkbox" class="roster-check" data-uid="${esc(r.uid)}"></td>
+                <td>${locked ? '' : `<input type="checkbox" class="roster-check" data-uid="${esc(r.uid)}" data-in="${r.inClass ? '1' : '0'}">`}</td>
                 <td>${esc(r.name)}<div class="muted small">${esc(r.email)}</div></td>
-                <td>${r.inClass ? '<span class="pill">in class</span> ' : ''}<button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="${r.inClass ? '1' : '0'}">${r.inClass ? 'Remove' : 'Add'}</button></td>
+                <td>${rosterCell}</td>
                 <td>${r.caught}</td>
                 <td>${r.seen}</td>
                 <td>${att ? `${acc}% <span class="muted small">(${cor}/${att})</span>` : '—'}</td>
@@ -546,7 +609,7 @@ function paintRoster(): void {
             btn.disabled = true;
             btn.textContent = '…';
             try {
-                await setMembership(uid, !isIn);
+                await setMembership(myClassId(), uid, !isIn);
             } catch (e) {
                 flash(e instanceof Error ? e.message : 'Could not update the roster.', true);
             }
@@ -555,11 +618,21 @@ function paintRoster(): void {
 }
 
 async function bulkRoster(add: boolean): Promise<void> {
-    const uids = Array.from(document.querySelectorAll<HTMLInputElement>('.roster-check:checked'))
+    let uids = Array.from(document.querySelectorAll<HTMLInputElement>('.roster-check:checked'))
         .map(c => c.dataset.uid as string);
-    if (uids.length === 0) { flash('Tick some students first.', true); return; }
+    if (add) {
+        // Adding: skip anyone already in this class, and (for non-supers) anyone
+        // claimed by another class — a single ineligible path rejects the whole
+        // atomic write.
+        const byUid = new Map(rosterRows.map(r => [r.uid, r] as const));
+        uids = uids.filter(uid => {
+            const r = byUid.get(uid);
+            return r && !r.inClass && !(r.assignedElsewhere && !session?.isSuper);
+        });
+    }
+    if (uids.length === 0) { flash(add ? 'No eligible students ticked.' : 'Tick some students first.', true); return; }
     try {
-        await setMembershipBulk(uids, add);
+        await setMembershipBulk(myClassId(), uids, add);
         flash(`${add ? 'Added' : 'Removed'} ${uids.length} student${uids.length > 1 ? 's' : ''}.`);
     } catch (e) {
         flash(e instanceof Error ? e.message : 'Bulk update failed.', true);

@@ -1,13 +1,12 @@
 // Teacher dashboard + roster data. Every student who registers (and verifies)
-// writes a students/{uid} record; the teacher claim lets us read all of them —
-// this is the "registrant pool". Class membership is a separate, teacher-only
-// list at classes/{CLASS_ID}/members. loadRoster() joins the two so the portal
-// can show everyone and flag who's actually on the roster; setMembership()
-// adds/removes a student from the class.
+// writes a students/{uid} record; staff can read all of them — this is the
+// "registrant pool". Class membership is a single assignment per student:
+// assignments/{studentUid} = classId (the owning staff member's uid). loadRoster
+// joins the pool with assignments and flags, for a given class: who's in it, and
+// who's already claimed by another class. setMembership writes the assignment.
 
 import { getFirebaseApp } from './firebase';
 import { getDatabase, ref, get, set, update } from 'firebase/database';
-import { CLASS_ID } from './classConfig';
 
 export interface StudentRow {
     uid: string;
@@ -16,7 +15,8 @@ export interface StudentRow {
     caught: number;
     seen: number;
     stats: Record<string, { attempts: number; correct: number }>;
-    inClass: boolean;               // true = on the AP Chem roster (a class member)
+    inClass: boolean;               // assigned to THIS class
+    assignedElsewhere: boolean;     // assigned to a different class (can't claim unless super)
 }
 
 function db() {
@@ -24,20 +24,21 @@ function db() {
     return app ? getDatabase(app) : undefined;
 }
 
-/** Every registrant, flagged with whether they're on the class roster. Sorted
- *  class-members first, then by name. Requires the teacher claim (rules gate the
- *  root read of /students on auth.token.teacher). */
-export async function loadRoster(): Promise<StudentRow[]> {
+/** Every registrant, flagged relative to `classId`: in this class, or claimed by
+ *  another. Sorted in-class first, then by name. Requires staff (rules gate the
+ *  root reads of /students and /assignments). */
+export async function loadRoster(classId: string): Promise<StudentRow[]> {
     const d = db();
     if (!d) return [];
-    const [studSnap, memSnap] = await Promise.all([
+    const [studSnap, asgSnap] = await Promise.all([
         get(ref(d, 'students')),
-        get(ref(d, `classes/${CLASS_ID}/members`)),
+        get(ref(d, 'assignments')),
     ]);
     const students = studSnap.exists() ? studSnap.val() : {};
-    const members: Record<string, unknown> = memSnap.exists() ? memSnap.val() : {};
+    const asg: Record<string, string> = asgSnap.exists() ? asgSnap.val() : {};
     const rows: StudentRow[] = Object.keys(students).map((uid) => {
         const v = students[uid] || {};
+        const assigned = asg[uid] || null;
         return {
             uid,
             name: v.name || '(unknown)',
@@ -45,27 +46,32 @@ export async function loadRoster(): Promise<StudentRow[]> {
             caught: v.caught ? Object.keys(v.caught).length : 0,
             seen: v.seen ? Object.keys(v.seen).length : 0,
             stats: v.stats || {},
-            inClass: members[uid] === true,
+            inClass: assigned === classId,
+            assignedElsewhere: !!assigned && assigned !== classId,
         };
     });
     return rows.sort((a, b) =>
         (Number(b.inClass) - Number(a.inClass)) || a.name.localeCompare(b.name));
 }
 
-/** Add (true) or remove (false) a student from the class roster. Staff-only. */
-export async function setMembership(uid: string, inClass: boolean): Promise<void> {
+/** Assign (true) or unassign (false) a student to/from `classId`. Admins may only
+ *  claim unassigned students into their own class; supers may reassign anyone
+ *  (enforced by the rules). */
+export async function setMembership(classId: string, uid: string, inClass: boolean): Promise<void> {
     const d = db();
     if (!d) return;
-    await set(ref(d, `classes/${CLASS_ID}/members/${uid}`), inClass ? true : null);
+    await set(ref(d, `assignments/${uid}`), inClass ? classId : null);
 }
 
-/** Add/remove many students from the roster in one atomic write. Staff-only. */
-export async function setMembershipBulk(uids: string[], inClass: boolean): Promise<void> {
+/** Assign/unassign many students in one atomic write. NOTE: the whole write is
+ *  rejected if any single assignment fails the rules (e.g. an admin trying to
+ *  claim someone already in another class), so the caller pre-filters. */
+export async function setMembershipBulk(classId: string, uids: string[], inClass: boolean): Promise<void> {
     const d = db();
     if (!d || uids.length === 0) return;
     const updates: Record<string, unknown> = {};
     for (const uid of uids) {
-        updates[`classes/${CLASS_ID}/members/${uid}`] = inClass ? true : null;
+        updates[`assignments/${uid}`] = inClass ? classId : null;
     }
     await update(ref(d), updates);
 }

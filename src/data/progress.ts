@@ -9,7 +9,6 @@
 
 import { getFirebaseApp } from './firebase';
 import { getDatabase, ref, get, set } from 'firebase/database';
-import { CLASS_ID } from './classConfig';
 
 export type MonsterStatus = 'unseen' | 'seen' | 'caught';
 
@@ -60,17 +59,16 @@ async function pushCloud(): Promise<void> {
     if (!d || !studentUid) return;
     try {
         await set(ref(d, `students/${studentUid}`), {
-            classId: CLASS_ID,
             name: studentInfo.name,
             email: studentInfo.email,
             seen: state.seen,
             caught: state.caught,
             stats: state.stats,
         });
-        // Intentionally NOT writing classes/{CLASS_ID}/members here: registering
-        // only creates the student's own record (the "registrant pool"). A teacher
-        // assigns class membership from the portal — see studentAdmin.setMembership
-        // and database.rules.json (members is a teacher-only write).
+        // Intentionally NOT writing class membership here: registering only
+        // creates the student's own record (the "registrant pool"). A staff member
+        // assigns the student to a class from the portal by writing
+        // assignments/{uid} — see studentAdmin.setMembership + database.rules.json.
     } catch { /* offline / transient — local copy is still saved */ }
 }
 
@@ -87,7 +85,7 @@ export async function attachStudent(uid: string, name: string, email: string): P
             const v = snap.val() as Partial<ProgressState>;
             state = { seen: v.seen ?? {}, caught: v.caught ?? {}, stats: v.stats ?? {} };
             saveLocal();
-            await pushCloud();          // ensure name/email/classId are current
+            await pushCloud();          // ensure name/email are current
         } else {
             await pushCloud();          // first sign-in: migrate local progress up
         }
