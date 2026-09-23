@@ -1,7 +1,7 @@
 # Isotopia — Session Handoff
 
 A running summary of what this is and where it stands, so work can resume after a
-context reset. Last updated 2026-08-05.
+context reset. Last updated 2026-09-23.
 
 ## What this is
 **Isotopia** — a Pokémon-style pixel game for learning the periodic table. You
@@ -9,15 +9,15 @@ play a dog exploring a small town, walk up to friendly element creatures called
 **Elementals**, and answer multiple-choice atomic-structure questions to catch
 them and fill your **Isotopedex**. It's **offline-first**: the whole game runs
 from a built-in question seed with no setup. An optional Firebase backend adds a
-shared question bank, a teacher portal, and per-student progress sync. Real
-classroom target: an **AP Chemistry** class at **SAD 15 (Gray–New Gloucester,
-Maine)** — the town is themed on Gray, Maine.
+shared question bank, a teacher portal, email/password student registration, and
+per-student progress sync. Real classroom target: an **AP Chemistry** class at
+**SAD 15 (Gray–New Gloucester, Maine)** — the town is themed on Gray, Maine.
 
 ## Coordinates
 | Thing | Value |
 |---|---|
 | Local path | `/home/nah/Claudia/elemonsters` (folder name predates the rename to Isotopia) |
-| GitHub | https://github.com/G00DTECH/isotopia (branch `main`, public) |
+| GitHub | https://github.com/justin-harvey/isotopia (branch `main`, public; old `G00DTECH` path redirects) |
 | Live game | https://is0topia.netlify.app/ (note the **zero**). Teacher portal: `/teacher.html` |
 | Firebase project | `isotopia-2809c` (Realtime Database) |
 | Deploy | Netlify auto-builds from `main` (`npm run build` → publish `dist/`). **Requires the 8 `FIREBASE_*` env vars set in Netlify** (see `.env.example`) or online features silently go offline |
@@ -74,40 +74,59 @@ harmless). 9 have real pixel art in `src/assets/elementals/`; declared in
 | `src/Scenes/InteriorScene.ts` + Home/Hardware/Hannaford/Auto/Library | Building interiors (image backgrounds + shared collision grid) |
 | `src/Scenes/GameScene.ts` | Base scene: `spawnElemental` (release-gated), `enableGrassEncounters`, `spawnPedestrian`, `spawnTalkingNpc`, `spawnCompanionNpc`, camera, embedded-map loading |
 | `src/ui/QuizOverlay.ts` | GBA battle quiz (round-based, HP bar, `startBattle` wipe) |
-| `src/ui/Isotopedex.ts` | Collection screen + student sign-in bar + hidden teacher-portal entrance (hold the title) |
+| `src/ui/Isotopedex.ts` | Collection screen + student account bar (email/password sign-up / log in / verify) + hidden teacher-portal entrance (hold the title) |
 | `src/ui/CityReveal.ts` | The secret-path cutscene (bridge pan-out under sunset, dog on the bridge; tap → enter city) |
 | `src/ui/Intro.ts` / `NpcDialog.ts` / `icons.ts` | Help card, NPC dialog box, inline SVG icons (replaced emoji) |
 | `src/data/elements.ts` / `questions.ts` / `questionSource.ts` | Elements, local seed bank, local-vs-RTDB question source |
 | `src/data/progress.ts` | Seen/Caught + stats; localStorage cache, mirrors to `students/{uid}` when signed in |
 | `src/data/classConfig.ts` | Class settings + 40-day release schedule; `elementReleased()` cache the game reads |
 | `src/data/firebase.ts` | Firebase config from `FIREBASE_*` env (blank ⇒ offline) + lazy init |
-| `src/data/auth.ts` / `studentAuth.ts` / `adminAuth.ts` | Guest anon sign-in / optional student Google (redirect) / teacher Google (popup) + claim gate |
+| `src/data/auth.ts` / `studentAuth.ts` / `adminAuth.ts` | Guest anon sign-in / student **email+password** register+verify / portal sign-in (super via Google, admin via email+password) + role gate |
+| `src/data/studentAdmin.ts` | Portal data: `loadRoster`/`setMembership(Bulk)` (class roster) + `loadAdmins`/`setAdmin` (super-only role mgmt) |
 | `src/data/maps.ts` | **Embedded tilemaps** (test/woods/interior/city) so the game runs from `file://` (no XHR). Regenerate via `tools/embed-maps.mjs` after editing any map |
 | `src/teacher.ts` + `teacher.html` + `teacher.css` | Teacher admin portal (separate rollup bundle) |
 | `tools/gen_town.py` / `gen_woods.py` / `gen_city.py` / `gen_interior.py` | Regenerate each tilemap; `embed-maps.mjs` re-embeds them into `maps.ts` |
 | `firebase/` | `database.rules.json`, `set-teacher.mjs`, `ADD-A-TEACHER.md`, `ACCOUNTS-SCOPE.md`, `NEXT-STEPS.md`, `serviceAccount.json` (gitignored) |
 
-## Accounts, auth, teacher portal
-- **Guests** play anonymously (local progress). **Students** may optionally sign
-  in with Google (`@sad15.org`, **redirect** flow for iPad Safari) to save
-  progress to `students/{uid}` and appear on the dashboard.
-- **Teachers** use `/teacher.html`: Google sign-in + a `teacher` custom claim
-  (RTDB rules gate writes on `auth.token.teacher`). In-game, **press-and-hold the
-  Isotopedex title ~1s** to open the portal. Current teachers: `jharvood@gmail.com`,
-  `aharvey@sad15.org` (Justin's mom, the teacher). Add/remove: `firebase/ADD-A-TEACHER.md`
-  (`node firebase/set-teacher.mjs <UID> [off]`; needs `firebase-admin@11` on Node 18).
-- Portal tabs: **Questions** (CRUD + import seed), **Schedule** (40-day per-element
-  unlock days), **Settings** (`questionsToCatch`), **Students** (dashboard). Has
-  busy states + save toasts.
+## Accounts, auth, roles, teacher portal
+Three roles, two of them enforced entirely in `database.rules.json` (client UI is
+just convenience — the rules are the real gate).
+- **Guests** play anonymously (local progress only).
+- **Students** register in-game (DEX account bar) with **email + password** — any
+  email, **email verification required**. Only a *verified* user syncs progress to
+  `students/{uid}`. Registering does **not** join the class: a student just lands
+  in the "registrant pool" until a staff member adds them (see roster below).
+- **Admins** (staff) — a promoted registrant, recorded at `admins/{uid}` in RTDB.
+  They manage classes/rosters/questions but **cannot create other admins**. They
+  open `/teacher.html` with the **same email + password** they registered with.
+- **Super admins** — the fixed set carrying the `teacher` custom claim
+  (`jharvood@gmail.com`, `aharvey@sad15.org`; Justin's mom is the teacher). Only
+  supers can promote/revoke admins. **No new supers are ever minted from the app** —
+  the claim only comes from `firebase/set-teacher.mjs` (`node set-teacher.mjs <UID>
+  [off]`, `firebase-admin@11` on Node 18) and we don't re-run it. Supers sign into
+  the portal with **Google** (`@sad15.org`). In-game, **press-and-hold the
+  Isotopedex title ~1s** opens the portal.
+- **Portal tabs:** **Questions** (CRUD + import seed), **Schedule** (40-day unlock
+  days), **Settings** (`questionsToCatch`), **Roster** (registrant pool → bulk
+  add/remove to the class, per-student stats), **Admins** (super-only: promote/
+  revoke admins). Busy states + save toasts.
+- **Membership is teacher-controlled**: writing `classes/ap-chem/members/{uid}` is
+  staff-only now (was student self-serve). `pushCloud` in `progress.ts` no longer
+  self-joins.
 
 ## Data model + release schedule
 ```
 questions/{id}                { elementId, angle, prompt, choices[4], correctIndex }
 classes/ap-chem/settings      { questionsToCatch, unitStartDate, releaseAllNow, release:{elementId:day} }
-classes/ap-chem/members/{uid} true
+classes/ap-chem/members/{uid} true    # STAFF-written (roster). Was student self-serve.
 students/{uid}                { classId, name, email, seen, caught, stats:{elementId:{attempts,correct}} }
+admins/{uid}                  true    # SUPER-written only. Presence = admin role.
 ```
-Single class hard-coded `CLASS_ID='ap-chem'`. **Release logic** (`isElementReleased`):
+**Rules gates** (`firebase/database.rules.json`): `students/{uid}` write = self +
+`email_verified`; reading the whole `students` pool + writing `members` + editing
+`questions`/`schedule`/`classes` = *staff* (super claim OR `admins/{uid}===true`);
+writing `admins/{uid}` = *super* (teacher claim) only. Single class hard-coded
+`CLASS_ID='ap-chem'`. **Release logic** (`isElementReleased`):
 releaseAllNow ⇒ all visible; else an element shows only if it has an unlock day
 that has arrived — **no day = hidden**. The game reads settings **once at
 startup** (cached), so schedule changes need a **game reload**.
@@ -129,7 +148,13 @@ startup** (cached), so schedule changes need a **game reload**.
 - **Editing any tilemap** (gen_*.py) requires re-running `tools/embed-maps.mjs`.
 - **file://-safe:** all Phaser loader paths are relative `assets/...` (not `../`);
   maps embedded; font self-hosted. Keep it that way (0 `../assets` in dist/game.js).
-- **iPad student sign-in (`signInWithRedirect`) is UNVERIFIED on hardware** — main risk.
+- **Email/Password provider must be ENABLED** in the Firebase Console (Auth →
+  Sign-in method) or both student registration and admin portal login fail. And
+  **redeploy rules after any change**: `firebase deploy --only database --project
+  isotopia-2809c` — the frontend expects the staff/super/verified gates.
+- **iPad student registration (email/password + verification link) is UNVERIFIED
+  on hardware** — main risk. Verification emails need `is0topia.netlify.app` in the
+  Firebase authorized domains (already set).
 - Teacher-claim script needs `firebase-admin@11` (latest is ESM-only, breaks Node 18);
   run from an isolated dir (e.g. `/tmp/isotopia-admin`).
 - localStorage progress key stays `elemonsters.progress.v1` (don't change the value).
@@ -151,6 +176,10 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+Email/password student registration + email verification (replaced Google
+`@sad15.org` student sign-in) · teacher-controlled roster (bulk add/remove) ·
+super/admin role tiers (supers promote admins; no new supers; admins sign in with
+their game email+password) · RTDB rules reworked (staff/super/verified gates) ·
 City tweaks (half-size people, doubled landmarks, more lamps/trees) · city
 populated (streets, plaza, pedestrians, talkers) · walkable CityScene · secret
 path + city-reveal cutscene · offline-playable (embedded maps, relative paths,
