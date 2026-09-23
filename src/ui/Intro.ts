@@ -6,6 +6,7 @@ import GlobalInfo from '../GlobalInfo';
 import { icon } from './icons';
 import { currentStudent } from '../data/studentAuth';
 import { isFirebaseConfigured } from '../data/firebase';
+import { onBodyReady } from './domReady';
 
 let overlay: HTMLDivElement | null = null;
 
@@ -63,6 +64,5 @@ export function initIntro(): void {
         }
         showIntro();
     };
-    if (document.body) mount();
-    else document.addEventListener('DOMContentLoaded', mount);
+    onBodyReady(mount);
 }

@@ -83,8 +83,6 @@ export default class WoodsScene extends GameScene {
 
     loadObjectImages(): void {
         this.loadElementalArt(WoodsScene.WILD.map(w => w.elementId));
-        // Neonu Reeves, the disco bug — now your woods companion.
-        this.load.image('neonu_reeves', 'assets/elementals/neonu-reeves.png');
         // Scenery sprites (unique texture keys across all SCENERY kinds).
         const files: Record<string, string> = {
             woods_tree_1: 'tree-1', woods_tree_2: 'tree-2', woods_tree_3: 'tree-3',
@@ -152,13 +150,6 @@ export default class WoodsScene extends GameScene {
     createNpcs(): void {
         // Wild Elementals roaming the meadow — walk up to any to start its quiz.
         WoodsScene.WILD.forEach(w => this.spawnElemental(w.elementId, w.x, w.y));
-
-        // Neonu Reeves waits near the entrance; talk to him and he tags along.
-        this.spawnCompanionNpc('neonu_reeves', 20, 19, 'Neonu Reeves', [
-            'Yo yo yo! Neonu Reeves — grooviest bug in the whole meadow.',
-            "You're out catchin' Elementals? Righteous. These woods are crawlin' with 'em.",
-            "Tell you what: I'll tag along and keep the vibes high. Let's boogie!",
-        ]);
     }
 
     update(): void {

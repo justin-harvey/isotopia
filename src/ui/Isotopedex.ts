@@ -18,6 +18,7 @@ import {
 import { isFirebaseConfigured } from '../data/firebase';
 import { elementalLocation } from '../data/elementalLocations';
 import { isRadFinderEquipped, setRadFinderEquipped } from './RadFinder';
+import { onBodyReady } from './domReady';
 
 const escHtml = (s: string): string =>
     s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
@@ -47,8 +48,7 @@ export function initIsotopedex(): void {
         btn.addEventListener('click', openIsotopedex);
         document.body.appendChild(btn);
     };
-    if (document.body) mount();
-    else document.addEventListener('DOMContentLoaded', mount);
+    onBodyReady(mount);
     // Keep the account bar in sync if sign-in state changes while the dex is open.
     onStudentAuth(() => { if (overlay) renderAccount(); });
 }

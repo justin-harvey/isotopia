@@ -69,7 +69,7 @@ harmless). 9 have real pixel art in `src/assets/elementals/`; declared in
 |---|---|
 | `src/game.ts` | Bootstrap: mounts DEX/intro, inits student auth, loads questions + class settings, then starts Phaser. Scene list incl. CityScene |
 | `src/Scenes/TestScene.ts` | Town (building-art overlays over invisible collision, lake, doors, north trail) |
-| `src/Scenes/WoodsScene.ts` | Woods; wild grass encounters, Neonu companion, the secret city-reveal trigger (col 20, top) |
+| `src/Scenes/WoodsScene.ts` | Woods; wild grass encounters, the secret city-reveal trigger (col 20, top) |
 | `src/Scenes/CityScene.ts` | **Walkable city** — buildings, streets, plaza props, pedestrians, talking NPCs |
 | `src/Scenes/InteriorScene.ts` + Home/Hardware/Hannaford/Auto/Library | Building interiors (image backgrounds + shared collision grid) |
 | `src/Scenes/GameScene.ts` | Base scene: `spawnElemental` (release-gated), `enableGrassEncounters`, `spawnPedestrian`, `spawnTalkingNpc`, `spawnCompanionNpc`, camera, embedded-map loading |
@@ -187,6 +187,9 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+Fixed a boot black screen (Rad Finder mounted before `<body>` existed; now all
+startup DOM mounts go through `ui/domReady.onBodyReady`) · removed Neonu Reeves
+(the woods companion NPC) ·
 Rad Finder tool — equippable Geiger counter (dex Tools row) with dex location
 hints + an in-game homing HUD, so students never get stuck ·
 Per-admin classes: each staff owns one named+colored class (`classes/{uid}`),

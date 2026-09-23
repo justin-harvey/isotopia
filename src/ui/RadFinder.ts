@@ -5,6 +5,8 @@
 // gets stuck. Fully client-side and offline/iPad-safe, so the "clicks" are
 // visual (audio is blocked on file:// and iOS Safari won't vibrate).
 
+import { onBodyReady } from './domReady';
+
 const KEY = 'isotopia.radfinder.v1';
 let equipped = load();
 const listeners: (() => void)[] = [];
@@ -34,11 +36,10 @@ export interface RadReading {
     totalUndiscovered: number;   // uncaught Elementals across the whole game
 }
 
-/** Mount the HUD once at startup (hidden until equipped). game.js is a classic
- *  script in <head>, so document.body may not exist yet — defer like the dex/intro
- *  do, or an unguarded appendChild throws and aborts the whole boot. */
+/** Mount the HUD once at startup (hidden until equipped). Deferred via
+ *  onBodyReady because game.js runs in <head> before <body> exists. */
 export function mountRadFinder(): void {
-    const mount = (): void => {
+    onBodyReady(() => {
         if (hud) return;
         hud = document.createElement('div');
         hud.className = 'radfinder';
@@ -49,9 +50,7 @@ export function mountRadFinder(): void {
             <div class="rf-read">Scanning…</div>`;
         document.body.appendChild(hud);
         syncHud();
-    };
-    if (document.body) mount();
-    else document.addEventListener('DOMContentLoaded', mount);
+    });
 }
 
 function syncHud(): void {
