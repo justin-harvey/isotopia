@@ -76,6 +76,7 @@ harmless). 9 have real pixel art in `src/assets/elementals/`; declared in
 | `src/ui/QuizOverlay.ts` | GBA battle quiz (round-based, HP bar, `startBattle` wipe) |
 | `src/ui/Isotopedex.ts` | Collection screen + student account bar (email/password sign-up / log in / verify) + hidden teacher-portal entrance (hold the title) |
 | `src/ui/CityReveal.ts` | The secret-path cutscene (bridge pan-out under sunset, dog on the bridge; tap → enter city) |
+| `src/ui/RadFinder.ts` + `data/elementalLocations.ts` | Equippable Geiger "Rad Finder" (dex Tools row): card location hints + in-game HUD meter that homes on the nearest uncaught Elemental. `GameScene` registers targets in `spawnElemental` and pushes readings from `update()` (`refreshRadFinder`) |
 | `src/ui/Intro.ts` / `NpcDialog.ts` / `icons.ts` | Help card, NPC dialog box, inline SVG icons (replaced emoji) |
 | `src/data/elements.ts` / `questions.ts` / `questionSource.ts` | Elements, local seed bank, local-vs-RTDB question source |
 | `src/data/progress.ts` | Seen/Caught + stats; localStorage cache, mirrors to `students/{uid}` when signed in |
@@ -186,6 +187,8 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+Rad Finder tool — equippable Geiger counter (dex Tools row) with dex location
+hints + an in-game homing HUD, so students never get stuck ·
 Per-admin classes: each staff owns one named+colored class (`classes/{uid}`),
 membership via `assignments/{studentUid}` (replaced `members`), new Class tab,
 per-class schedule/settings, roster scoped per class · fixed supers being written
