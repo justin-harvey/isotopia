@@ -82,7 +82,8 @@ harmless). 9 have real pixel art in `src/assets/elementals/`; declared in
 | `src/data/classConfig.ts` | Class settings + 40-day release schedule; `elementReleased()` cache the game reads |
 | `src/data/firebase.ts` | Firebase config from `FIREBASE_*` env (blank ⇒ offline) + lazy init |
 | `src/data/auth.ts` / `studentAuth.ts` / `adminAuth.ts` | Guest anon sign-in / student **email+password** register+verify / portal sign-in (super via Google, admin via email+password) + role gate |
-| `src/data/studentAdmin.ts` | Portal data: `loadRoster`/`setMembership(Bulk)` (class roster) + `loadAdmins`/`setAdmin` (super-only role mgmt) |
+| `src/data/studentAdmin.ts` | Portal data: `loadRoster(classId)`/`setMembership(Bulk)` (writes `assignments/`) + `loadAdmins`/`setAdmin` (super-only role mgmt) |
+| `src/data/classConfig.ts` | Per-owner class settings + `meta{name,color}` + `assignments/` resolution; game reads the student's assigned class's release schedule (`loadAndCacheSettings`) |
 | `src/data/maps.ts` | **Embedded tilemaps** (test/woods/interior/city) so the game runs from `file://` (no XHR). Regenerate via `tools/embed-maps.mjs` after editing any map |
 | `src/teacher.ts` + `teacher.html` + `teacher.css` | Teacher admin portal (separate rollup bundle) |
 | `tools/gen_town.py` / `gen_woods.py` / `gen_city.py` / `gen_interior.py` | Regenerate each tilemap; `embed-maps.mjs` re-embeds them into `maps.ts` |
@@ -106,30 +107,39 @@ just convenience — the rules are the real gate).
   [off]`, `firebase-admin@11` on Node 18) and we don't re-run it. Supers sign into
   the portal with **Google** (`@sad15.org`). In-game, **press-and-hold the
   Isotopedex title ~1s** opens the portal.
-- **Portal tabs:** **Questions** (CRUD + import seed), **Schedule** (40-day unlock
-  days), **Settings** (`questionsToCatch`), **Roster** (registrant pool → bulk
-  add/remove to the class, per-student stats), **Admins** (super-only: promote/
-  revoke admins). Busy states + save toasts.
-- **Membership is teacher-controlled**: writing `classes/ap-chem/members/{uid}` is
-  staff-only now (was student self-serve). `pushCloud` in `progress.ts` no longer
-  self-joins.
+- **One class per staff member** (super or admin), keyed by the owner's uid
+  (`classes/{uid}`). Each has `meta {name,color}` (color is portal-only) — set on
+  the **Class** tab; a header chip shows it. Auto-created on first portal load.
+- **Portal tabs:** **Class** (name + color), **Questions** (CRUD + import seed),
+  **Schedule** (40-day unlock days, per class), **Settings** (`questionsToCatch`,
+  per class), **Roster** (registrant pool → bulk add/remove to *your* class),
+  **Admins** (super-only: promote/revoke admins). Busy states + save toasts.
+- **Membership = `assignments/{studentUid} = classId`** (one class per student;
+  replaced the old `classes/*/members`). Staff-written: admins may only claim
+  *unassigned* students into their own class; supers can reassign anyone. The game
+  resolves a student's class from their assignment; `pushCloud` in `progress.ts`
+  no longer self-joins or writes classId.
 
 ## Data model + release schedule
 ```
-questions/{id}                { elementId, angle, prompt, choices[4], correctIndex }
-classes/ap-chem/settings      { questionsToCatch, unitStartDate, releaseAllNow, release:{elementId:day} }
-classes/ap-chem/members/{uid} true    # STAFF-written (roster). Was student self-serve.
-students/{uid}                { classId, name, email, seen, caught, stats:{elementId:{attempts,correct}} }
-admins/{uid}                  true    # SUPER-written only. Presence = admin role.
+questions/{id}                 { elementId, angle, prompt, choices[4], correctIndex }   # global bank
+classes/{ownerUid}/meta        { name, color, ownerUid }                                # owner or super writes
+classes/{ownerUid}/settings    { questionsToCatch, unitStartDate, releaseAllNow, release:{elementId:day} }
+assignments/{studentUid}       "{ownerUid}"   # student's class. STAFF-written (see rules). Source of truth.
+students/{uid}                 { name, email, seen, caught, stats:{elementId:{attempts,correct}} }
+admins/{uid}                   true           # SUPER-written only. Presence = admin role.
 ```
 **Rules gates** (`firebase/database.rules.json`): `students/{uid}` write = self +
-`email_verified`; reading the whole `students` pool + writing `members` + editing
-`questions`/`schedule`/`classes` = *staff* (super claim OR `admins/{uid}===true`);
-writing `admins/{uid}` = *super* (teacher claim) only. Single class hard-coded
-`CLASS_ID='ap-chem'`. **Release logic** (`isElementReleased`):
+`email_verified`; reading the `students` pool + `assignments` + editing
+`questions`/`dailySchedule` = *staff* (super claim OR `admins/{uid}===true`);
+`classes/{cid}` write = **owner (`auth.uid===cid`) or super**; `assignments/{sid}`
+write = super (any) OR admin claiming an *unassigned* student into their own class;
+`admins/{uid}` write = *super* only. **No single `CLASS_ID` any more** (old
+`classes/ap-chem/*` is orphaned legacy). **Release logic** (`isElementReleased`):
 releaseAllNow ⇒ all visible; else an element shows only if it has an unlock day
-that has arrived — **no day = hidden**. The game reads settings **once at
-startup** (cached), so schedule changes need a **game reload**.
+that has arrived — **no day = hidden**; unassigned students fall back to defaults
+(all released). The game reads settings **once at startup** (cached), so schedule
+changes need a **game reload**.
 
 ## The city (reached via the woods secret path)
 - Cutscene: `WoodsScene` movementStopped at (col 20, y≤1) → `playCityReveal(onEnter)`
@@ -176,6 +186,10 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+Per-admin classes: each staff owns one named+colored class (`classes/{uid}`),
+membership via `assignments/{studentUid}` (replaced `members`), new Class tab,
+per-class schedule/settings, roster scoped per class · fixed supers being written
+as students (they already held the `teacher` claim; cleaned 2 stray records) ·
 Email/password student registration + email verification (replaced Google
 `@sad15.org` student sign-in) · teacher-controlled roster (bulk add/remove) ·
 super/admin role tiers (supers promote admins; no new supers; admins sign in with
