@@ -34,18 +34,24 @@ export interface RadReading {
     totalUndiscovered: number;   // uncaught Elementals across the whole game
 }
 
-/** Mount the HUD once at startup (hidden until equipped). */
+/** Mount the HUD once at startup (hidden until equipped). game.js is a classic
+ *  script in <head>, so document.body may not exist yet — defer like the dex/intro
+ *  do, or an unguarded appendChild throws and aborts the whole boot. */
 export function mountRadFinder(): void {
-    if (hud) return;
-    hud = document.createElement('div');
-    hud.className = 'radfinder';
-    hud.dataset.heat = 'none';
-    hud.innerHTML = `
-        <div class="rf-title">⚛ Rad Finder</div>
-        <div class="rf-meter"><div class="rf-fill"></div></div>
-        <div class="rf-read">Scanning…</div>`;
-    document.body.appendChild(hud);
-    syncHud();
+    const mount = (): void => {
+        if (hud) return;
+        hud = document.createElement('div');
+        hud.className = 'radfinder';
+        hud.dataset.heat = 'none';
+        hud.innerHTML = `
+            <div class="rf-title">⚛ Rad Finder</div>
+            <div class="rf-meter"><div class="rf-fill"></div></div>
+            <div class="rf-read">Scanning…</div>`;
+        document.body.appendChild(hud);
+        syncHud();
+    };
+    if (document.body) mount();
+    else document.addEventListener('DOMContentLoaded', mount);
 }
 
 function syncHud(): void {
