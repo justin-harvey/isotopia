@@ -35,9 +35,22 @@ function auth() {
 export function initStudentAuth(): void {
     const app = getFirebaseApp();
     if (!app) return;
-    onAuthStateChanged(getAuth(app), (user) => {
+    onAuthStateChanged(getAuth(app), async (user) => {
         const real = (user && !user.isAnonymous) ? user : null;
         if (real && real.emailVerified) {
+            // Super admins carry the "teacher" claim. They only turn up signed in
+            // here because their portal session is shared in the same browser —
+            // they are NOT students, so don't create a students/{uid} record for
+            // them (it would pollute the roster). Promoted admins have no claim and
+            // are ordinary students who may play, so they still attach normally.
+            const token = await real.getIdTokenResult();
+            if (token.claims.teacher === true) {
+                current = null;
+                pending = null;
+                detachStudent();
+                emit();
+                return;
+            }
             current = real;
             pending = null;
             void attachStudent(real.uid, real.displayName || real.email || 'Student', real.email || '');
