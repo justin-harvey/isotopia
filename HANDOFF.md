@@ -16,7 +16,7 @@ per-student progress sync. Real classroom target: an **AP Chemistry** class at
 ## Coordinates
 | Thing | Value |
 |---|---|
-| Local path | `/home/nah/Claudia/elemonsters` (folder name predates the rename to Isotopia) |
+| Local path | `/home/nah/Claudia/isotopia` |
 | GitHub | https://github.com/justin-harvey/isotopia (branch `main`, public; old `G00DTECH` path redirects) |
 | Live game | https://is0topia.netlify.app/ (note the **zero**). Teacher portal: `/teacher.html` |
 | Firebase project | `isotopia-2809c` (Realtime Database) |
@@ -26,7 +26,7 @@ per-student progress sync. Real classroom target: an **AP Chemistry** class at
 
 ## Run locally
 ```bash
-cd /home/nah/Claudia/elemonsters
+cd /home/nah/Claudia/isotopia
 npm install
 npm run watch    # dev server + live reload → http://localhost:10001
 npm run build    # production build → dist/ (also builds dist/teacher.html)
