@@ -4,7 +4,7 @@
 
 import GlobalInfo from '../GlobalInfo';
 import { icon } from './icons';
-import { currentStudent, signInStudent } from '../data/studentAuth';
+import { currentStudent } from '../data/studentAuth';
 import { isFirebaseConfigured } from '../data/firebase';
 
 let overlay: HTMLDivElement | null = null;
@@ -34,7 +34,7 @@ export function showIntro(): void {
                 <li>${icon('book')} Tap the DEX (top-right) to see everything you've found.</li>
             </ul>
             <div class="intro-actions">
-                ${(currentStudent() || !isFirebaseConfigured()) ? '' : `<button class="intro-signin">Sign in to save (@sad15.org)</button>`}
+                ${(currentStudent() || !isFirebaseConfigured()) ? '' : `<p class="intro-note">Open the DEX (top-right) to sign up and save your progress across devices.</p>`}
                 <button class="intro-go">Let's go!</button>
             </div>
         </div>`;
@@ -45,8 +45,6 @@ export function showIntro(): void {
         setDialogue(false);
     };
     overlay.querySelector('.intro-go')!.addEventListener('click', close);
-    overlay.querySelector('.intro-signin')?.addEventListener('click',
-        () => { signInStudent().catch(e => alert(e.message)); });
     document.body.appendChild(overlay);
 }
 

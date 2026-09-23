@@ -1,55 +1,106 @@
-// Optional student sign-in. Guests play anonymously; a student can sign in with
-// their @sad15.org Google account to save their collection to the cloud and show
-// up on the teacher dashboard. When a real (non-anonymous) user is present we
-// attach the progress store to their students/{uid} record; anonymous guests
-// stay local-only.
+// Optional student sign-in via email + password. Guests play anonymously; a
+// student can register with any email + password to save their collection to the
+// cloud. Two things gate a "real" saved student:
+//
+//   1. Email verification — we send a verification link on sign-up and only treat
+//      a VERIFIED user as a signed-in student (progress sync + rules writes). An
+//      unverified sign-up is held in `pending` so the UI can nudge them.
+//   2. Class membership — being a saved student does NOT put you on the roster;
+//      the teacher adds registrants to the class from the portal (studentAdmin).
+//
+// So an open sign-up just lands in the "registrant pool": verified but unassigned,
+// harmless until a teacher picks them. Teachers sign in separately (adminAuth).
 
 import {
-    getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, User,
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    sendEmailVerification, sendPasswordResetEmail, signOut,
+    onAuthStateChanged, User,
 } from 'firebase/auth';
 import { getFirebaseApp } from './firebase';
 import { attachStudent, detachStudent } from './progress';
 
-export const STUDENT_DOMAIN = 'sad15.org';
+let current: User | null = null;    // a VERIFIED, non-anonymous student, else null
+let pending: User | null = null;    // signed in but email not yet verified, else null
+const listeners: (() => void)[] = [];
 
-let current: User | null = null;                     // null = guest/anonymous
-const listeners: ((u: User | null) => void)[] = [];
+function emit(): void { listeners.forEach(fn => fn()); }
+
+function auth() {
+    const app = getFirebaseApp();
+    if (!app) throw new Error('Firebase is not configured.');
+    return getAuth(app);
+}
 
 /** Start listening for student sign-in state. Call once at startup. */
 export function initStudentAuth(): void {
     const app = getFirebaseApp();
     if (!app) return;
     onAuthStateChanged(getAuth(app), (user) => {
-        const student = (user && !user.isAnonymous) ? user : null;
-        current = student;
-        if (student) {
-            void attachStudent(student.uid, student.displayName || student.email || 'Student', student.email || '');
+        const real = (user && !user.isAnonymous) ? user : null;
+        if (real && real.emailVerified) {
+            current = real;
+            pending = null;
+            void attachStudent(real.uid, real.displayName || real.email || 'Student', real.email || '');
         } else {
+            current = null;
+            pending = real;         // non-null only while a non-anonymous user is unverified
             detachStudent();
         }
-        listeners.forEach(fn => fn(current));
+        emit();
     });
 }
 
-/** Subscribe to student sign-in changes; fires immediately with current state. */
-export function onStudentAuth(fn: (u: User | null) => void): void {
+/** Subscribe to sign-in changes; fires immediately. Callers re-read state via
+ *  currentStudent()/pendingVerification(). */
+export function onStudentAuth(fn: () => void): void {
     listeners.push(fn);
-    fn(current);
+    fn();
 }
 
-export function currentStudent(): User | null {
-    return current;
+/** The signed-in, email-verified student (whose progress is syncing), or null. */
+export function currentStudent(): User | null { return current; }
+
+/** A signed-in user who still needs to verify their email, or null. */
+export function pendingVerification(): User | null { return pending; }
+
+/** Create a new account and send a verification email. Leaves them signed in
+ *  (unverified) so they can resend / verify from the same session. */
+export async function registerStudent(email: string, password: string): Promise<void> {
+    const cred = await createUserWithEmailAndPassword(auth(), email.trim(), password);
+    await sendEmailVerification(cred.user);
 }
 
-export async function signInStudent(): Promise<void> {
-    const app = getFirebaseApp();
-    if (!app) throw new Error('Firebase is not configured.');
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ hd: STUDENT_DOMAIN });   // hint the school domain
-    // Redirect (not popup): iPad Safari commonly blocks auth popups. This
-    // navigates to Google and back; onAuthStateChanged above then attaches
-    // progress once the student returns signed in.
-    await signInWithRedirect(getAuth(app), provider);
+/** Sign in an existing account. */
+export async function loginStudent(email: string, password: string): Promise<void> {
+    await signInWithEmailAndPassword(auth(), email.trim(), password);
+}
+
+/** Re-send the verification email to the currently signed-in (unverified) user. */
+export async function resendVerification(): Promise<void> {
+    const u = pending;
+    if (!u) throw new Error('Sign in first, then resend.');
+    await sendEmailVerification(u);
+}
+
+/** Reload the current user so a just-clicked verification link takes effect in
+ *  this session. Returns true once verified. */
+export async function refreshVerification(): Promise<boolean> {
+    const u = pending || current;
+    if (!u) return false;
+    await u.reload();
+    if (u.emailVerified) {
+        current = u;
+        pending = null;
+        void attachStudent(u.uid, u.displayName || u.email || 'Student', u.email || '');
+        emit();
+        return true;
+    }
+    return false;
+}
+
+/** Send a password-reset email. */
+export async function resetStudentPassword(email: string): Promise<void> {
+    await sendPasswordResetEmail(auth(), email.trim());
 }
 
 export async function signOutStudent(): Promise<void> {

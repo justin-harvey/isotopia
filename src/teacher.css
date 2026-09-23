@@ -190,3 +190,36 @@ fieldset.choices legend { font-size: 13px; color: var(--muted); padding: 0 6px; 
     padding: 4px 6px;
 }
 .choice:has(:checked) { border-color: #2f7a3d; background: #eefaf0; }
+
+/* ---- Roster / Admins tabs ---- */
+.toolbar { flex-wrap: wrap; }
+.filter {
+    flex: 1;
+    min-width: 180px;
+    padding: 8px 10px;
+    font: inherit;
+    border: 2px solid #c9c2a8;
+    border-radius: 8px;
+}
+.pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: #2f7a3d;
+    color: #fff;
+    vertical-align: middle;
+}
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 280px;
+    margin: 8px auto 0;
+}
+.stack input {
+    padding: 8px 10px;
+    font: inherit;
+    border: 2px solid #c9c2a8;
+    border-radius: 8px;
+}

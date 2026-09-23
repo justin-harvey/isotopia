@@ -67,7 +67,10 @@ async function pushCloud(): Promise<void> {
             caught: state.caught,
             stats: state.stats,
         });
-        await set(ref(d, `classes/${CLASS_ID}/members/${studentUid}`), true);
+        // Intentionally NOT writing classes/{CLASS_ID}/members here: registering
+        // only creates the student's own record (the "registrant pool"). A teacher
+        // assigns class membership from the portal — see studentAdmin.setMembership
+        // and database.rules.json (members is a teacher-only write).
     } catch { /* offline / transient — local copy is still saved */ }
 }
 
@@ -84,7 +87,7 @@ export async function attachStudent(uid: string, name: string, email: string): P
             const v = snap.val() as Partial<ProgressState>;
             state = { seen: v.seen ?? {}, caught: v.caught ?? {}, stats: v.stats ?? {} };
             saveLocal();
-            await pushCloud();          // ensure name/email/classId/members are current
+            await pushCloud();          // ensure name/email/classId are current
         } else {
             await pushCloud();          // first sign-in: migrate local progress up
         }

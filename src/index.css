@@ -644,6 +644,33 @@ html, body {
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
 }
+.dex-auth-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.dex-auth-form input {
+    font-family: var(--gba-font);
+    font-size: 8px;
+    padding: 7px 8px;
+    width: 120px;
+    color: #303030;
+    background: #fffdf2;
+    border: 2px solid #303030;
+    border-radius: 5px;
+}
+.dex-auth-link {
+    font-family: var(--gba-font);
+    font-size: 8px;
+    padding: 4px;
+    color: #3a5a9c;
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
 
 .dex-grid {
     display: grid;
@@ -798,7 +825,14 @@ html, body {
 }
 .ico svg .fill { fill: currentColor; stroke: none; }
 .intro-actions { display: flex; flex-direction: column; gap: 10px; }
-.intro-go, .intro-signin {
+.intro-note {
+    margin: 0;
+    font-size: 9px;
+    line-height: 1.6;
+    color: #5a5140;
+    text-align: center;
+}
+.intro-go {
     width: 100%;
     font-family: var(--gba-font);
     font-size: 12px;
@@ -810,8 +844,7 @@ html, body {
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
 }
-.intro-signin { font-size: 10px; background: #fffdf2; }
-.intro-go:active, .intro-signin:active { transform: scale(0.98); }
+.intro-go:active { transform: scale(0.98); }
 
 /* ================= Keyboard / switch focus ================= */
 /* -webkit-tap-highlight-color is off globally, so give keyboard users a clear

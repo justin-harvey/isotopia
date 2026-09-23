@@ -11,7 +11,10 @@ import { ELEMENTS, ElementInfo } from '../data/elements';
 import { statusOf, counts } from '../data/progress';
 import { elementalArtKey } from '../data/elementalArt';
 import { elementReleased } from '../data/classConfig';
-import { currentStudent, signInStudent, signOutStudent, onStudentAuth } from '../data/studentAuth';
+import {
+    currentStudent, pendingVerification, onStudentAuth, signOutStudent,
+    registerStudent, loginStudent, resendVerification, refreshVerification, resetStudentPassword,
+} from '../data/studentAuth';
 import { isFirebaseConfigured } from '../data/firebase';
 
 const escHtml = (s: string): string =>
@@ -134,17 +137,67 @@ function renderAccount(): void {
         return;
     }
     const u = currentStudent();
+    const p = pendingVerification();
+
+    // Signed in and verified — progress is syncing.
     if (u) {
-        host.innerHTML = `<span class="dex-acct-label">Saving as <b>${escHtml(u.displayName || u.email || 'you')}</b></span>
+        host.innerHTML = `<span class="dex-acct-label">Saving as <b>${escHtml(u.email || u.displayName || 'you')}</b></span>
             <button class="dex-auth-btn" id="dex-signout">Sign out</button>`;
         (host.querySelector('#dex-signout') as HTMLButtonElement)
             .addEventListener('click', () => { void signOutStudent(); });
-    } else {
-        host.innerHTML = `<span class="dex-acct-label">Playing as <b>guest</b> — saved on this device only.</span>
-            <button class="dex-auth-btn" id="dex-signin">Sign in to save</button>`;
-        (host.querySelector('#dex-signin') as HTMLButtonElement)
-            .addEventListener('click', () => { signInStudent().catch(e => alert(e.message)); });
+        return;
     }
+
+    // Signed in but the email link hasn't been clicked yet.
+    if (p) {
+        host.innerHTML = `<span class="dex-acct-label">Check <b>${escHtml(p.email || 'your email')}</b> for a
+            verification link, then tap I'm verified to start saving.</span>
+            <button class="dex-auth-btn" id="dex-verified">I'm verified</button>
+            <button class="dex-auth-btn" id="dex-resend">Resend</button>
+            <button class="dex-auth-btn" id="dex-signout">Cancel</button>`;
+        (host.querySelector('#dex-verified') as HTMLButtonElement)
+            .addEventListener('click', async () => {
+                const ok = await refreshVerification();
+                if (!ok) alert('Not verified yet. Click the link in your email, then try again.');
+            });
+        (host.querySelector('#dex-resend') as HTMLButtonElement)
+            .addEventListener('click', () => {
+                resendVerification().then(() => alert('Verification email sent.')).catch(e => alert(e.message));
+            });
+        (host.querySelector('#dex-signout') as HTMLButtonElement)
+            .addEventListener('click', () => { void signOutStudent(); });
+        return;
+    }
+
+    // Guest — offer sign up / log in.
+    host.innerHTML = `<span class="dex-acct-label">Playing as <b>guest</b> — saved on this device only.</span>
+        <form class="dex-auth-form" id="dex-auth-form">
+            <input type="email" id="dex-email" placeholder="email" autocomplete="email" required>
+            <input type="password" id="dex-pass" placeholder="password (6+)" autocomplete="current-password" required minlength="6">
+            <button type="submit" class="dex-auth-btn" id="dex-login">Log in</button>
+            <button type="button" class="dex-auth-btn" id="dex-signup">Sign up</button>
+            <button type="button" class="dex-auth-link" id="dex-reset">Forgot password?</button>
+        </form>`;
+    const email = (): string => (host.querySelector('#dex-email') as HTMLInputElement).value;
+    const pass = (): string => (host.querySelector('#dex-pass') as HTMLInputElement).value;
+    (host.querySelector('#dex-auth-form') as HTMLFormElement)
+        .addEventListener('submit', (e) => {
+            e.preventDefault();
+            loginStudent(email(), pass()).catch(err => alert(err.message));
+        });
+    (host.querySelector('#dex-signup') as HTMLButtonElement)
+        .addEventListener('click', () => {
+            if (!email() || pass().length < 6) { alert('Enter an email and a password of at least 6 characters.'); return; }
+            registerStudent(email(), pass())
+                .then(() => alert('Account created. Check your email for a verification link.'))
+                .catch(err => alert(err.message));
+        });
+    (host.querySelector('#dex-reset') as HTMLButtonElement)
+        .addEventListener('click', () => {
+            if (!email()) { alert('Type your email above first, then tap Forgot password.'); return; }
+            resetStudentPassword(email())
+                .then(() => alert('Password reset email sent.')).catch(err => alert(err.message));
+        });
 }
 
 // One creature card. Unseen → dark silhouette + "???"; seen/caught reveal the

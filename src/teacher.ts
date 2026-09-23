@@ -5,7 +5,9 @@
 //
 // The student game (game.ts) is untouched by this; students play as guests.
 
-import { onTeacherAuth, signInTeacher, signOutTeacher, TeacherSession, ALLOWED_DOMAIN } from './data/adminAuth';
+import {
+    onTeacherAuth, signInTeacher, signInAdminEmail, signOutTeacher, TeacherSession, ALLOWED_DOMAIN,
+} from './data/adminAuth';
 import { isFirebaseConfigured } from './data/firebase';
 import { ELEMENTS } from './data/elements';
 import { PERIODIC_TABLE, getPeriodicElement, elementLabel } from './data/periodicTable';
@@ -16,7 +18,9 @@ import {
 import {
     StoredQuestion, loadAllQuestions, saveQuestion, deleteQuestion, importStarterQuestions,
 } from './data/questionAdmin';
-import { loadClassStudents } from './data/studentAdmin';
+import {
+    loadRoster, setMembership, setMembershipBulk, loadAdmins, setAdmin, StudentRow, AdminRow,
+} from './data/studentAdmin';
 
 const app = document.getElementById('app') as HTMLDivElement;
 
@@ -30,8 +34,12 @@ const PLAYABLE = new Map(ELEMENTS.map(e => [e.id, e.monster] as const));
 let session: TeacherSession | null = null;
 let settings: ClassSettings = { ...DEFAULT_SETTINGS };
 let questions: StoredQuestion[] = [];
-let tab: 'questions' | 'schedule' | 'settings' | 'students' = 'questions';
+let tab: 'questions' | 'schedule' | 'settings' | 'students' | 'admins' = 'questions';
 let editing: StoredQuestion | null = null;      // question being added/edited
+let rosterRows: StudentRow[] = [];              // cached roster (filtered client-side)
+let rosterFilter = '';
+let adminRows: AdminRow[] = [];                 // cached registrant list for role mgmt
+let adminFilter = '';
 let pickerQuery = '';                            // element-picker search text (editor)
 
 const esc = (s: string): string =>
@@ -80,7 +88,7 @@ function boot(): void {
     }
     onTeacherAuth(async (s) => {
         session = s;
-        if (s?.isTeacher) {
+        if (s?.isStaff) {
             [settings, questions] = await Promise.all([loadSettings(), loadAllQuestions()]);
         }
         render();
@@ -90,18 +98,32 @@ function boot(): void {
 // ---------------------------------------------------------------- shells
 function render(): void {
     if (!session) return renderSignedOut();
-    if (!session.isTeacher) return renderNotAuthorized();
+    if (!session.isStaff) return renderNotAuthorized();
     renderPortal();
 }
 
 function renderSignedOut(): void {
     app.innerHTML = `<div class="card center">
         <h1>Isotopia Teacher</h1>
-        <p>Sign in with your <b>@${ALLOWED_DOMAIN}</b> account to manage the game.</p>
+        <p>Super admins sign in with their <b>@${ALLOWED_DOMAIN}</b> Google account.</p>
         <button id="signin" class="btn primary">Sign in with Google</button>
+        <p class="muted" style="margin-top:18px">Class admins sign in with the email
+            and password they registered with in the game.</p>
+        <form id="admin-email-form" class="stack">
+            <input type="email" id="admin-email" placeholder="email" autocomplete="email" required>
+            <input type="password" id="admin-pass" placeholder="password" autocomplete="current-password" required>
+            <button type="submit" class="btn">Sign in as admin</button>
+        </form>
     </div>`;
     (document.getElementById('signin') as HTMLButtonElement)
         .addEventListener('click', () => signInTeacher().catch(err => alert(err.message)));
+    (document.getElementById('admin-email-form') as HTMLFormElement)
+        .addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = (document.getElementById('admin-email') as HTMLInputElement).value;
+            const pass = (document.getElementById('admin-pass') as HTMLInputElement).value;
+            signInAdminEmail(email, pass).catch(err => alert(err.message));
+        });
 }
 
 function renderNotAuthorized(): void {
@@ -115,14 +137,25 @@ function renderNotAuthorized(): void {
         .addEventListener('click', () => signOutTeacher());
 }
 
+// Tabs available in the portal. The Admins tab (role management) is super-only.
+function portalTabs(): [typeof tab, string][] {
+    const tabs: [typeof tab, string][] = [
+        ['questions', 'Questions'],
+        ['schedule', 'Schedule'],
+        ['settings', 'Settings'],
+        ['students', 'Roster'],
+    ];
+    if (session?.isSuper) tabs.push(['admins', 'Admins']);
+    return tabs;
+}
+
 function renderPortal(): void {
     app.innerHTML = `
         <header class="topbar">
             <span class="brand">Isotopia Teacher</span>
             <nav class="tabs" role="tablist">
-                ${(['questions', 'schedule', 'settings', 'students'] as const).map(t => {
+                ${portalTabs().map(([t, label]) => {
                     const on = tab === t;
-                    const label = t[0].toUpperCase() + t.slice(1);
                     return `<button data-tab="${t}" role="tab" aria-selected="${on}" class="${on ? 'on' : ''}">${label}</button>`;
                 }).join('')}
             </nav>
@@ -153,6 +186,7 @@ function renderPanel(): void {
     if (tab === 'questions') return renderQuestions();
     if (tab === 'schedule') return renderSchedule();
     if (tab === 'students') { void renderStudents(); return; }
+    if (tab === 'admins') { void renderAdmins(); return; }
     renderSettings();
 }
 
@@ -432,51 +466,171 @@ function renderSettings(): void {
     });
 }
 
-// ---------------------------------------------------------------- students
+// ---------------------------------------------------------------- roster
+// Everyone who has registered (and verified their email) lands here. Staff tick
+// students and bulk add/remove them to the class, or use the per-row button.
+// Registrants who aren't added just sit here harmlessly.
 async function renderStudents(): Promise<void> {
     const panel = document.getElementById('panel') as HTMLElement;
-    const head = `<div class="row between"><h2>Students</h2>
-        <button id="stu-refresh" class="btn">Refresh</button></div>`;
-    const wireRefresh = (): void => {
-        const btn = document.getElementById('stu-refresh') as HTMLButtonElement | null;
-        btn?.addEventListener('click', () => {
-            btn.disabled = true;
-            btn.textContent = 'Loading…';
-            void renderStudents();
-        });
-    };
+    const intro = `<p class="muted small">Tick students and use the bulk buttons, or
+        the per-row button. Only class members count toward progress tracking.</p>`;
+    panel.innerHTML = `<div class="row between"><h2>Roster</h2>
+        <button id="stu-refresh" class="btn">Refresh</button></div>${intro}
+        <p class="muted">Loading…</p>`;
+    document.getElementById('stu-refresh')?.addEventListener('click', () => void renderStudents());
 
-    panel.innerHTML = `${head}<p class="muted">Loading…</p>`;
-    wireRefresh();
-
-    const rows = await loadClassStudents().catch(() => []);
-    if (rows.length === 0) {
-        panel.innerHTML = `${head}<p class="muted">No students have signed in yet.
-            Guests who don't sign in won't appear here — have students open the DEX
-            and tap "Sign in to save."</p>`;
-        wireRefresh();
+    rosterRows = await loadRoster().catch(() => []);
+    if (rosterRows.length === 0) {
+        panel.innerHTML = `<div class="row between"><h2>Roster</h2>
+            <button id="stu-refresh" class="btn">Refresh</button></div>${intro}
+            <p class="muted">No one has registered yet. Have students open the DEX,
+            tap "Sign up", and click the verification link in their email.</p>`;
+        document.getElementById('stu-refresh')?.addEventListener('click', () => void renderStudents());
         return;
     }
 
-    panel.innerHTML = `${head.replace('<h2>Students</h2>', `<h2>Students <span class="muted">(${rows.length})</span></h2>`)}
-        <table class="sched">
-            <thead><tr><th>Student</th><th>Caught</th><th>Seen</th><th>Accuracy</th></tr></thead>
-            <tbody>${rows.map(r => {
-                let att = 0, cor = 0;
-                (Object.values(r.stats) as { attempts: number; correct: number }[])
-                    .forEach(s => { if (s && typeof s === 'object') { att += s.attempts || 0; cor += s.correct || 0; } });
-                const acc = att ? Math.round((cor / att) * 100) : 0;
-                return `<tr>
-                    <td>${esc(r.name)}<div class="muted small">${esc(r.email)}</div></td>
-                    <td>${r.caught}</td>
-                    <td>${r.seen}</td>
-                    <td>${att ? `${acc}% <span class="muted small">(${cor}/${att})</span>` : '—'}</td>
-                </tr>`;
-            }).join('')}</tbody>
-        </table>
-        <p class="muted small">Caught / Seen counts and overall answer accuracy.
-            Students appear here once they sign in.</p>`;
-    wireRefresh();
+    const inClass = rosterRows.filter(r => r.inClass).length;
+    panel.innerHTML = `<div class="row between">
+            <h2>Roster <span class="muted">(${inClass} in class / ${rosterRows.length} registered)</span></h2>
+            <button id="stu-refresh" class="btn">Refresh</button></div>${intro}
+        <div class="row toolbar">
+            <input id="roster-filter" class="filter" type="search" placeholder="Filter by name or email…" value="${esc(rosterFilter)}">
+            <button id="bulk-add" class="btn">Add selected to class</button>
+            <button id="bulk-remove" class="btn">Remove selected</button>
+        </div>
+        <div id="roster-table"></div>`;
+    document.getElementById('stu-refresh')?.addEventListener('click', () => void renderStudents());
+    const filterEl = document.getElementById('roster-filter') as HTMLInputElement;
+    filterEl.addEventListener('input', () => { rosterFilter = filterEl.value; paintRoster(); });
+    document.getElementById('bulk-add')!.addEventListener('click', () => void bulkRoster(true));
+    document.getElementById('bulk-remove')!.addEventListener('click', () => void bulkRoster(false));
+    paintRoster();
+}
+
+function filteredRoster(): StudentRow[] {
+    const q = rosterFilter.trim().toLowerCase();
+    if (!q) return rosterRows;
+    return rosterRows.filter(r =>
+        r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q));
+}
+
+function paintRoster(): void {
+    const host = document.getElementById('roster-table');
+    if (!host) return;
+    const rows = filteredRoster();
+    if (rows.length === 0) {
+        host.innerHTML = `<p class="muted">No registrants match "${esc(rosterFilter)}".</p>`;
+        return;
+    }
+    host.innerHTML = `<table class="sched">
+        <thead><tr><th></th><th>Student</th><th>Roster</th><th>Caught</th><th>Seen</th><th>Accuracy</th></tr></thead>
+        <tbody>${rows.map(r => {
+            let att = 0, cor = 0;
+            (Object.values(r.stats) as { attempts: number; correct: number }[])
+                .forEach(s => { if (s && typeof s === 'object') { att += s.attempts || 0; cor += s.correct || 0; } });
+            const acc = att ? Math.round((cor / att) * 100) : 0;
+            return `<tr>
+                <td><input type="checkbox" class="roster-check" data-uid="${esc(r.uid)}"></td>
+                <td>${esc(r.name)}<div class="muted small">${esc(r.email)}</div></td>
+                <td>${r.inClass ? '<span class="pill">in class</span> ' : ''}<button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="${r.inClass ? '1' : '0'}">${r.inClass ? 'Remove' : 'Add'}</button></td>
+                <td>${r.caught}</td>
+                <td>${r.seen}</td>
+                <td>${att ? `${acc}% <span class="muted small">(${cor}/${att})</span>` : '—'}</td>
+            </tr>`;
+        }).join('')}</tbody>
+    </table>`;
+    host.querySelectorAll<HTMLButtonElement>('.roster-toggle').forEach(btn =>
+        btn.addEventListener('click', async () => {
+            const uid = btn.dataset.uid as string;
+            const isIn = btn.dataset.in === '1';
+            btn.disabled = true;
+            btn.textContent = '…';
+            try {
+                await setMembership(uid, !isIn);
+            } catch (e) {
+                flash(e instanceof Error ? e.message : 'Could not update the roster.', true);
+            }
+            void renderStudents();
+        }));
+}
+
+async function bulkRoster(add: boolean): Promise<void> {
+    const uids = Array.from(document.querySelectorAll<HTMLInputElement>('.roster-check:checked'))
+        .map(c => c.dataset.uid as string);
+    if (uids.length === 0) { flash('Tick some students first.', true); return; }
+    try {
+        await setMembershipBulk(uids, add);
+        flash(`${add ? 'Added' : 'Removed'} ${uids.length} student${uids.length > 1 ? 's' : ''}.`);
+    } catch (e) {
+        flash(e instanceof Error ? e.message : 'Bulk update failed.', true);
+    }
+    void renderStudents();
+}
+
+// ---------------------------------------------------------------- admins
+// Super-admin-only role management. Promote a registrant to admin (they can then
+// manage classes/rosters) or revoke it. Admins can never reach this tab, and no
+// new super admins can be minted here — that's the teacher custom claim, which
+// only comes from firebase/set-teacher.mjs (see database.rules.json).
+async function renderAdmins(): Promise<void> {
+    const panel = document.getElementById('panel') as HTMLElement;
+    const intro = `<p class="muted small">Super admins only. Promote a registrant to
+        <b>admin</b> to let them manage classes and rosters. Admins can’t promote
+        anyone, and no new super admins can be created here.</p>`;
+    panel.innerHTML = `<div class="row between"><h2>Admins</h2>
+        <button id="adm-refresh" class="btn">Refresh</button></div>${intro}
+        <p class="muted">Loading…</p>`;
+    document.getElementById('adm-refresh')?.addEventListener('click', () => void renderAdmins());
+
+    adminRows = await loadAdmins().catch(() => []);
+    const count = adminRows.filter(r => r.isAdmin).length;
+    panel.innerHTML = `<div class="row between">
+            <h2>Admins <span class="muted">(${count})</span></h2>
+            <button id="adm-refresh" class="btn">Refresh</button></div>${intro}
+        <div class="row toolbar">
+            <input id="admin-filter" class="filter" type="search" placeholder="Filter by name or email…" value="${esc(adminFilter)}">
+        </div>
+        <div id="admin-table"></div>`;
+    document.getElementById('adm-refresh')?.addEventListener('click', () => void renderAdmins());
+    const f = document.getElementById('admin-filter') as HTMLInputElement;
+    f.addEventListener('input', () => { adminFilter = f.value; paintAdmins(); });
+    paintAdmins();
+}
+
+function paintAdmins(): void {
+    const host = document.getElementById('admin-table');
+    if (!host) return;
+    const q = adminFilter.trim().toLowerCase();
+    const rows = q
+        ? adminRows.filter(r => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q))
+        : adminRows;
+    if (rows.length === 0) {
+        host.innerHTML = `<p class="muted">No registrants match "${esc(adminFilter)}".</p>`;
+        return;
+    }
+    host.innerHTML = `<table class="sched">
+        <thead><tr><th>Person</th><th>Role</th><th></th></tr></thead>
+        <tbody>${rows.map(r => `<tr>
+            <td>${esc(r.name)}<div class="muted small">${esc(r.email)}</div></td>
+            <td>${r.isAdmin ? '<span class="pill">admin</span>' : '<span class="muted">registrant</span>'}</td>
+            <td><button class="btn small admin-toggle" data-uid="${esc(r.uid)}" data-admin="${r.isAdmin ? '1' : '0'}" data-label="${esc(r.email || r.name)}">${r.isAdmin ? 'Revoke admin' : 'Make admin'}</button></td>
+        </tr>`).join('')}</tbody>
+    </table>`;
+    host.querySelectorAll<HTMLButtonElement>('.admin-toggle').forEach(btn =>
+        btn.addEventListener('click', async () => {
+            const uid = btn.dataset.uid as string;
+            const isAdm = btn.dataset.admin === '1';
+            const label = btn.dataset.label || 'this person';
+            if (!confirm(`${isAdm ? 'Revoke admin from' : 'Make admin:'} ${label}?`)) return;
+            btn.disabled = true;
+            btn.textContent = '…';
+            try {
+                await setAdmin(uid, !isAdm);
+            } catch (e) {
+                flash(e instanceof Error ? e.message : 'Could not update the role.', true);
+            }
+            void renderAdmins();
+        }));
 }
 
 boot();
