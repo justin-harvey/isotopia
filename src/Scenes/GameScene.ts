@@ -6,15 +6,29 @@ import GlobalInfo from '../GlobalInfo'
 import { GridEngine, Position, Direction, CollisionStrategy } from 'grid-engine'
 import { basicMovement, clickToMove } from './components/Characters'
 import { Npc } from './components/Npc'
-import { getElement } from '../data/elements'
+import { getElement, ELEMENTS } from '../data/elements'
+import { statusOf } from '../data/progress'
 import { elementalArtKey, elementalArtPath } from '../data/elementalArt'
 import { elementReleased } from '../data/classConfig'
 import { startBattle } from '../ui/QuizOverlay'
 import { showNpcDialog } from '../ui/NpcDialog'
+import { isRadFinderEquipped, setRadReading } from '../ui/RadFinder'
 
 // Real Elemental art is a big single image; this scale reads it down to roughly
 // character size on the grid (the placeholder NPC spritesheet uses ~0.7).
 const ELEMENTAL_ART_SCALE = 0.05
+
+// 8-way arrow from a tile delta (dx east-positive, dy south-positive in grid
+// coords). Used by the Rad Finder to point toward the nearest Elemental.
+function compass(dx: number, dy: number): string {
+    if (dx === 0 && dy === 0) return '⚛'
+    const ns = dy < 0 ? 'N' : dy > 0 ? 'S' : ''
+    const ew = dx < 0 ? 'W' : dx > 0 ? 'E' : ''
+    const arrows: Record<string, string> = {
+        N: '↑', S: '↓', E: '→', W: '←', NE: '↗', NW: '↖', SE: '↘', SW: '↙',
+    }
+    return arrows[ns + ew] || '⚛'
+}
 
 export default abstract class GameScene extends Phaser.Scene {
 
@@ -55,6 +69,12 @@ export default abstract class GameScene extends Phaser.Scene {
     map!: Tilemaps.Tilemap;
     npcsAndObjectsArray: NpcsAndObjects[] = [];
     characterMoved: boolean = false;
+
+    // Rad Finder: fixed-position Elementals spawned in this scene (release-gated),
+    // and the last player tile we computed a reading for (so update() only
+    // recomputes on a tile change, not every frame).
+    elementalTargets: { elementId: string; x: number; y: number }[] = [];
+    private rfLastMs = 0;
 
     // to load images
     imageNames!: {
@@ -123,6 +143,10 @@ export default abstract class GameScene extends Phaser.Scene {
         this.createMap();
         this.initiateGridEngine();
         this.createCamera(this.map.widthInPixels, this.map.heightInPixels);
+        // Scenes are reused across switch/restart, so clear last run's targets
+        // before createNpcs() (which calls spawnElemental) repopulates them.
+        this.elementalTargets = [];
+        this.rfLastMs = 0;
         this.createNpcs();
         basicMovement(this);
         clickToMove(this);
@@ -143,6 +167,8 @@ export default abstract class GameScene extends Phaser.Scene {
     }
 
     update(): void {
+        this.refreshRadFinder();
+
         // code to set habilities
         if (Phaser.Input.Keyboard.JustDown(this.keyA)) {
             /* uncomment this to use it as a hint to see the tile where player is placed ingame */
@@ -178,6 +204,34 @@ export default abstract class GameScene extends Phaser.Scene {
         if (Phaser.Input.Keyboard.JustUp(this.keyR)) {
             this.gridEngine.setSpeed(this.playerName, 4)
         };
+    }
+
+    // Rad Finder reading for the current room: nearest UNCAUGHT, released target to
+    // the player, plus a global count so the HUD can say "look elsewhere". Only
+    // recomputes when the player's tile changes (or when forced) to stay cheap.
+    refreshRadFinder(): void {
+        if (!isRadFinderEquipped() || !this.gridEngine) return
+        const now = performance.now()
+        if (now - this.rfLastMs < 250) return   // ~4 readings/sec, catches DOM cost
+        this.rfLastMs = now
+        const p = this.gridEngine.getPosition(this.playerName)
+
+        const live = this.elementalTargets.filter(t => statusOf(t.elementId) !== 'caught')
+        let nearest: { d: number; dx: number; dy: number } | null = null
+        for (const t of live) {
+            const dx = t.x - p.x, dy = t.y - p.y
+            const d = Math.max(Math.abs(dx), Math.abs(dy))   // Chebyshev tiles
+            if (!nearest || d < nearest.d) nearest = { d, dx, dy }
+        }
+        const totalUndiscovered = ELEMENTS.filter(
+            e => elementReleased(e.id) && statusOf(e.id) !== 'caught').length
+
+        setRadReading({
+            targetsInRoom: live.length,
+            nearestDist: nearest ? nearest.d : null,
+            dir: nearest ? compass(nearest.dx, nearest.dy) : null,
+            totalUndiscovered,
+        })
     }
 
     // used in scenes to load objects images
@@ -252,6 +306,8 @@ export default abstract class GameScene extends Phaser.Scene {
         })
         // Open the quiz on proximity rather than on an interact key.
         npc.proximityTrigger = true
+        // Register as a Rad Finder target so the tool can home in on it.
+        this.elementalTargets.push({ elementId, x, y })
     }
 
     // A flavor NPC with real art that just wanders the map — no quiz, no plot.

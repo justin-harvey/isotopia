@@ -672,6 +672,88 @@ html, body {
     -webkit-tap-highlight-color: transparent;
 }
 
+/* ---- Dex tools row (Rad Finder) ---- */
+.dex-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 14px;
+    font-size: 8px;
+    background: #efe8c4;
+    color: #303030;
+    border-bottom: 3px solid #303030;
+}
+.dex-tools-label { font-weight: bold; }
+.dex-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--gba-font);
+    font-size: 8px;
+    padding: 7px 10px;
+    color: #303030;
+    background: #fffdf2;
+    border: 2px solid #303030;
+    border-radius: 6px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.dex-tool.on { background: #b7f0c0; }
+.dex-tool-ico { font-size: 11px; }
+.dex-tool-state { font-weight: bold; opacity: .7; }
+.dex-tools-hint { flex: 1; color: #5a5140; }
+.dex-loc {
+    margin-top: 4px;
+    font-size: 7px;
+    line-height: 1.5;
+    color: #2f6b3a;
+}
+
+/* ---- Rad Finder in-game HUD (bottom-left, hidden until equipped) ---- */
+.radfinder {
+    position: fixed;
+    left: calc(10px + env(safe-area-inset-left, 0px));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 30;
+    display: none;
+    width: 152px;
+    padding: 8px 10px;
+    font-family: var(--gba-font);
+    font-size: 8px;
+    line-height: 1.5;
+    color: #eafff0;
+    background: rgba(18, 26, 20, 0.92);
+    border: 2px solid #7cfc00;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+    pointer-events: none;
+}
+.radfinder.on { display: block; }
+.rf-title { color: #7cfc00; margin-bottom: 5px; letter-spacing: .5px; }
+.rf-meter {
+    height: 8px;
+    background: #223122;
+    border: 1px solid #3a5a3a;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.rf-fill { height: 100%; width: 4%; background: #7cfc00; transition: width .2s ease; }
+.rf-read { margin-top: 5px; }
+.radfinder[data-heat="cool"] { border-color: #4fc3f7; }
+.radfinder[data-heat="cool"] .rf-fill { background: #4fc3f7; }
+.radfinder[data-heat="cool"] .rf-title { color: #4fc3f7; }
+.radfinder[data-heat="warm"] { border-color: #ffb74d; }
+.radfinder[data-heat="warm"] .rf-fill { background: #ffb74d; }
+.radfinder[data-heat="warm"] .rf-title { color: #ffb74d; }
+.radfinder[data-heat="hot"] { border-color: #ff5252; animation: rf-pulse .5s infinite; }
+.radfinder[data-heat="hot"] .rf-fill { background: #ff5252; }
+.radfinder[data-heat="hot"] .rf-title { color: #ff5252; }
+@keyframes rf-pulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 82, 82, 0); }
+    50% { box-shadow: 0 0 12px rgba(255, 82, 82, .8); }
+}
+
 .dex-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));

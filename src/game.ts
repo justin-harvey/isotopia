@@ -20,11 +20,14 @@ import { loadQuestionBank } from "./data/questionSource";
 import { loadAndCacheSettings } from "./data/classConfig";
 import { initIsotopedex } from "./ui/Isotopedex";
 import { initIntro } from "./ui/Intro";
+import { mountRadFinder } from "./ui/RadFinder";
 
-// Mount the persistent Isotopedex corner button (independent of Phaser scenes)
-// and the first-run "how to play" card + "?" help button.
+// Mount the persistent Isotopedex corner button (independent of Phaser scenes),
+// the first-run "how to play" card + "?" help button, and the Rad Finder HUD
+// (hidden until the student equips it from the dex).
 initIsotopedex();
 initIntro();
+mountRadFinder();
 
 // Watch for optional student sign-in (guests stay anonymous). When a student
 // signs in, their progress syncs to students/{uid}.

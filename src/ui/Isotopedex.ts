@@ -16,6 +16,8 @@ import {
     registerStudent, loginStudent, resendVerification, refreshVerification, resetStudentPassword,
 } from '../data/studentAuth';
 import { isFirebaseConfigured } from '../data/firebase';
+import { elementalLocation } from '../data/elementalLocations';
+import { isRadFinderEquipped, setRadFinderEquipped } from './RadFinder';
 
 const escHtml = (s: string): string =>
     s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
@@ -73,14 +75,12 @@ export function openIsotopedex(): void {
                 <button class="dex-close" aria-label="Close">✕</button>
             </div>
             <div class="dex-account"></div>
+            <div class="dex-tools"></div>
             <div class="dex-grid"></div>
         </div>`;
 
-    const grid = overlay.querySelector('.dex-grid') as HTMLDivElement;
-    // Ordered by atomic number, like a periodic-table index.
-    [...released]
-        .sort((a, b) => a.number - b.number)
-        .forEach(el => grid.appendChild(makeCard(el)));
+    renderTools();
+    populateGrid();
 
     renderAccount();
     overlay.querySelector('.dex-close')!.addEventListener('click', closeIsotopedex);
@@ -200,8 +200,46 @@ function renderAccount(): void {
         });
 }
 
+// The tools row: currently just the Rad Finder — a Geiger counter students can
+// equip any time to home in on undiscovered Elementals (an in-game meter) and see
+// where each one lives (location hints on the cards below). So nobody gets stuck.
+function renderTools(): void {
+    if (!overlay) return;
+    const host = overlay.querySelector('.dex-tools') as HTMLElement | null;
+    if (!host) return;
+    const on = isRadFinderEquipped();
+    host.innerHTML = `
+        <span class="dex-tools-label">Tools</span>
+        <button class="dex-tool${on ? ' on' : ''}" id="tool-rad" aria-pressed="${on}">
+            <span class="dex-tool-ico">⚛</span> Rad Finder
+            <span class="dex-tool-state">${on ? 'ON' : 'OFF'}</span>
+        </button>
+        <span class="dex-tools-hint">${on
+            ? 'Homing active. Locations shown below.'
+            : 'Equip to find hard-to-spot Elementals.'}</span>`;
+    (host.querySelector('#tool-rad') as HTMLButtonElement)
+        .addEventListener('click', () => {
+            setRadFinderEquipped(!isRadFinderEquipped());
+            renderTools();
+            populateGrid();     // reveal / hide the location hints
+        });
+}
+
+// (Re)build the card grid. Only released Elementals appear; the Rad Finder adds a
+// location hint to every not-yet-caught card.
+function populateGrid(): void {
+    if (!overlay) return;
+    const grid = overlay.querySelector('.dex-grid') as HTMLDivElement | null;
+    if (!grid) return;
+    grid.innerHTML = '';
+    ELEMENTS.filter(el => elementReleased(el.id))
+        .sort((a, b) => a.number - b.number)
+        .forEach(el => grid.appendChild(makeCard(el)));
+}
+
 // One creature card. Unseen → dark silhouette + "???"; seen/caught reveal the
-// art, names and atomic-structure facts. Caught gets a gold ✓ badge.
+// art, names and atomic-structure facts. Caught gets a gold ✓ badge. With the
+// Rad Finder equipped, not-yet-caught cards also show where to find them.
 function makeCard(el: ElementInfo): HTMLDivElement {
     const status = statusOf(el.id);
     const known = status !== 'unseen';
@@ -223,6 +261,9 @@ function makeCard(el: ElementInfo): HTMLDivElement {
         : status === 'seen' ? `<div class="dex-badge seen">Seen</div>`
         : `<div class="dex-badge locked">Undiscovered</div>`;
 
+    const locLine = (isRadFinderEquipped() && status !== 'caught')
+        ? `<div class="dex-loc">📍 ${escHtml(elementalLocation(el.id))}</div>` : '';
+
     card.innerHTML = `
         <div class="dex-num">#${el.number}</div>
         <div class="dex-portrait">${portrait}</div>
@@ -231,6 +272,7 @@ function makeCard(el: ElementInfo): HTMLDivElement {
         <div class="dex-stats">${known
             ? `Atomic #${el.number}<br>Protons ${el.number} · Electrons ${el.number}`
             : 'Find and meet it to reveal!'}</div>
+        ${locLine}
         ${badge}`;
     return card;
 }
