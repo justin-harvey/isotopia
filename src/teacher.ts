@@ -553,6 +553,7 @@ async function renderStudents(): Promise<void> {
             <input id="roster-filter" class="filter" type="search" placeholder="Filter by name or email…" value="${esc(rosterFilter)}">
             <button id="bulk-add" class="btn">Add selected to class</button>
             <button id="bulk-remove" class="btn">Remove selected</button>
+            <button id="export-csv" class="btn">Export CSV</button>
         </div>
         <div id="roster-table"></div>`;
     document.getElementById('stu-refresh')?.addEventListener('click', () => void renderStudents());
@@ -560,6 +561,7 @@ async function renderStudents(): Promise<void> {
     filterEl.addEventListener('input', () => { rosterFilter = filterEl.value; paintRoster(); });
     document.getElementById('bulk-add')!.addEventListener('click', () => void bulkRoster(true));
     document.getElementById('bulk-remove')!.addEventListener('click', () => void bulkRoster(false));
+    document.getElementById('export-csv')!.addEventListener('click', () => exportRosterCsv());
     paintRoster();
 }
 
@@ -568,6 +570,43 @@ function filteredRoster(): StudentRow[] {
     if (!q) return rosterRows;
     return rosterRows.filter(r =>
         r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q));
+}
+
+/** Sum attempts/correct across all elements for one student. */
+function statTotals(r: StudentRow): { attempts: number; correct: number } {
+    let attempts = 0, correct = 0;
+    (Object.values(r.stats) as { attempts: number; correct: number }[])
+        .forEach(s => { if (s && typeof s === 'object') { attempts += s.attempts || 0; correct += s.correct || 0; } });
+    return { attempts, correct };
+}
+
+/** Download the current class roster as a CSV for grading. In-class students
+ *  only, one row each: name, email, caught/seen counts, and answer accuracy. */
+function exportRosterCsv(): void {
+    const rows = rosterRows.filter(r => r.inClass);
+    if (rows.length === 0) { flash('No students are in this class yet.', true); return; }
+    const cell = (v: string | number): string => {
+        const s = String(v);
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = ['Name', 'Email', 'Caught', 'Seen', 'Questions answered', 'Correct', 'Accuracy %'];
+    const lines = [header.join(',')];
+    rows.sort((a, b) => a.name.localeCompare(b.name)).forEach(r => {
+        const { attempts, correct } = statTotals(r);
+        const acc = attempts ? Math.round((correct / attempts) * 100) : 0;
+        lines.push([r.name, r.email, r.caught, r.seen, attempts, correct, acc].map(cell).join(','));
+    });
+    const stamp = new Date().toISOString().slice(0, 10);
+    const safeName = (myClassName() || 'class').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `isotopia-${safeName || 'class'}-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
 }
 
 function paintRoster(): void {
@@ -581,9 +620,7 @@ function paintRoster(): void {
     host.innerHTML = `<table class="sched">
         <thead><tr><th></th><th>Student</th><th>Roster</th><th>Caught</th><th>Seen</th><th>Accuracy</th></tr></thead>
         <tbody>${rows.map(r => {
-            let att = 0, cor = 0;
-            (Object.values(r.stats) as { attempts: number; correct: number }[])
-                .forEach(s => { if (s && typeof s === 'object') { att += s.attempts || 0; cor += s.correct || 0; } });
+            const { attempts: att, correct: cor } = statTotals(r);
             const acc = att ? Math.round((cor / att) * 100) : 0;
             // "Assigned elsewhere" is only claimable by a super (rules block admins).
             const locked = r.assignedElsewhere && !session?.isSuper;

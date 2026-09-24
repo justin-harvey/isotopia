@@ -47,9 +47,30 @@ initStudentAuth();
     } catch (err) {
         console.warn("Isotopia: using local questions (Firebase unavailable):", err);
     } finally {
-        new Phaser.Game(config);
+        installFormKeyboardGuard(new Phaser.Game(config));
     }
 })();
+
+// While a DOM form field is focused (the sign-in / sign-up email + password
+// boxes, etc.), stop Phaser from capturing the keyboard. Otherwise letters like
+// "A"/"S"/"D" fire the dog's bark/sniff actions and are swallowed before they
+// reach the input, so students can't type their credentials. Re-enable on blur.
+function installFormKeyboardGuard(game: Phaser.Game): void {
+    const isField = (el: EventTarget | null): boolean => {
+        const n = el as HTMLElement | null;
+        if (!n || !n.tagName) return false;
+        return n.tagName === 'INPUT' || n.tagName === 'TEXTAREA'
+            || n.tagName === 'SELECT' || n.isContentEditable;
+    };
+    const setKeyboards = (on: boolean): void => {
+        game.scene.getScenes(false).forEach(s => {
+            const kb = s.input?.keyboard;
+            if (kb) kb.enabled = on;
+        });
+    };
+    document.addEventListener('focusin', e => { if (isField(e.target)) setKeyboards(false); });
+    document.addEventListener('focusout', e => { if (isField(e.target)) setKeyboards(true); });
+}
 
 const config = {
     type: Phaser.AUTO,
