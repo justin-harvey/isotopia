@@ -120,8 +120,9 @@ abstract class CityInteriorScene extends GameScene {
             .setDisplaySize(this.map.widthInPixels, this.map.heightInPixels)
             .setDepth(-100);
 
-        // Fill the canvas width with the room (same trick as the town interiors).
-        this.cameras.main.setZoom(this.scale.gameSize.width / this.map.widthInPixels);
+        // Fill the screen with the room (same as the town interiors). Fitting only
+        // the width left a white band under these wide 11:6 rooms.
+        this.keepRoomFilled();
 
         if (this.nav) {
             this.createPortals();

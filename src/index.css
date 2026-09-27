@@ -51,7 +51,10 @@ html, body {
     display: flex;
     flex-wrap: nowrap;
     gap: 16px;
-    justify-content: center;
+    /* Centred via auto margins on the end items (below), not justify-content:
+       with justify-content:center, overflowing tips spill off the LEFT edge
+       where they can't be scrolled to. */
+    justify-content: flex-start;
     align-items: center;
     padding: 6px 14px;
     padding-bottom: calc(6px + env(safe-area-inset-bottom));  /* clear the home indicator */
@@ -67,6 +70,8 @@ html, body {
     white-space: nowrap;
 }
 #hud > span { flex: 0 0 auto; }
+#hud > span:first-child { margin-left: auto; }
+#hud > span:last-child { margin-right: auto; }
 #hud .hud-title { color: #ffd166; font-weight: bold; }
 #hud b { color: #ffd166; }
 
@@ -145,6 +150,16 @@ html, body {
     box-shadow: 0 0 0 4px #08101f, 0 10px 30px rgba(0, 0, 0, 0.55);
     padding: 10px;
     overflow: hidden;
+    /* Never taller than the screen: on a phone in landscape the card used to
+       run off the top and bottom, hiding ✕ and Continue (a stuck quiz). */
+    box-sizing: border-box;
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+}
+@media (max-height: 500px) {
+    .battle-scene { height: clamp(100px, 28vh, 180px) !important; }
+    .quiz-card.battle { padding: 6px; }
 }
 
 /* Back out of a quiz you didn't mean to start (no keyboard on iPad). */
@@ -713,8 +728,10 @@ html, body {
 /* ---- Rad Finder in-game HUD (bottom-left, hidden until equipped) ---- */
 .radfinder {
     position: fixed;
-    left: calc(10px + env(safe-area-inset-left, 0px));
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    /* Above the tips HUD (which would otherwise cover it completely) and just
+       right of the round "?" help button. */
+    left: calc(64px + env(safe-area-inset-left, 0px));
+    bottom: calc(var(--hud-h) + 12px + env(safe-area-inset-bottom, 0px));
     z-index: 30;
     display: none;
     width: 152px;

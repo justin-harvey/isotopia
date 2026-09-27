@@ -52,6 +52,7 @@ export default [
                 targets: [
                     { src: 'src/index.html', dest: 'dist' },
                     { src: 'src/index.css', dest: 'dist' },
+                    { src: 'src/manifest.webmanifest', dest: 'dist' },
                     { src: 'src/teacher.html', dest: 'dist' },
                     { src: 'src/teacher.css', dest: 'dist' },
                     { src: 'src/assets/*', dest: 'dist/assets' }
