@@ -12,15 +12,15 @@
         "cap:sync": "npm run build:app && npx cap sync"
     },
     "dependencies": {
-        "@capacitor/android": "^6.2.2",
-        "@capacitor/core": "^6.2.2",
-        "@capacitor/ios": "^6.2.2",
+        "@capacitor/android": "^8.5.2",
+        "@capacitor/core": "^8.5.2",
+        "@capacitor/ios": "^8.5.2",
         "firebase": "^12.17.0",
         "grid-engine": "^2.20.0",
         "phaser": "^3.55.2"
     },
     "devDependencies": {
-        "@capacitor/cli": "^6.2.2",
+        "@capacitor/cli": "^8.5.2",
         "@lopatnov/rollup-plugin-uglify": "^2.1.4",
         "@rollup/plugin-commonjs": "^22.0.2",
         "@rollup/plugin-node-resolve": "^13.3.0",

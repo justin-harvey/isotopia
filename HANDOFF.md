@@ -16,7 +16,7 @@ per-student progress sync. Real classroom target: an **AP Chemistry** class at
 ## Coordinates
 | Thing | Value |
 |---|---|
-| Local path | `/home/nah/Claudia/isotopia` |
+| Local path | `~/isotopia` on Justin's Mac (2017 Intel MacBook Pro, macOS 13 Ventura — the max for that model). Earlier work happened on a Linux box. |
 | GitHub | https://github.com/justin-harvey/isotopia (branch `main`, public; old `G00DTECH` path redirects) |
 | Live game | https://is0topia.netlify.app/ (note the **zero**). Teacher portal: `/teacher.html` |
 | Firebase project | `isotopia-2809c` (Realtime Database) |
@@ -26,8 +26,8 @@ per-student progress sync. Real classroom target: an **AP Chemistry** class at
 
 ## Run locally
 ```bash
-cd /home/nah/Claudia/isotopia
-npm install
+cd ~/isotopia
+npm install      # Node 24 LTS lives in ~/.local/node (symlinked into ~/.local/bin)
 npm run watch    # dev server + live reload → http://localhost:10001
 npm run build    # production build → dist/ (also builds dist/teacher.html)
 npm run package  # build + zip -> isotopia-offline.zip (download-and-play bundle)
@@ -48,21 +48,27 @@ enable the online features.
 - **Secret path:** walk **north up column 20 of the woods to the very top** → a
   cutscene reveals the distant city → tap **"enter the city"** to walk it.
 
-## The Elementals (9 active)
+## The Elementals (16 active)
 Original, copyright-safe display names (no "-mon"), set in `data/elements.ts`
 (`monster` field). Element `id`s and art filenames are unchanged.
 
 | Element | Name | Where | Element | Name | Where |
 |---|---|---|---|---|---|
-| Hydrogen | Hydrohop | town lake | Magnesium | Magflash | Auto interior |
-| Carbon | Carbocrunch | woods (wild) | Iron | Ironclank | Hardware interior |
-| Nitrogen | Nitronoodle | woods (wild) | Neon | Neonglow | town plaza |
+| Hydrogen | Hydrohop | town lake | Helium | Helior | Home interior |
+| Neon | Neonglow | town plaza | Iron | Ironclank | Hardware interior |
+| Carbon | Carbocrunch | woods (wild) | Sodium | Sodazoom | Hannaford interior |
+| Nitrogen | Nitronoodle | woods (wild) | Magnesium | Magflash | Auto interior |
 | Oxygen | Oxypuff | woods (wild) | Uranium | Glowbun | Library interior |
-| Sodium | Sodazoom | Hannaford interior | | | |
+| Aluminum | Aluminio | city streets | Fluorine | Fluorvex | city streets |
+| Scandium | Scandion | city streets | Boron | Borolith | city streets |
+| Beryllium | Beryllia | city streets | Sulfur | Brimora | city streets |
 
-Helium & Chlorine retired (removed from `elements.ts`; seed questions remain,
-harmless). 9 have real pixel art in `src/assets/elementals/`; declared in
-`data/elementalArt.ts`.
+Placements live in `TestScene.MONSTER_SPAWNS`, `WoodsScene.WILD`, the
+`elementIds` passed to each town `InteriorScene`, and `CityScene.CITY_ELEMENTALS`
+(outdoors — the city *interiors* hold none). **Keep
+`data/elementalLocations.ts` (Rad Finder hints) in sync when moving one.**
+All 16 have art in `src/assets/elementals/` (declared in `data/elementalArt.ts`).
+Chlorine is retired; `isotopia-next-batch.csv` lists the next candidates.
 
 ## Architecture / key files
 | Path | Purpose |
@@ -177,8 +183,13 @@ Town interiors, building/bridge artwork, the dog) authored by Justin. Code is
 MIT. README credits reflect this.
 
 ## Open items / next
-- **Verify on a real iPad:** student sign-in, city walking/animation + NPC dialog,
-  and the new smaller pedestrian scale + doubled-building layout.
+- **Native apps: see `MOBILE-HANDOFF.md`** (branch `mobile`). iOS is blocked on an
+  Apple ID; Android builds on this Mac.
+- **Verify on a real iPad:** student sign-in (typing was broken until the
+  2026-09-27 keyboard fix), portrait/landscape layout, city walking + NPC dialog.
+- **Deploy the RTDB rules** from the `mobile` branch (students may delete their own
+  `assignments/{uid}` on account deletion): `firebase deploy --only database
+  --project isotopia-2809c`.
 - **Fountain** for the plaza centre (couldn't isolate its tiles in the 16k-tile
   sheet — its centre spot is left open). More city props/NPCs/shops.
 - Populate the city with gameplay (Elementals/quizzes/Gym).
@@ -187,6 +198,16 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-27 (web-fixes):** sign-in fields could not receive A/S/D/R/space/arrows
+(Phaser's game-wide KeyboardManager preventDefault()s captured keys; the guard now
+disables the manager while a field is focused) · progress sync failed for up to an
+hour after verifying (ID token now force-refreshed) · 8s startup timeout → local
+data · game resizes to the screen shape (portrait iPad fills the screen; rotation
+handled; `GameScene.keepRoomFilled` zooms interiors to cover — fixed the white band
+under city rooms) · Rad Finder meter was hidden under the tips bar; 6 city hints
+were wrong · battle card fits phones · web app manifest + home-screen icons ·
+Firebase config for the Netlify build is unchanged. Previously: lab favicon,
+roster CSV export ·
 Fixed a boot black screen (Rad Finder mounted before `<body>` existed; now all
 startup DOM mounts go through `ui/domReady.onBodyReady`) · removed Neonu Reeves
 (the woods companion NPC) ·
