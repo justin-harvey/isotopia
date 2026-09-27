@@ -1,7 +1,50 @@
 # Isotopia — Session Handoff
 
 A running summary of what this is and where it stands, so work can resume after a
-context reset. Last updated 2026-09-23.
+context reset. Last updated 2026-09-27.
+
+## Where things stand (2026-09-27) — read this first
+Work moved to Justin's Mac for a day and is coming back to Linux. Branches:
+
+| Branch | State | Next step |
+|---|---|---|
+| `web-fixes` | **The active branch.** `main` + website fixes + the Support page. Tested in headless Chrome at iPad/iPhone/laptop sizes. | Merge into `main` and push → Netlify deploys it. |
+| `mobile` | **Shelved.** Capacitor 8.5.2 iOS/Android shell; web-fixes merged in. See `MOBILE-HANDOFF.md` on that branch. | Nothing for now. Keep merging `web-fixes`/`main` into it so it doesn't drift. |
+| `main` | Live site. Behind `web-fixes`. | Fast-forward to `web-fixes`. |
+
+Decisions made:
+- **No iOS App Store for now.** Justin can't get a usable Apple ID of his own, and
+  the Mac is a 2017 model stuck on macOS 13 (Xcode 15.2 max — too old to upload).
+  iPads get the **web game**: Safari → Share → Add to Home Screen, or the school's
+  MDM pushes a web clip of https://is0topia.netlify.app/. The web app manifest +
+  icons (`src/manifest.webmanifest`, `src/assets/icon-*.png`) make that open
+  full-screen with the dog icon.
+- **Monetization = voluntary support, not sales or ads.** `support.html` + a quiet
+  help-card link + a teacher-portal link, all switched on by the `SUPPORT_URL`
+  build env var (https:// only; unset ⇒ hidden, page says "coming soon"). Never
+  call it a charity or tax-deductible. Before ever *charging* money, check the
+  LimeZu/Cainos asset licenses (permission was given for a free game).
+
+Waiting on Justin:
+1. Push the branches (see "Pick up on Linux" below).
+2. Create a Ko-fi (or GitHub Sponsors) page → set `SUPPORT_URL` in Netlify's
+   environment variables → redeploy. Then add `.github/FUNDING.yml` for the repo's
+   Sponsor button.
+
+Next candidates: offline support via a service worker (launch without Wi-Fi after
+the first visit), an "Install Isotopia" page with Add-to-Home-Screen steps for
+iPad/Android/Chromebook, then the older open items at the bottom of this file.
+
+### Pick up on Linux
+```bash
+cd /home/nah/Claudia/isotopia
+git fetch origin
+git checkout web-fixes          # new branch from the Mac; tracks origin/web-fixes
+npm install
+npm run build                   # sanity check
+# ship it:
+git checkout main && git merge --ff-only web-fixes && git push origin main
+```
 
 ## What this is
 **Isotopia** — a Pokémon-style pixel game for learning the periodic table. You
@@ -16,7 +59,7 @@ per-student progress sync. Real classroom target: an **AP Chemistry** class at
 ## Coordinates
 | Thing | Value |
 |---|---|
-| Local path | `/home/nah/Claudia/isotopia` |
+| Local path | Linux: `/home/nah/Claudia/isotopia` (main machine). Mac: `~/isotopia` (2017 Intel MacBook Pro, macOS 13; Node 24, Java 21 and the Android SDK live in `~/.local`). |
 | GitHub | https://github.com/justin-harvey/isotopia (branch `main`, public; old `G00DTECH` path redirects) |
 | Live game | https://is0topia.netlify.app/ (note the **zero**). Teacher portal: `/teacher.html` |
 | Firebase project | `isotopia-2809c` (Realtime Database) |
@@ -26,7 +69,7 @@ per-student progress sync. Real classroom target: an **AP Chemistry** class at
 
 ## Run locally
 ```bash
-cd /home/nah/Claudia/isotopia
+cd /home/nah/Claudia/isotopia   # or ~/isotopia on the Mac
 npm install
 npm run watch    # dev server + live reload → http://localhost:10001
 npm run build    # production build → dist/ (also builds dist/teacher.html)
@@ -48,21 +91,27 @@ enable the online features.
 - **Secret path:** walk **north up column 20 of the woods to the very top** → a
   cutscene reveals the distant city → tap **"enter the city"** to walk it.
 
-## The Elementals (9 active)
+## The Elementals (16 active)
 Original, copyright-safe display names (no "-mon"), set in `data/elements.ts`
 (`monster` field). Element `id`s and art filenames are unchanged.
 
 | Element | Name | Where | Element | Name | Where |
 |---|---|---|---|---|---|
-| Hydrogen | Hydrohop | town lake | Magnesium | Magflash | Auto interior |
-| Carbon | Carbocrunch | woods (wild) | Iron | Ironclank | Hardware interior |
-| Nitrogen | Nitronoodle | woods (wild) | Neon | Neonglow | town plaza |
+| Hydrogen | Hydrohop | town lake | Helium | Helior | Home interior |
+| Neon | Neonglow | town plaza | Iron | Ironclank | Hardware interior |
+| Carbon | Carbocrunch | woods (wild) | Sodium | Sodazoom | Hannaford interior |
+| Nitrogen | Nitronoodle | woods (wild) | Magnesium | Magflash | Auto interior |
 | Oxygen | Oxypuff | woods (wild) | Uranium | Glowbun | Library interior |
-| Sodium | Sodazoom | Hannaford interior | | | |
+| Aluminum | Aluminio | city streets | Fluorine | Fluorvex | city streets |
+| Scandium | Scandion | city streets | Boron | Borolith | city streets |
+| Beryllium | Beryllia | city streets | Sulfur | Brimora | city streets |
 
-Helium & Chlorine retired (removed from `elements.ts`; seed questions remain,
-harmless). 9 have real pixel art in `src/assets/elementals/`; declared in
-`data/elementalArt.ts`.
+Placements live in `TestScene.MONSTER_SPAWNS`, `WoodsScene.WILD`, the
+`elementIds` passed to each town `InteriorScene`, and `CityScene.CITY_ELEMENTALS`
+(outdoors — the city *interiors* hold none). **Keep
+`data/elementalLocations.ts` (Rad Finder hints) in sync when moving one.**
+All 16 have art in `src/assets/elementals/` (declared in `data/elementalArt.ts`).
+Chlorine is retired; `isotopia-next-batch.csv` lists the next candidates.
 
 ## Architecture / key files
 | Path | Purpose |
@@ -87,6 +136,8 @@ harmless). 9 have real pixel art in `src/assets/elementals/`; declared in
 | `src/data/classConfig.ts` | Per-owner class settings + `meta{name,color}` + `assignments/` resolution; game reads the student's assigned class's release schedule (`loadAndCacheSettings`) |
 | `src/data/maps.ts` | **Embedded tilemaps** (test/woods/interior/city) so the game runs from `file://` (no XHR). Regenerate via `tools/embed-maps.mjs` after editing any map |
 | `src/teacher.ts` + `teacher.html` + `teacher.css` | Teacher admin portal (separate rollup bundle) |
+| `src/support.html` + `src/data/support.ts` | Support page (copied with `%SUPPORT_URL%` filled in by rollup-plugin-copy's `transform`) + the flag the game/portal use to show their support links |
+| `src/manifest.webmanifest` + `src/assets/icon-192/512.png` | Home-screen web app (name, icon, full-screen) |
 | `tools/gen_town.py` / `gen_woods.py` / `gen_city.py` / `gen_interior.py` | Regenerate each tilemap; `embed-maps.mjs` re-embeds them into `maps.ts` |
 | `firebase/` | `database.rules.json`, `set-teacher.mjs`, `ADD-A-TEACHER.md`, `ACCOUNTS-SCOPE.md`, `NEXT-STEPS.md`, `serviceAccount.json` (gitignored) |
 
@@ -177,8 +228,12 @@ Town interiors, building/bridge artwork, the dog) authored by Justin. Code is
 MIT. README credits reflect this.
 
 ## Open items / next
-- **Verify on a real iPad:** student sign-in, city walking/animation + NPC dialog,
-  and the new smaller pedestrian scale + doubled-building layout.
+- **Verify on a real iPad** once `web-fixes` is live: student sign-up/login (typing
+  was broken until the 2026-09-27 keyboard fix), portrait/landscape layout, Add to
+  Home Screen, city walking + NPC dialog.
+- **Native apps (shelved):** `MOBILE-HANDOFF.md` on branch `mobile`. If revived: that
+  branch also has in-app account deletion and an RTDB rules change that must be
+  deployed with it (`firebase deploy --only database --project isotopia-2809c`).
 - **Fountain** for the plaza centre (couldn't isolate its tiles in the 16k-tile
   sheet — its centre spot is left open). More city props/NPCs/shops.
 - Populate the city with gameplay (Elementals/quizzes/Gym).
@@ -187,6 +242,17 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-27 (web-fixes):** "Support Isotopia" page + links (`support.html`,
+`data/support.ts`, `SUPPORT_URL` env) · sign-in fields could not receive A/S/D/R/space/arrows
+(Phaser's game-wide KeyboardManager preventDefault()s captured keys; the guard now
+disables the manager while a field is focused) · progress sync failed for up to an
+hour after verifying (ID token now force-refreshed) · 8s startup timeout → local
+data · game resizes to the screen shape (portrait iPad fills the screen; rotation
+handled; `GameScene.keepRoomFilled` zooms interiors to cover — fixed the white band
+under city rooms) · Rad Finder meter was hidden under the tips bar; 6 city hints
+were wrong · battle card fits phones · web app manifest + home-screen icons ·
+Firebase config for the Netlify build is unchanged. Previously: lab favicon,
+roster CSV export ·
 Fixed a boot black screen (Rad Finder mounted before `<body>` existed; now all
 startup DOM mounts go through `ui/domReady.onBodyReady`) · removed Neonu Reeves
 (the woods companion NPC) ·
