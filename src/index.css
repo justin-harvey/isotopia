@@ -924,6 +924,17 @@ html, body {
 }
 .ico svg .fill { fill: currentColor; stroke: none; }
 .intro-actions { display: flex; flex-direction: column; gap: 10px; }
+/* Quiet support link under "Let's go!" (only when SUPPORT_URL is set). */
+.intro-support {
+    display: block;
+    margin-top: 14px;
+    font-size: 8px;
+    line-height: 1.6;
+    color: #7a6f55;
+    text-align: center;
+    text-decoration: underline;
+    -webkit-tap-highlight-color: transparent;
+}
 .intro-note {
     margin: 0;
     font-size: 9px;

@@ -62,6 +62,8 @@ code { background: #eef1f7; padding: 1px 5px; border-radius: 4px; }
 .tabs button.on { background: #eaf1fb; color: var(--primary); font-weight: 600; }
 .who { margin-left: auto; display: flex; align-items: center; gap: 10px;
     color: var(--muted); font-size: 13px; }
+.support-link { color: #c0392b; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.support-link:hover { text-decoration: underline; }
 
 main { max-width: 860px; margin: 24px auto; padding: 0 20px 60px; }
 

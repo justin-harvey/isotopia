@@ -40,6 +40,9 @@ export default {
                  'FIREBASE_STORAGE_BUCKET', 'FIREBASE_MESSAGING_SENDER_ID', 'FIREBASE_APP_ID', 'FIREBASE_MEASUREMENT_ID']
                     .map(k => [`process.env.${k}`, JSON.stringify(process.env[k] || '')]),
             ),
+            // Optional support link (https only; empty => support links hidden).
+            'process.env.SUPPORT_URL': JSON.stringify(
+                /^https:\/\/[^\s"'<>]+$/.test(process.env.SUPPORT_URL || '') ? process.env.SUPPORT_URL : ''),
         }),
 
         //  Parse our .ts source files

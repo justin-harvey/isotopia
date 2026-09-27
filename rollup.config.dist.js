@@ -15,6 +15,12 @@ const firebaseReplacements = Object.fromEntries(
     FIREBASE_ENV_KEYS.map(k => [`process.env.${k}`, JSON.stringify(process.env[k] || '')]),
 );
 
+// Optional "Support Isotopia" payment link (Ko-fi, GitHub Sponsors, a Stripe
+// Payment Link…) from the SUPPORT_URL env var. Only an https:// URL counts; unset
+// => every support link stays hidden (see src/data/support.ts).
+const SUPPORT_URL = /^https:\/\/[^\s"'<>]+$/.test(process.env.SUPPORT_URL || '') ? process.env.SUPPORT_URL : '';
+const htmlAttr = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
 const replaceOpts = {
     preventAssignment: true,
     'typeof CANVAS_RENDERER': JSON.stringify(true),
@@ -24,6 +30,7 @@ const replaceOpts = {
     'typeof PLUGIN_FBINSTANT': JSON.stringify(false),
     'typeof FEATURE_SOUND': JSON.stringify(true),
     ...firebaseReplacements,
+    'process.env.SUPPORT_URL': JSON.stringify(SUPPORT_URL),
 };
 
 //  Fresh plugin instances per bundle (typescript2 keeps per-instance caches).
@@ -53,6 +60,10 @@ export default [
                     { src: 'src/index.html', dest: 'dist' },
                     { src: 'src/index.css', dest: 'dist' },
                     { src: 'src/manifest.webmanifest', dest: 'dist' },
+                    {
+                        src: 'src/support.html', dest: 'dist',
+                        transform: c => c.toString().replace(/%SUPPORT_URL%/g, htmlAttr(SUPPORT_URL)),
+                    },
                     { src: 'src/teacher.html', dest: 'dist' },
                     { src: 'src/teacher.css', dest: 'dist' },
                     { src: 'src/assets/*', dest: 'dist/assets' }

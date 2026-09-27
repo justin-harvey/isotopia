@@ -14,6 +14,9 @@ teacher admin portal, and per-student progress sync.
 Built on [Phaser 3](https://phaser.io/) with grid-based movement via
 [grid-engine](https://github.com/Annoraaq/grid-engine).
 
+Isotopia is free and ad-free for students. If it's useful to you, you can
+[support it](https://is0topia.netlify.app/support.html).
+
 ## Play
 
 - **Tap / click** where you want to walk (arrow keys also work on desktop).
@@ -96,6 +99,13 @@ the teacher portal, and saving student progress across devices.
 More detail in **[`firebase/NEXT-STEPS.md`](firebase/NEXT-STEPS.md)**. The Firebase
 *web* config is not secret (it identifies the project; access is enforced by the
 rules), but this project keeps it out of source so forks run offline by default.
+
+### Optional: support link
+
+Set `SUPPORT_URL` (an `https://` link to Ko-fi, GitHub Sponsors, a Stripe Payment
+Link, etc.) in the build environment to switch on the "Support Isotopia" links: a
+quiet line on the help card, a link in the teacher portal, and the button on
+`/support.html`. Leave it unset and all of them stay hidden.
 
 ### Teacher portal
 
