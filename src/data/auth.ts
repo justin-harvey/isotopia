@@ -8,17 +8,16 @@
 // for Firebase to restore any existing session first, then fall back to
 // anonymous only if there's nobody.
 
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirebaseApp } from './firebase';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getGameAuth } from './firebase';
 
 let uid: string | undefined;
 
 /** Ensure a signed-in user (restoring a persisted one if present, otherwise
  *  anonymous). Returns the uid, or undefined if Firebase isn't configured. */
 export function ensureSignedIn(): Promise<string | undefined> {
-    const app = getFirebaseApp();
-    if (!app) return Promise.resolve(undefined);
-    const auth = getAuth(app);
+    const auth = getGameAuth();
+    if (!auth) return Promise.resolve(undefined);
     return new Promise((resolve) => {
         const unsub = onAuthStateChanged(auth, async (user) => {
             unsub();

@@ -11,6 +11,10 @@
 // undefined and everything falls back to local data. Nothing secret is committed.
 
 import { initializeApp, FirebaseApp } from 'firebase/app';
+import {
+    Auth, getAuth, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence,
+} from 'firebase/auth';
+import { isNativeApp } from '../platform';
 
 // `process.env.*` here is replaced with a literal string by rollup at build time
 // ('' when the variable is unset), so no real `process` exists at runtime.
@@ -39,4 +43,25 @@ export function getFirebaseApp(): FirebaseApp | undefined {
     if (!isFirebaseConfigured()) return undefined;
     if (!app) app = initializeApp(firebaseConfig);
     return app;
+}
+
+let gameAuth: Auth | undefined;
+
+/** The game's Firebase Auth instance, or undefined when offline. Every game-side
+ *  auth call must go through here rather than getAuth(): in the Capacitor app,
+ *  getAuth() also wires up the popup/redirect resolver, which loads an iframe
+ *  from the auth domain that never finishes inside the iOS WebView, so
+ *  onAuthStateChanged never fires and the game hangs on startup. The native app
+ *  only needs email/password + anonymous sign-in, so it initializes Auth with
+ *  plain persistence and no resolver. (The web game and teacher portal are
+ *  unaffected and keep the default getAuth().) */
+export function getGameAuth(): Auth | undefined {
+    const a = getFirebaseApp();
+    if (!a) return undefined;
+    if (!gameAuth) {
+        gameAuth = isNativeApp()
+            ? initializeAuth(a, { persistence: [indexedDBLocalPersistence, browserLocalPersistence] })
+            : getAuth(a);
+    }
+    return gameAuth;
 }

@@ -675,6 +675,11 @@ html, body {
     border: 2px solid #303030;
     border-radius: 5px;
 }
+.dex-auth-form .dex-acct-label { flex-basis: 100%; }
+.dex-auth-btn.dex-danger { color: #fff; background: #c0392b; }
+.dex-auth-btn:disabled { opacity: 0.6; cursor: default; }
+.dex-acct-error { flex-basis: 100%; color: #b3261e; }
+.dex-acct-error:empty { display: none; }
 .dex-auth-link {
     font-family: var(--gba-font);
     font-size: 8px;

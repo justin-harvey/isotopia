@@ -97,6 +97,13 @@ export function detachStudent(): void {
     studentUid = null;
 }
 
+/** Forget all progress on this device (used after account deletion, so a deleted
+ *  student's collection isn't migrated into the next account made here). */
+export function clearLocalProgress(): void {
+    state = { seen: {}, caught: {}, stats: {} };
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* storage unavailable */ }
+}
+
 // ---- Progress API (unchanged signatures for game code) --------------------
 export function markSeen(elementId: string): void {
     if (!state.seen[elementId]) {

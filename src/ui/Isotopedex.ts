@@ -130,31 +130,63 @@ export function closeIsotopedex(): void {
     setDialogue(false);
 }
 
-// Wire a "Delete account" button: confirm, then permanently delete the student's
-// account + cloud data. Firebase may require a recent login to delete the auth
-// user, so we fall back to asking for the password to reauthenticate.
+// Wire a "Delete account" button. It swaps the account bar for an inline
+// confirmation rather than using confirm()/prompt(): the password field stays
+// masked, and nothing is deleted until the student re-enters it (which also lets
+// deleteStudentAccount reauthenticate before touching any data).
 function wireDeleteAccount(btn: HTMLButtonElement | null): void {
     if (!btn) return;
-    btn.addEventListener('click', async () => {
-        if (!confirm('Delete your account and all saved progress? This cannot be undone.')) return;
+    btn.addEventListener('click', renderDeleteConfirm);
+}
+
+function renderDeleteConfirm(): void {
+    const host = overlay?.querySelector('.dex-account') as HTMLElement | null;
+    if (!host) return;
+    host.innerHTML = `<form class="dex-auth-form" id="dex-delete-form">
+            <span class="dex-acct-label">Delete your account and all saved progress?
+                This can't be undone. Enter your password to confirm.</span>
+            <input type="password" id="dex-delete-pass" placeholder="password" autocomplete="current-password" required>
+            <button type="submit" class="dex-auth-btn dex-danger" id="dex-delete-go">Delete forever</button>
+            <button type="button" class="dex-auth-btn" id="dex-delete-cancel">Cancel</button>
+            <span class="dex-acct-error" role="alert"></span>
+        </form>`;
+    const pass = host.querySelector('#dex-delete-pass') as HTMLInputElement;
+    const go = host.querySelector('#dex-delete-go') as HTMLButtonElement;
+    const cancel = host.querySelector('#dex-delete-cancel') as HTMLButtonElement;
+    const errBox = host.querySelector('.dex-acct-error') as HTMLElement;
+    cancel.addEventListener('click', renderAccount);
+    (host.querySelector('#dex-delete-form') as HTMLFormElement).addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (go.disabled) return;                // one deletion at a time
+        go.disabled = cancel.disabled = true;
+        go.textContent = 'Deleting…';
+        errBox.textContent = '';
         try {
-            await deleteStudentAccount();
+            await deleteStudentAccount(pass.value);
+            closeIsotopedex();                  // the card grid still shows the old progress
             alert('Your account and saved data have been deleted.');
         } catch (err) {
-            if ((err as { code?: string }).code === 'auth/requires-recent-login') {
-                const pw = prompt('For your security, re-enter your password to finish deleting your account:');
-                if (!pw) return;
-                try {
-                    await deleteStudentAccount(pw);
-                    alert('Your account and saved data have been deleted.');
-                } catch (err2) {
-                    alert((err2 as Error).message || 'Could not delete your account. Please try again.');
-                }
-            } else {
-                alert((err as Error).message || 'Could not delete your account. Please try again.');
-            }
+            go.disabled = cancel.disabled = false;
+            go.textContent = 'Delete forever';
+            errBox.textContent = deleteErrorMessage(err);
         }
     });
+    pass.focus();
+}
+
+function deleteErrorMessage(err: unknown): string {
+    switch ((err as { code?: string }).code) {
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+        case 'auth/invalid-login-credentials':
+            return "That password isn't right. Nothing was deleted.";
+        case 'auth/too-many-requests':
+            return 'Too many tries. Wait a minute, then try again.';
+        case 'auth/network-request-failed':
+            return 'No internet connection. Nothing was deleted.';
+        default:
+            return (err as Error).message || 'Could not delete your account. Please try again.';
+    }
 }
 
 // The account bar in the dex header: guest vs signed-in student, with a

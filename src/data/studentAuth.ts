@@ -14,18 +14,19 @@
 // Token freshness: the database rules check `auth.token.email_verified`, which
 // comes from the ID token, not from `user.emailVerified`. `user.reload()` updates
 // the latter but keeps the cached token, so right after a student verifies, the
-// rules would still see `false` for up to an hour (progress sync silently fails).
-// Wherever we learn the user is verified, we force-refresh the token.
+// rules would still see `false` for up to an hour (sync silently fails, account
+// deletion is denied). Wherever we learn the user is verified, we force-refresh
+// the token with getIdToken(true).
 
 import {
-    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
     sendEmailVerification, sendPasswordResetEmail, signOut, deleteUser,
     reauthenticateWithCredential, EmailAuthProvider,
     onAuthStateChanged, User,
 } from 'firebase/auth';
-import { getDatabase, ref, remove } from 'firebase/database';
-import { getFirebaseApp } from './firebase';
-import { attachStudent, detachStudent } from './progress';
+import { getDatabase, ref, remove, get } from 'firebase/database';
+import { getFirebaseApp, getGameAuth } from './firebase';
+import { attachStudent, detachStudent, clearLocalProgress } from './progress';
 
 let current: User | null = null;    // a VERIFIED, non-anonymous student, else null
 let pending: User | null = null;    // signed in but email not yet verified, else null
@@ -34,16 +35,20 @@ const listeners: (() => void)[] = [];
 function emit(): void { listeners.forEach(fn => fn()); }
 
 function auth() {
-    const app = getFirebaseApp();
-    if (!app) throw new Error('Firebase is not configured.');
-    return getAuth(app);
+    const a = getGameAuth();
+    if (!a) throw new Error('Firebase is not configured.');
+    return a;
+}
+
+function attach(u: User): void {
+    void attachStudent(u.uid, u.displayName || u.email || 'Student', u.email || '');
 }
 
 /** Start listening for student sign-in state. Call once at startup. */
 export function initStudentAuth(): void {
-    const app = getFirebaseApp();
-    if (!app) return;
-    onAuthStateChanged(getAuth(app), async (user) => {
+    const a = getGameAuth();
+    if (!a) return;
+    onAuthStateChanged(a, async (user) => {
         const real = (user && !user.isAnonymous) ? user : null;
         if (real && real.emailVerified) {
             // A token minted before the student verified still says
@@ -64,7 +69,7 @@ export function initStudentAuth(): void {
             }
             current = real;
             pending = null;
-            void attachStudent(real.uid, real.displayName || real.email || 'Student', real.email || '');
+            attach(real);
         } else {
             current = null;
             pending = real;         // non-null only while a non-anonymous user is unverified
@@ -116,7 +121,7 @@ export async function refreshVerification(): Promise<boolean> {
         await u.getIdToken(true);   // so the rules see email_verified=true now
         current = u;
         pending = null;
-        void attachStudent(u.uid, u.displayName || u.email || 'Student', u.email || '');
+        attach(u);
         emit();
         return true;
     }
@@ -129,47 +134,55 @@ export async function resetStudentPassword(email: string): Promise<void> {
 }
 
 export async function signOutStudent(): Promise<void> {
-    const app = getFirebaseApp();
-    if (app) await signOut(getAuth(app));
+    const a = getGameAuth();
+    if (a) await signOut(a);
 }
 
-/** Permanently delete the signed-in student's account: removes their cloud
- *  record (students/{uid}) and their Firebase Auth user. Required by both the
- *  App Store (5.1.1(v)) and Google Play for any app that lets users create
- *  accounts.
+/** Permanently delete the signed-in student's account: their cloud record
+ *  (students/{uid}), their class assignment, the progress cached on this device,
+ *  and their Firebase Auth user. Required by both the App Store (5.1.1(v)) and
+ *  Google Play for any app that lets users create accounts.
  *
- *  Deleting the Auth user can require a recent sign-in. If Firebase reports
- *  `auth/requires-recent-login`, the caller should retry with the student's
- *  password so we can reauthenticate first. */
-export async function deleteStudentAccount(password?: string): Promise<void> {
+ *  The password is required up front: reauthenticating FIRST means the
+ *  irreversible steps below can't fail halfway on `auth/requires-recent-login`
+ *  (which would leave the cloud data gone but the account alive). */
+export async function deleteStudentAccount(password: string): Promise<void> {
     const user = current || pending;
-    if (!user) throw new Error('No account is signed in.');
+    if (!user || !user.email) throw new Error('No account is signed in.');
     const app = getFirebaseApp();
     if (!app) throw new Error('Firebase is not configured.');
+    const db = getDatabase(app);
 
-    // Remove the cloud record first, while still authenticated — the database
-    // rules only let a verified student write their own students/{uid} node, so
-    // this must happen before the Auth user is deleted. Unverified sign-ups never
-    // created a node, so there is nothing to remove for them.
-    if (user.emailVerified) {
-        await remove(ref(getDatabase(app), `students/${user.uid}`));
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+    // Fresh emailVerified + a token that carries it, so the rules allow the
+    // removal even if the student verified only moments ago.
+    await user.reload();
+    await user.getIdToken(true);
+
+    // Staff accounts own a class and its roster; deleting one from the game would
+    // orphan that data, so it has to go through a super admin instead.
+    if ((await get(ref(db, `admins/${user.uid}`))).val() === true) {
+        throw new Error('This is a staff account. Ask a super admin to remove it.');
     }
 
+    // Stop syncing first so an in-flight progress save can't recreate the record.
+    detachStudent();
     try {
+        // The rules only let a verified student write students/{uid}; unverified
+        // sign-ups never created one, so there's nothing to remove for them.
+        if (user.emailVerified) await remove(ref(db, `students/${user.uid}`));
+        // Best effort: older deployed rules don't let a student clear their own
+        // assignment, and an unassigned student has nothing to clear.
+        await remove(ref(db, `assignments/${user.uid}`)).catch(() => undefined);
         await deleteUser(user);
     } catch (err) {
-        const code = (err as { code?: string }).code;
-        if (code === 'auth/requires-recent-login' && password && user.email) {
-            const cred = EmailAuthProvider.credential(user.email, password);
-            await reauthenticateWithCredential(user, cred);
-            await deleteUser(user);
-        } else {
-            throw err;
-        }
+        // Account still exists: resume syncing so its record is restored intact.
+        if (current === user) attach(user);
+        throw err;
     }
 
+    clearLocalProgress();
     current = null;
     pending = null;
-    detachStudent();
     emit();
 }
