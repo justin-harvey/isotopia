@@ -9,6 +9,7 @@ import {
     onTeacherAuth, signInTeacher, signInAdminEmail, signOutTeacher, TeacherSession, ALLOWED_DOMAIN,
 } from './data/adminAuth';
 import { isFirebaseConfigured } from './data/firebase';
+import { supportEnabled, SUPPORT_PAGE } from './data/support';
 import { ELEMENTS } from './data/elements';
 import { PERIODIC_TABLE, getPeriodicElement, elementLabel } from './data/periodicTable';
 import {
@@ -175,7 +176,9 @@ function renderPortal(): void {
                     return `<button data-tab="${t}" role="tab" aria-selected="${on}" class="${on ? 'on' : ''}">${label}</button>`;
                 }).join('')}
             </nav>
-            <span class="who">${esc(session!.user.email || '')}
+            <span class="who">${supportEnabled()
+                    ? `<a class="support-link" href="${SUPPORT_PAGE}" target="_blank" rel="noopener">&#9829; Support Isotopia</a>` : ''}
+                ${esc(session!.user.email || '')}
                 <button id="signout" class="btn small">Sign out</button></span>
         </header>
         <main id="panel"></main>`;

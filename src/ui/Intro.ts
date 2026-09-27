@@ -7,6 +7,7 @@ import { icon } from './icons';
 import { currentStudent } from '../data/studentAuth';
 import { isFirebaseConfigured } from '../data/firebase';
 import { onBodyReady } from './domReady';
+import { supportEnabled, SUPPORT_PAGE } from '../data/support';
 
 let overlay: HTMLDivElement | null = null;
 
@@ -38,6 +39,7 @@ export function showIntro(): void {
                 ${(currentStudent() || !isFirebaseConfigured()) ? '' : `<p class="intro-note">Open the DEX (top-right) to sign up and save your progress across devices.</p>`}
                 <button class="intro-go">Let's go!</button>
             </div>
+            ${supportEnabled() ? `<a class="intro-support" href="${SUPPORT_PAGE}" target="_blank" rel="noopener">Isotopia is free &amp; ad-free &middot; support it &#9829;</a>` : ''}
         </div>`;
 
     const close = (): void => {
