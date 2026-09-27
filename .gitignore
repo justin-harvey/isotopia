@@ -28,3 +28,6 @@ isotopia-offline.zip
 
 # Local dev preview page (not part of the game)
 cutscene-preview.html
+
+# Capacitor native shell — www/ is a stripped copy of dist/ (no teacher portal)
+/www

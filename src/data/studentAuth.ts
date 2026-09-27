@@ -13,9 +13,11 @@
 
 import {
     getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    sendEmailVerification, sendPasswordResetEmail, signOut,
+    sendEmailVerification, sendPasswordResetEmail, signOut, deleteUser,
+    reauthenticateWithCredential, EmailAuthProvider,
     onAuthStateChanged, User,
 } from 'firebase/auth';
+import { getDatabase, ref, remove } from 'firebase/database';
 import { getFirebaseApp } from './firebase';
 import { attachStudent, detachStudent } from './progress';
 
@@ -119,4 +121,45 @@ export async function resetStudentPassword(email: string): Promise<void> {
 export async function signOutStudent(): Promise<void> {
     const app = getFirebaseApp();
     if (app) await signOut(getAuth(app));
+}
+
+/** Permanently delete the signed-in student's account: removes their cloud
+ *  record (students/{uid}) and their Firebase Auth user. Required by both the
+ *  App Store (5.1.1(v)) and Google Play for any app that lets users create
+ *  accounts.
+ *
+ *  Deleting the Auth user can require a recent sign-in. If Firebase reports
+ *  `auth/requires-recent-login`, the caller should retry with the student's
+ *  password so we can reauthenticate first. */
+export async function deleteStudentAccount(password?: string): Promise<void> {
+    const user = current || pending;
+    if (!user) throw new Error('No account is signed in.');
+    const app = getFirebaseApp();
+    if (!app) throw new Error('Firebase is not configured.');
+
+    // Remove the cloud record first, while still authenticated — the database
+    // rules only let a verified student write their own students/{uid} node, so
+    // this must happen before the Auth user is deleted. Unverified sign-ups never
+    // created a node, so there is nothing to remove for them.
+    if (user.emailVerified) {
+        await remove(ref(getDatabase(app), `students/${user.uid}`));
+    }
+
+    try {
+        await deleteUser(user);
+    } catch (err) {
+        const code = (err as { code?: string }).code;
+        if (code === 'auth/requires-recent-login' && password && user.email) {
+            const cred = EmailAuthProvider.credential(user.email, password);
+            await reauthenticateWithCredential(user, cred);
+            await deleteUser(user);
+        } else {
+            throw err;
+        }
+    }
+
+    current = null;
+    pending = null;
+    detachStudent();
+    emit();
 }

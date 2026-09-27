@@ -14,8 +14,10 @@ import { elementReleased } from '../data/classConfig';
 import {
     currentStudent, pendingVerification, onStudentAuth, signOutStudent,
     registerStudent, loginStudent, resendVerification, refreshVerification, resetStudentPassword,
+    deleteStudentAccount,
 } from '../data/studentAuth';
 import { isFirebaseConfigured } from '../data/firebase';
+import { isNativeApp } from '../platform';
 import { elementalLocation } from '../data/elementalLocations';
 import { isRadFinderEquipped, setRadFinderEquipped } from './RadFinder';
 import { onBodyReady } from './domReady';
@@ -100,6 +102,9 @@ export function openIsotopedex(): void {
         title.classList.remove('holding');
     };
     title.addEventListener('pointerdown', () => {
+        // The teacher portal is web-only; it isn't shipped in the native app, so
+        // the hold-to-open shortcut is disabled there.
+        if (isNativeApp()) return;
         title.classList.add('holding');
         holdTimer = setTimeout(() => { window.location.href = 'teacher.html'; }, 1000);
     });
@@ -125,6 +130,33 @@ export function closeIsotopedex(): void {
     setDialogue(false);
 }
 
+// Wire a "Delete account" button: confirm, then permanently delete the student's
+// account + cloud data. Firebase may require a recent login to delete the auth
+// user, so we fall back to asking for the password to reauthenticate.
+function wireDeleteAccount(btn: HTMLButtonElement | null): void {
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        if (!confirm('Delete your account and all saved progress? This cannot be undone.')) return;
+        try {
+            await deleteStudentAccount();
+            alert('Your account and saved data have been deleted.');
+        } catch (err) {
+            if ((err as { code?: string }).code === 'auth/requires-recent-login') {
+                const pw = prompt('For your security, re-enter your password to finish deleting your account:');
+                if (!pw) return;
+                try {
+                    await deleteStudentAccount(pw);
+                    alert('Your account and saved data have been deleted.');
+                } catch (err2) {
+                    alert((err2 as Error).message || 'Could not delete your account. Please try again.');
+                }
+            } else {
+                alert((err as Error).message || 'Could not delete your account. Please try again.');
+            }
+        }
+    });
+}
+
 // The account bar in the dex header: guest vs signed-in student, with a
 // sign-in / sign-out button. Re-rendered on auth changes while the dex is open.
 function renderAccount(): void {
@@ -142,9 +174,11 @@ function renderAccount(): void {
     // Signed in and verified — progress is syncing.
     if (u) {
         host.innerHTML = `<span class="dex-acct-label">Saving as <b>${escHtml(u.email || u.displayName || 'you')}</b></span>
-            <button class="dex-auth-btn" id="dex-signout">Sign out</button>`;
+            <button class="dex-auth-btn" id="dex-signout">Sign out</button>
+            <button class="dex-auth-link" id="dex-delete">Delete account</button>`;
         (host.querySelector('#dex-signout') as HTMLButtonElement)
             .addEventListener('click', () => { void signOutStudent(); });
+        wireDeleteAccount(host.querySelector('#dex-delete') as HTMLButtonElement);
         return;
     }
 
@@ -154,7 +188,8 @@ function renderAccount(): void {
             verification link, then tap I'm verified to start saving.</span>
             <button class="dex-auth-btn" id="dex-verified">I'm verified</button>
             <button class="dex-auth-btn" id="dex-resend">Resend</button>
-            <button class="dex-auth-btn" id="dex-signout">Cancel</button>`;
+            <button class="dex-auth-btn" id="dex-signout">Cancel</button>
+            <button class="dex-auth-link" id="dex-delete">Delete account</button>`;
         (host.querySelector('#dex-verified') as HTMLButtonElement)
             .addEventListener('click', async () => {
                 const ok = await refreshVerification();
@@ -166,6 +201,7 @@ function renderAccount(): void {
             });
         (host.querySelector('#dex-signout') as HTMLButtonElement)
             .addEventListener('click', () => { void signOutStudent(); });
+        wireDeleteAccount(host.querySelector('#dex-delete') as HTMLButtonElement);
         return;
     }
 
