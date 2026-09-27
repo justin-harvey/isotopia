@@ -493,6 +493,21 @@ export default abstract class GameScene extends Phaser.Scene {
         this.cameras.main.setZoom(2.5)
     }
 
+    // Interiors: zoom so the room covers the whole screen (no empty bands), and
+    // keep it that way when the game resizes (iPad rotation — see game.ts). The
+    // camera already follows the dog within the room's bounds, so whatever part
+    // of the room doesn't fit on this screen shape pans into view as it walks.
+    keepRoomFilled(): void {
+        const fit = (): void => {
+            const { width, height } = this.scale.gameSize;
+            this.cameras.main.setZoom(Math.max(
+                width / this.map.widthInPixels, height / this.map.heightInPixels));
+        };
+        fit();
+        this.scale.on(Phaser.Scale.Events.RESIZE, fit);
+        this.events.once('destroy', () => this.scale.off(Phaser.Scale.Events.RESIZE, fit));
+    }
+
     switch(key: string | Phaser.Scene): void {
         this.scene.scene.sound.stopAll()
         this.scene.switch(key)

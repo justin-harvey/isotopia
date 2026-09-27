@@ -10,6 +10,12 @@
 //
 // So an open sign-up just lands in the "registrant pool": verified but unassigned,
 // harmless until a teacher picks them. Teachers sign in separately (adminAuth).
+//
+// Token freshness: the database rules check `auth.token.email_verified`, which
+// comes from the ID token, not from `user.emailVerified`. `user.reload()` updates
+// the latter but keeps the cached token, so right after a student verifies, the
+// rules would still see `false` for up to an hour (progress sync silently fails).
+// Wherever we learn the user is verified, we force-refresh the token.
 
 import {
     getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -38,12 +44,15 @@ export function initStudentAuth(): void {
     onAuthStateChanged(getAuth(app), async (user) => {
         const real = (user && !user.isAnonymous) ? user : null;
         if (real && real.emailVerified) {
+            // A token minted before the student verified still says
+            // email_verified=false, and the rules would reject every sync write.
+            let token = await real.getIdTokenResult();
+            if (token.claims.email_verified !== true) token = await real.getIdTokenResult(true);
             // Super admins carry the "teacher" claim. They only turn up signed in
             // here because their portal session is shared in the same browser —
             // they are NOT students, so don't create a students/{uid} record for
             // them (it would pollute the roster). Promoted admins have no claim and
             // are ordinary students who may play, so they still attach normally.
-            const token = await real.getIdTokenResult();
             if (token.claims.teacher === true) {
                 current = null;
                 pending = null;
@@ -102,6 +111,7 @@ export async function refreshVerification(): Promise<boolean> {
     if (!u) return false;
     await u.reload();
     if (u.emailVerified) {
+        await u.getIdToken(true);   // so the rules see email_verified=true now
         current = u;
         pending = null;
         void attachStudent(u.uid, u.displayName || u.email || 'Student', u.email || '');
