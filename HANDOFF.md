@@ -4,21 +4,25 @@ A running summary of what this is and where it stands, so work can resume after 
 context reset. Last updated 2026-09-27.
 
 ## Where things stand (2026-09-27) — read this first
-Work moved to Justin's Mac for a day and is coming back to Linux. Branches:
+**Isotopia is a web app, full stop.** Native (iOS/Android) is **abandoned** — Justin
+has no usable Apple ID and the 2017 Mac (macOS 13, Xcode 15.2 max) is too old to
+upload to the App Store. iPads get the **web game**: Safari → Share → **Add to Home
+Screen**, or the school's MDM pushes a web clip of https://is0topia.netlify.app/.
+The web app manifest + icons (`src/manifest.webmanifest`, `src/assets/icon-*.png`)
+make it open full-screen with the dog icon.
 
-| Branch | State | Next step |
+The day of Mac work — sign-in typing fix, iPad layout, Rad Finder hints, the Support
+page, and the PWA manifest/icons — is now **merged to `main` and deployed live**.
+
+| Branch | State | What to do with it |
 |---|---|---|
-| `web-fixes` | **The active branch.** `main` + website fixes + the Support page. Tested in headless Chrome at iPad/iPhone/laptop sizes. | Merge into `main` and push → Netlify deploys it. |
-| `mobile` | **Shelved.** Capacitor 8.5.2 iOS/Android shell; web-fixes merged in. See `MOBILE-HANDOFF.md` on that branch. | Nothing for now. Keep merging `web-fixes`/`main` into it so it doesn't drift. |
-| `main` | Live site. Behind `web-fixes`. | Fast-forward to `web-fixes`. |
+| `main` | **The only branch that matters.** Live site; now includes all the former `web-fixes` work. | Do work here (or short-lived feature branches off it). Push → Netlify deploys. |
+| `web-fixes` | Fully merged into `main`; nothing left on it. | Done. Safe to delete anytime; harmless if left. |
+| `mobile` | **ABANDONED.** Capacitor 8.5.2 iOS/Android shell, archived at `origin/mobile` (`MOBILE-HANDOFF.md` lives there). | Do **not** maintain, merge, or keep in sync. Kept only as a recoverable archive if native is ever revived — that branch also carries an RTDB rules change that must ship with it. |
+| `origin/claude/repo-interview-readiness-x9z7u5` | Stale (Aug 29, a README tweak, far behind `main`). | Deletable; ignore. |
 
 Decisions made:
-- **No iOS App Store for now.** Justin can't get a usable Apple ID of his own, and
-  the Mac is a 2017 model stuck on macOS 13 (Xcode 15.2 max — too old to upload).
-  iPads get the **web game**: Safari → Share → Add to Home Screen, or the school's
-  MDM pushes a web clip of https://is0topia.netlify.app/. The web app manifest +
-  icons (`src/manifest.webmanifest`, `src/assets/icon-*.png`) make that open
-  full-screen with the dog icon.
+- **Web-only, no App Store** (see above). This is the direction, not a temporary hold.
 - **Monetization = voluntary support, not sales or ads.** `support.html` + a quiet
   help-card link + a teacher-portal link, all switched on by the `SUPPORT_URL`
   build env var (https:// only; unset ⇒ hidden, page says "coming soon"). Never
@@ -26,24 +30,26 @@ Decisions made:
   LimeZu/Cainos asset licenses (permission was given for a free game).
 
 Waiting on Justin:
-1. Push the branches (see "Pick up on Linux" below).
-2. Create a Ko-fi (or GitHub Sponsors) page → set `SUPPORT_URL` in Netlify's
+1. Create a Ko-fi (or GitHub Sponsors) page → set `SUPPORT_URL` in Netlify's
    environment variables → redeploy. Then add `.github/FUNDING.yml` for the repo's
-   Sponsor button.
+   Sponsor button. (Until then the Support link stays hidden and the page reads
+   "coming soon" — the deployed default.)
+2. **Verify on a real iPad now that the fixes are live** — the main untested risk
+   (student sign-up/login typing, portrait/landscape, Add to Home Screen). See Open items.
 
 Next candidates: offline support via a service worker (launch without Wi-Fi after
 the first visit), an "Install Isotopia" page with Add-to-Home-Screen steps for
 iPad/Android/Chromebook, then the older open items at the bottom of this file.
 
-### Pick up on Linux
+### Deploying
+Deploy = push to `main`. Netlify auto-builds (`npm run build`, Node 18) and publishes
+`dist/`. Needs the 8 `FIREBASE_*` env vars already set in Netlify (see `.env.example`)
+or online features silently go offline. Justin pastes a GitHub PAT inline per push.
 ```bash
 cd /home/nah/Claudia/isotopia
-git fetch origin
-git checkout web-fixes          # new branch from the Mac; tracks origin/web-fixes
 npm install
-npm run build                   # sanity check
-# ship it:
-git checkout main && git merge --ff-only web-fixes && git push origin main
+npm run build          # local sanity check
+git push origin main   # → Netlify deploys
 ```
 
 ## What this is
@@ -59,7 +65,7 @@ per-student progress sync. Real classroom target: an **AP Chemistry** class at
 ## Coordinates
 | Thing | Value |
 |---|---|
-| Local path | Linux: `/home/nah/Claudia/isotopia` (main machine). Mac: `~/isotopia` (2017 Intel MacBook Pro, macOS 13; Node 24, Java 21 and the Android SDK live in `~/.local`). |
+| Local path | `/home/nah/Claudia/isotopia` (Linux — the main and only machine now; the Mac was for the abandoned native build) |
 | GitHub | https://github.com/justin-harvey/isotopia (branch `main`, public; old `G00DTECH` path redirects) |
 | Live game | https://is0topia.netlify.app/ (note the **zero**). Teacher portal: `/teacher.html` |
 | Firebase project | `isotopia-2809c` (Realtime Database) |
@@ -69,7 +75,7 @@ per-student progress sync. Real classroom target: an **AP Chemistry** class at
 
 ## Run locally
 ```bash
-cd /home/nah/Claudia/isotopia   # or ~/isotopia on the Mac
+cd /home/nah/Claudia/isotopia
 npm install
 npm run watch    # dev server + live reload → http://localhost:10001
 npm run build    # production build → dist/ (also builds dist/teacher.html)
@@ -228,12 +234,18 @@ Town interiors, building/bridge artwork, the dog) authored by Justin. Code is
 MIT. README credits reflect this.
 
 ## Open items / next
-- **Verify on a real iPad** once `web-fixes` is live: student sign-up/login (typing
-  was broken until the 2026-09-27 keyboard fix), portrait/landscape layout, Add to
-  Home Screen, city walking + NPC dialog.
-- **Native apps (shelved):** `MOBILE-HANDOFF.md` on branch `mobile`. If revived: that
-  branch also has in-app account deletion and an RTDB rules change that must be
-  deployed with it (`firebase deploy --only database --project isotopia-2809c`).
+- **Verify on a real iPad (now live — top untested risk):** student sign-up/login
+  (typing was broken until the 2026-09-27 keyboard fix), portrait/landscape layout,
+  Add to Home Screen (full-screen + dog icon), city walking + NPC dialog.
+- **PWA polish:** an "Install Isotopia" page with Add-to-Home-Screen steps for
+  iPad/Android/Chromebook, then a **service worker** so it launches offline after
+  the first visit.
+- **Support/monetization:** stand up Ko-fi or GitHub Sponsors → set `SUPPORT_URL` in
+  Netlify env → redeploy → add `.github/FUNDING.yml`.
+- **Native apps (abandoned — see top):** archived only on branch `origin/mobile`
+  (`MOBILE-HANDOFF.md` lives there). Not maintained. If ever revived, that branch
+  also carries in-app account deletion and an RTDB rules change that must ship with
+  it (`firebase deploy --only database --project isotopia-2809c`).
 - **Fountain** for the plaza centre (couldn't isolate its tiles in the 16k-tile
   sheet — its centre spot is left open). More city props/NPCs/shops.
 - Populate the city with gameplay (Elementals/quizzes/Gym).
@@ -242,6 +254,10 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-27 (deploy + web-only):** decided Isotopia is **web-only** (native App
+Store abandoned — no Apple ID, Mac too old); merged the day's `web-fixes` work into
+`main` and pushed → Netlify deployed it live; `mobile` branch marked abandoned
+(archived at `origin/mobile`), handoff rewritten for the web-only future.
 **2026-09-27 (web-fixes):** "Support Isotopia" page + links (`support.html`,
 `data/support.ts`, `SUPPORT_URL` env) · sign-in fields could not receive A/S/D/R/space/arrows
 (Phaser's game-wide KeyboardManager preventDefault()s captured keys; the guard now
