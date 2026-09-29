@@ -6,12 +6,11 @@ import GameScene from "./GameScene"
 import { LayerType } from './enums/LayerType';
 import { MAPS } from '../data/maps';
 
-// The Elementals that live outdoors in town. Hydrogen sits on the shore of the
-// town lake; Neon roams the plaza like a glowing sign. Oxygen, Carbon and
-// Nitrogen now live wild up in the North Woods. The rest live inside the venues.
-// Coordinates are walkable grass, clear of paths/lake.
+// The Elementals that live outdoors in town. Neon roams the plaza like a glowing
+// sign. Oxygen and Nitrogen live wild up in the North Woods; Hydrogen and Carbon
+// have moved down into the Museum basement (in the city). The rest live inside the
+// venues. Coordinates are walkable grass, clear of paths/lake.
 const MONSTER_SPAWNS: { elementId: string; x: number; y: number }[] = [
-    { elementId: 'hydrogen', x: 23, y: 16 },
     { elementId: 'neon',     x: 16, y: 14 },
 ];
 

@@ -6,18 +6,20 @@
 // moves. The city is only reachable by the secret path, so its hints say how.
 
 const CITY = 'City (walk to the very top of the North Woods)';
+// Relocated starters now live down in the Museum basement (a city building).
+const MUSEUM_B1 = `${CITY} — in the Museum, first basement level`;
 
 export const ELEMENTAL_LOCATION: Record<string, string> = {
-    hydrogen:  'Town — by the lake',
+    hydrogen:  MUSEUM_B1,
     neon:      'Town — the plaza',
     oxygen:    'North Woods',
     nitrogen:  'North Woods — tall grass',
-    carbon:    'North Woods',
+    carbon:    MUSEUM_B1,
     iron:      'Hardware store',
     sodium:    'Hannaford (grocery)',
     magnesium: 'Auto shop',
     uranium:   'Library',
-    helium:    'Home',
+    helium:    MUSEUM_B1,
     // Directions relative to where you arrive (bottom middle of the city map).
     aluminum:  `${CITY} — far west side, halfway up`,
     scandium:  `${CITY} — far west side, lower down`,

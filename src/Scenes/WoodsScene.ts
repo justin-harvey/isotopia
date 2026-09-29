@@ -53,17 +53,18 @@ export default class WoodsScene extends GameScene {
         this.loadObjectImages();
     }
 
-    // The wild Elementals that roam the woods (each has real art).
+    // The wild Elementals that roam the woods (each has real art). Carbon moved
+    // down into the Museum basement (in the city).
     private static readonly WILD: { elementId: string; x: number; y: number }[] = [
         { elementId: 'oxygen',   x: 16, y: 8 },    // up north in the meadow
         { elementId: 'nitrogen', x: 25, y: 10 },   // in the tall grass
-        { elementId: 'carbon',   x: 17, y: 15 },   // lower clearing
     ];
 
     // Walkable tall-grass GIDs (from tools/gen_woods.py: TALL1/TALL2), and the
     // pool of wild Elementals that can ambush you when you step through them.
+    // (Carbon and Hydrogen left the woods for the Museum basement.)
     private static readonly GRASS_GIDS = [1852, 1853];
-    private static readonly GRASS_POOL = ['oxygen', 'nitrogen', 'carbon', 'hydrogen'];
+    private static readonly GRASS_POOL = ['oxygen', 'nitrogen'];
 
     // Cainos "Pixel Art Top Down - Basic" props, sliced into src/assets/woods/ by
     // tools/slice_cainos.py. Each scenery object in the tilemap names a KIND; we

@@ -91,6 +91,10 @@ abstract class CityInteriorScene extends GameScene {
         super.preload();
         super.loadAvatarSpritesheet();
         super.loadMapImages();
+        // Load any assigned Elementals' art (no-op for the empty rooms — every city
+        // building except a populated museum floor). Without this a floor's
+        // Elementals would spawn with a missing texture.
+        this.loadObjectImages();
         this.load.image(this.bgKey, `assets/rooms/${this.cfg.background}`);
     }
 
@@ -278,7 +282,9 @@ export class CityMuseumScene extends CityInteriorScene {
     constructor() { super(SceneName.CityMuseum, { background: 'museum-interior.png', up: SceneName.City, upLabel: 'EXIT', down: SceneName.CityMuseumB1, collisionMap: 'museum_ground' }); }
 }
 export class CityMuseumB1Scene extends CityInteriorScene {
-    constructor() { super(SceneName.CityMuseumB1, { background: 'museum-level-1.png', up: SceneName.CityMuseum, upLabel: 'UP', down: SceneName.CityMuseumB2, collisionMap: 'museum_b1' }); }
+    // First basement: the relocated "starter" Elementals — Hydrogen (was the town
+    // lake), Helium (was Home), and Carbon (was the North Woods).
+    constructor() { super(SceneName.CityMuseumB1, { background: 'museum-level-1.png', up: SceneName.CityMuseum, upLabel: 'UP', down: SceneName.CityMuseumB2, collisionMap: 'museum_b1', elementIds: ['hydrogen', 'helium', 'carbon'] }); }
 }
 export class CityMuseumB2Scene extends CityInteriorScene {
     constructor() { super(SceneName.CityMuseumB2, { background: 'museum-level-2.png', up: SceneName.CityMuseumB1, upLabel: 'UP', down: SceneName.CityMuseumB3, collisionMap: 'museum_b2' }); }
