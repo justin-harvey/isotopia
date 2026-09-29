@@ -26,6 +26,10 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
 - Step on a glowing **▲ / ▼** pad to enter or leave a building, or take the
   trail north into the **woods**, where wild Elementals appear in the tall grass.
 - Tap the **DEX** button (top-right) to open your **Isotopedex** collection.
+- Find the hidden city and its **Evolution Lab**, where you fuse your caught
+  Elementals into real molecules by solving their chemistry — matching VSEPR bond
+  angles, expanding an octet (SF₄/SF₆), and weighing electronegativity to lock in
+  ionic bonds (NaF, MgO, and more).
 
 ## Get it (play offline, no coding)
 
@@ -66,6 +70,7 @@ No configuration is required — it runs on the local question seed.
 | `src/data/progress.ts` | Seen/Caught + answer stats (localStorage, synced to Firebase when signed in) |
 | `src/data/classConfig.ts` | Per-class settings + the release schedule |
 | `src/ui/QuizOverlay.ts` | The GBA-style battle quiz |
+| `src/ui/EvolveOverlay.ts` + `src/data/evolution.ts` | The Evolution Lab — fuse Elementals into compounds (VSEPR Fusion / Hyper-Chamber / ΔEN Tug-of-War chambers) |
 | `src/ui/Isotopedex.ts` | The creature-collection screen |
 | `src/teacher.ts` + `teacher.html` | The teacher admin portal (separate page) |
 | `firebase/` | Security rules, seed data, and setup docs |

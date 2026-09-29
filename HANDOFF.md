@@ -103,19 +103,24 @@ Original, copyright-safe display names (no "-mon"), set in `data/elements.ts`
 
 | Element | Name | Where | Element | Name | Where |
 |---|---|---|---|---|---|
-| Hydrogen | Hydrohop | town lake | Helium | Helior | Home interior |
+| Hydrogen | Hydrohop | Museum B1 | Helium | Helior | Museum B1 |
 | Neon | Neonglow | town plaza | Iron | Ironclank | Hardware interior |
-| Carbon | Carbocrunch | woods (wild) | Sodium | Sodazoom | Hannaford interior |
+| Carbon | Carbocrunch | Museum B1 | Sodium | Sodazoom | Hannaford interior |
 | Nitrogen | Nitronoodle | woods (wild) | Magnesium | Magflash | Auto interior |
 | Oxygen | Oxypuff | woods (wild) | Uranium | Glowbun | Library interior |
 | Aluminum | Aluminio | city streets | Fluorine | Fluorvex | city streets |
 | Scandium | Scandion | city streets | Boron | Borolith | city streets |
 | Beryllium | Beryllia | city streets | Sulfur | Brimora | city streets |
 
-Placements live in `TestScene.MONSTER_SPAWNS`, `WoodsScene.WILD`, the
-`elementIds` passed to each town `InteriorScene`, and `CityScene.CITY_ELEMENTALS`
-(outdoors — the city *interiors* hold none). **Keep
-`data/elementalLocations.ts` (Rad Finder hints) in sync when moving one.**
+Placements live in `TestScene.MONSTER_SPAWNS`, `WoodsScene.WILD`, the `elementIds`
+passed to each town `InteriorScene`, `CityScene.CITY_ELEMENTALS` (city streets), and
+now populated **city interiors** — **Hydrogen, Helium and Carbon were relocated into
+the Museum first basement** (`CityMuseumB1Scene`'s `elementIds` in `CityInteriors.ts`;
+they were removed from the town lake / Home / woods, incl. the woods grass pool).
+**Keep `data/elementalLocations.ts` (Rad Finder hints) in sync when moving one.**
+Every Elemental is **cloaked** on spawn (`components/Cloak.ts`) — a steady very-faint
+alpha so it's hard to spot by eye; the Rad Finder is how you're meant to find them
+(walking within one tile still auto-triggers the quiz regardless of visibility).
 All 16 have art in `src/assets/elementals/` (declared in `data/elementalArt.ts`).
 Chlorine is retired; `isotopia-next-batch.csv` lists the next candidates.
 
@@ -129,6 +134,8 @@ Chlorine is retired; `isotopia-next-batch.csv` lists the next candidates.
 | `src/Scenes/InteriorScene.ts` + Home/Hardware/Hannaford/Auto/Library | Building interiors (image backgrounds + shared collision grid) |
 | `src/Scenes/GameScene.ts` | Base scene: `spawnElemental` (release-gated), `enableGrassEncounters`, `spawnPedestrian`, `spawnTalkingNpc`, `spawnCompanionNpc`, camera, embedded-map loading |
 | `src/ui/QuizOverlay.ts` | GBA battle quiz (round-based, HP bar, `startBattle` wipe) |
+| `src/ui/EvolveOverlay.ts` + `src/data/evolution.ts` | **Evolution Lab** (city Power Station). Three chambers — VSEPR Fusion, Hyper-Chamber (expanded octet), ΔEN Tug-of-War — fuse Elementals into compounds. `evolution.ts` holds recipes + real chemistry (EN table, geometries); products record via `progress.markEvolved`. Product art auto-loads from `assets/compounds/<id>.png` (formula-disc fallback) |
+| `src/Scenes/components/Cloak.ts` | Cloaks Elementals on spawn: a steady very-faint alpha so they're hard to spot by eye (the Rad Finder is the intended way to find them). Called from `GameScene.spawnElemental` |
 | `src/ui/Isotopedex.ts` | Collection screen + student account bar (email/password sign-up / log in / verify) + hidden teacher-portal entrance (hold the title) |
 | `src/ui/CityReveal.ts` | The secret-path cutscene (bridge pan-out under sunset, dog on the bridge; tap → enter city) |
 | `src/ui/RadFinder.ts` + `data/elementalLocations.ts` | "Rad Finder" tool (dex Tools row). Tap **Track** on an uncaught dex card to target it (`getRadTarget`/`setRadTarget`, persisted); the in-game HUD then shows a **directional arrow** rotating toward that Elemental when it's in the current scene (heat by distance), its **location hint** when it's elsewhere, or falls back to the nearest when nothing's picked. `GameScene.refreshRadFinder` registers targets in `spawnElemental` and pushes `RadReading`s from `update()`; also unlocks per-card location hints. |
@@ -210,6 +217,32 @@ changes need a **game reload**.
   (`spawnPedestrian`, scale 0.35) + **3 talking NPCs** (`spawnTalkingNpc`). WOODS
   pad returns you. Keep `CityScene.BUILDINGS` in sync with `gen_city.PLACEMENTS`.
 
+## The Evolution Lab (city Power Station)
+The city **Power Station** is repurposed as the **Evolution Lab** (`lab: true` on
+`CityPowerStationScene` in `CityInteriors.ts`): a console **technician** — a proximity
+NPC on an "EVOLVE ▲" pad (`spawnEvolutionConsole`) — opens `ui/EvolveOverlay.ts`. Three
+chambers, all live:
+- **VSEPR Fusion** — pick a molecule, match its bond angle on a dial (±2.5°) to fuse.
+  Products: H₂O, CO₂, CH₄, NH₃, BF₃, SO₂, O₂, N₂.
+- **Hyper-Chamber** — expand a central atom past the octet by injecting reagents:
+  SF₄ (10 e⁻, see-saw), SF₆ (12 e⁻, octahedral). He/Ne/period-2 cores **fizzle** with
+  the real reason they can't expand — the AP lesson, deliberately not a faked reaction.
+- **Tug-of-War** — classify a binary bond from ΔEN, then slide to the potential-energy
+  well minimum (equilibrium bond length). Products: NaF, MgO, MgF₂, Al₂O₃ (ionic),
+  FeS (polar covalent), steel/Fe·C (interstitial alloy).
+
+Recipes + chemistry: `data/evolution.ts` (`FUSIONS` / `HYPERVALENTS` / `IONICS` + a
+Pauling EN table). Success calls `progress.markEvolved(id)` → local key
+`elemonsters.evolved.v1`, kept **out** of the cloud `students/{uid}` schema on purpose
+(so a new field can't reject the RTDB write and break progress sync). **16 products,
+placeholder names/tints** until art lands.
+
+**Artwork drop-in:** the success disc loads `assets/compounds/<recipe-id>.png` if it
+exists, else a tinted formula disc. Drop a PNG there + rebuild — no code change.
+Filenames + spec in `src/assets/compounds/README.md`. Justin is supplying the art.
+**Soft-gated:** attempts are allowed without owning the reactants (marked a "practice
+simulation") so it's testable; flip to strict "must be caught" later.
+
 ## Gotchas
 - **Netlify needs the 8 `FIREBASE_*` env vars** or the live site loses online features.
 - **Reload the game** after changing schedule/settings (startup-cached).
@@ -226,6 +259,13 @@ changes need a **game reload**.
 - Teacher-claim script needs `firebase-admin@11` (latest is ESM-only, breaks Node 18);
   run from an isolated dir (e.g. `/tmp/isotopia-admin`).
 - localStorage progress key stays `elemonsters.progress.v1` (don't change the value).
+- **Evolved/compound forms are local-only** (`elemonsters.evolved.v1`), deliberately
+  outside the cloud `students/{uid}` record; cloud-syncing them needs a rules update.
+- **`CityInteriorScene.preload` now calls `loadObjectImages()`** so a populated city
+  floor (museum, lab) actually loads its Elemental/NPC art (was a latent gap — no city
+  interior held Elementals before).
+- **Compound art:** drop `src/assets/compounds/<id>.png` (ids in that folder's README)
+  and rebuild; missing art falls back to a formula disc.
 
 ## Licensing (for the open-source release)
 LimeZu "Modern Exteriors/Interiors" tilesets + character sheet are used with
@@ -238,6 +278,10 @@ MIT. README credits reflect this.
   (see `SESSION-HANDOFF-2026-09-29.md`) — student sign-up/login (inline errors +
   auto-verify), the Rad Finder arrow + Track, the reduced-motion battle cover, dex
   legibility/pinch-zoom, portrait/landscape, Add to Home Screen, city walking.
+- **Evolution Lab follow-ups:** wire in Justin's evolved artwork (drop PNGs into
+  `assets/compounds/`, filenames in its README); tighten gating to "must own the
+  reactants"; add the compounds to the DEX/collection; cloud-sync evolved forms (+ a
+  rules update); difficulty tuning (hide target angles, allow Hyper-Chamber overshoot).
 - **PWA polish:** an "Install Isotopia" page with Add-to-Home-Screen steps for
   iPad/Android/Chromebook, then a **service worker** so it launches offline after
   the first visit.
@@ -255,6 +299,15 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-29 (cloak + museum move + Evolution Lab):** Elementals are now **cloaked**
+(steady very-faint alpha, `components/Cloak.ts`) so they're hard to spot — the Rad
+Finder carries finding them. Relocated **Hydrogen, Helium and Carbon into the Museum
+first basement** (`CityMuseumB1`; pulled from town lake / Home / woods incl. the grass
+pool; Rad Finder hints updated). Built the **Evolution Lab** in the city Power Station:
+three working chambers (VSEPR Fusion, Hyper-Chamber expanded-octet, ΔEN Tug-of-War),
+16 compound products, a local `markEvolved` store, and an `assets/compounds/<id>.png`
+art drop-in pipeline (art pending from Justin). Fixed `CityInteriorScene.preload` not
+loading object art. All shipped to `main` → live.
 **2026-09-29 (UX/accessibility pass):** shipped the multi-agent code-review fixes
 (details in `SESSION-HANDOFF-2026-09-29.md`) — Rad Finder redesigned as a directional
 arrow toward a DEX-tracked target (+ a "LOOKOUT" woods cue); prefers-reduced-motion
