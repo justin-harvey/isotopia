@@ -6,8 +6,9 @@ exploring a small town, meet friendly element creatures called **Elementals**,
 and answer multiple-choice chemistry questions (protons, electrons, ions,
 valence, isotopes, and more) to catch them and fill your **Isotopedex**.
 
-**Runs fully offline with zero setup** — the whole game works from a built-in
-question bank, so kids can just open it and play. An optional
+**No accounts, no setup** — the whole game runs from a built-in question bank with
+no backend required, so students can jump straight in at
+**[is0topia.netlify.app](https://is0topia.netlify.app/)**. An optional
 [Firebase](https://firebase.google.com/) backend adds a shared question bank, a
 teacher admin portal, and per-student progress sync.
 
@@ -30,23 +31,6 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
   Elementals into real molecules by solving their chemistry — matching VSEPR bond
   angles, expanding an octet (SF₄/SF₆), and weighing electronegativity to lock in
   ionic bonds (NaF, MgO, and more).
-
-## Get it (play offline, no coding)
-
-The game is fully offline — no internet, accounts, or install required.
-
-1. Download **`isotopia-offline.zip`** from the
-   [Releases](https://github.com/G00DTECH/isotopia/releases) page.
-2. Unzip it.
-3. Open **`index.html`** inside the unzipped folder in a web browser.
-
-That's it — it runs entirely from your computer. (Sound may be silent when
-opened this way; if your browser is strict about local files, either play
-online at **https://is0topia.netlify.app/** or serve the folder with a tiny
-local server, e.g. `npx serve` or `python3 -m http.server`.)
-
-Maintainers: run `npm run package` to (re)build `isotopia-offline.zip` and
-attach it to a GitHub Release.
 
 ## Run it locally (for development)
 
