@@ -111,7 +111,7 @@ Original, copyright-safe display names (no "-mon"), set in `data/elements.ts`
 |---|---|---|---|---|---|
 | Hydrogen | Hydrohop | Museum B1 | Helium | Helior | Museum B1 |
 | Neon | Neonglow | town plaza | Iron | Ironclank | Hardware interior |
-| Carbon | Carbocrunch | Museum B1 | Sodium | Sodazoom | Hannaford interior |
+| Carbon | Carbocrunch | Museum B2 | Sodium | Sodazoom | Hannaford interior |
 | Nitrogen | Nitronoodle | woods (wild) | Magnesium | Magflash | Auto interior |
 | Oxygen | Oxypuff | woods (wild) | Uranium | Glowbun | Library interior |
 | Aluminum | Aluminio | city streets | Fluorine | Fluorvex | city streets |
@@ -120,9 +120,10 @@ Original, copyright-safe display names (no "-mon"), set in `data/elements.ts`
 
 Placements live in `TestScene.MONSTER_SPAWNS`, `WoodsScene.WILD`, the `elementIds`
 passed to each town `InteriorScene`, `CityScene.CITY_ELEMENTALS` (city streets), and
-now populated **city interiors** — **Hydrogen, Helium and Carbon were relocated into
-the Museum first basement** (`CityMuseumB1Scene`'s `elementIds` in `CityInteriors.ts`;
-they were removed from the town lake / Home / woods, incl. the woods grass pool).
+now populated **city interiors** — **Hydrogen & Helium were relocated into the Museum
+first basement (B1) and Carbon into the second basement (B2)** (the `elementIds` on
+`CityMuseumB1Scene` / `CityMuseumB2Scene` in `CityInteriors.ts`; they were removed from
+the town lake / Home / woods, incl. the woods grass pool).
 **Keep `data/elementalLocations.ts` (Rad Finder hints) in sync when moving one.**
 Every Elemental is **cloaked** on spawn (`components/Cloak.ts`) — a steady very-faint
 alpha so it's hard to spot by eye; the Rad Finder is how you're meant to find them
@@ -272,6 +273,11 @@ simulation") so it's testable; flip to strict "must be caught" later.
   interior held Elementals before).
 - **Compound art:** drop `src/assets/compounds/<id>.png` (ids in that folder's README)
   and rebuild; missing art falls back to a formula disc.
+- **Camera zoom is a fixed per-scene value** — `GameScene.createCamera` sets 2.5;
+  `CityScene` overrides to 1.8 (large map). There is **no more `keepRoomFilled`**: its
+  cover-zoom over-zoomed interiors ~50% on tall/portrait screens. To retune a scene, set
+  its camera zoom (lower = wider); uncovered margins letterbox to **black** (camera bg is
+  set black in `createCamera`) — don't reintroduce a cover-zoom to "fix" a margin.
 
 ## Licensing (for the open-source release)
 LimeZu "Modern Exteriors/Interiors" tilesets + character sheet are used with
@@ -305,10 +311,17 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-29 (camera zoom fix + museum spread):** Interiors had regressed ~50% closer
+because the 2026-09-27 `keepRoomFilled` cover-zoom over-zoomed wide/short rooms on tall
+(portrait) screens — **removed `keepRoomFilled`**; interiors use the fixed per-scene
+camera zoom again, and `createCamera` now sets a **black camera background** so any
+uncovered margin letterboxes cleanly (no white band). Pulled the large **city** exterior
+back (2.5 → **1.8**); town/woods unchanged at 2.5. Moved **Carbon from museum B1 to B2**
+(B1 = Hydrogen + Helium). Shipped to `main` → live.
 **2026-09-29 (cloak + museum move + Evolution Lab):** Elementals are now **cloaked**
 (steady very-faint alpha, `components/Cloak.ts`) so they're hard to spot — the Rad
-Finder carries finding them. Relocated **Hydrogen, Helium and Carbon into the Museum
-first basement** (`CityMuseumB1`; pulled from town lake / Home / woods incl. the grass
+Finder carries finding them. Relocated **Hydrogen & Helium into the Museum first
+basement (B1) and Carbon into B2** (pulled from town lake / Home / woods incl. the grass
 pool; Rad Finder hints updated). Built the **Evolution Lab** in the city Power Station:
 three working chambers (VSEPR Fusion, Hyper-Chamber expanded-octet, ΔEN Tug-of-War),
 16 compound products, a local `markEvolved` store, and an `assets/compounds/<id>.png`
