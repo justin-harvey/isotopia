@@ -4,10 +4,13 @@ import { CollisionStrategy } from 'grid-engine';
 import GameScene from './GameScene';
 import { LayerType } from './enums/LayerType';
 import { Door } from './components/Door';
+import { Npc } from './components/Npc';
 import { Portal, MUSEUM_ARRIVAL } from './components/Portal';
 import { SceneName } from './enums/SceneNames';
 import { showLeaveButton, hideLeaveButton } from '../ui/LeaveButton';
 import { drawDoorCue } from './components/DoorCue';
+import { showNpcDialog } from '../ui/NpcDialog';
+import { openEvolveOverlay } from '../ui/EvolveOverlay';
 import { MAPS } from '../data/maps';
 import { INTERIOR_NAV, InteriorFloorNav } from '../data/interiorNav';
 
@@ -29,6 +32,9 @@ interface CityRoomConfig {
     // When set, the room uses that painted collision grid and navigates via painted
     // portals (see museumNav.ts) instead of the fixed centre doors.
     collisionMap?: string;
+    // Repurpose this floor as the Evolution Lab: spawn a console technician you walk
+    // up to (proximity) that opens the evolution overlay. See spawnEvolutionConsole.
+    lab?: boolean;
 }
 
 // Shared landscape-room behaviour. Concrete scenes below only supply their art
@@ -102,11 +108,13 @@ abstract class CityInteriorScene extends GameScene {
     // When a room does host Elementals, load their art plus the shared NPC
     // spritesheet that spawnElemental falls back to for creatures lacking art.
     loadObjectImages(): void {
-        if (this.elementIds.length === 0) return;
+        // The NPC sheet is needed for Elementals' fallback art AND the lab console
+        // technician, so load it when either is present.
+        if (this.elementIds.length === 0 && !this.cfg.lab) return;
         this.load.spritesheet(this.imageNames.Veterinary,
             'assets/Characters/NPCs_1.png',
             { frameWidth: 32, frameHeight: 64 });
-        this.loadElementalArt(this.elementIds);
+        if (this.elementIds.length) this.loadElementalArt(this.elementIds);
     }
 
     create(): void {
@@ -242,6 +250,32 @@ abstract class CityInteriorScene extends GameScene {
             if (!tile) return;   // more Elementals than free slots — extras are skipped
             this.spawnElemental(id, tile.x, tile.y);
         });
+        if (this.cfg.lab) this.spawnEvolutionConsole(tiles.slice(this.elementIds.length));
+    }
+
+    // The Evolution Lab console: a technician you walk up to (proximity) who opens
+    // the evolution overlay. Dropped on the free spawn tile nearest the entrance and
+    // marked with a glowing "EVOLVE" pad so it's findable.
+    private spawnEvolutionConsole(freeTiles: { x: number; y: number }[]): void {
+        const start = this.nav?.start ?? CityInteriorScene.START;
+        const dist = (t: { x: number; y: number }) =>
+            Math.abs(t.x - start.x) + Math.abs(t.y - start.y);
+        const spot = freeTiles.length
+            ? freeTiles.reduce((best, t) => (dist(t) < dist(best) ? t : best), freeTiles[0])
+            : start;
+        const tech = new Npc({
+            scene: this, xPosition: spot.x, yPosition: spot.y,
+            texture: this.imageNames.Veterinary, scale: 0.35, walkingAnimationMapping: 3,
+            action: () => {
+                tech.proximityTrigger = false;
+                showNpcDialog('EVOLUTION LAB', [
+                    'Welcome to the Evolution Lab!',
+                    'Bond Elementals into a molecule, then shape its geometry to evolve them.',
+                ], () => openEvolveOverlay(() => { tech.proximityTrigger = true; }));
+            },
+        });
+        tech.proximityTrigger = true;
+        drawDoorCue(this, spot.x, spot.y, 'EVOLVE', '▲');
     }
 
     update(): void {
@@ -269,7 +303,8 @@ export class CityRadioTowerScene extends CityInteriorScene {
     constructor() { super(SceneName.CityRadioTower, { background: 'radio-tower-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_radio_tower' }); }
 }
 export class CityPowerStationScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityPowerStation, { background: 'power-station-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_power_station' }); }
+    // Repurposed as the Evolution Lab — a console technician runs molecular fusion.
+    constructor() { super(SceneName.CityPowerStation, { background: 'power-station-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_power_station', lab: true }); }
 }
 export class CityRadioTower2Scene extends CityInteriorScene {
     constructor() { super(SceneName.CityRadioTower2, { background: 'radio-tower-2-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_radio_tower2' }); }

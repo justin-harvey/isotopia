@@ -135,3 +135,35 @@ export function counts(): { seen: number; caught: number } {
         caught: Object.keys(state.caught).length,
     };
 }
+
+// ---- Evolved / fused compound forms (Evolution Lab) -----------------------
+// Stored under a SEPARATE localStorage key, deliberately outside the cloud-synced
+// ProgressState above: pushCloud() writes the whole students/{uid} object, and the
+// RTDB rules validate that schema — adding a field there could reject the write and
+// break progress sync. Local-only for now; wiring evolved forms into cloud sync
+// (plus a database.rules.json update) is a clean follow-up.
+const EVOLVED_KEY = 'elemonsters.evolved.v1';
+
+function loadEvolved(): Record<string, boolean> {
+    try {
+        const raw = localStorage.getItem(EVOLVED_KEY);
+        if (raw) return JSON.parse(raw) as Record<string, boolean>;
+    } catch { /* ignore corrupt/unavailable storage */ }
+    return {};
+}
+
+let evolvedState: Record<string, boolean> = loadEvolved();
+
+function saveEvolved(): void {
+    try { localStorage.setItem(EVOLVED_KEY, JSON.stringify(evolvedState)); }
+    catch { /* storage unavailable — stays in-memory this session */ }
+}
+
+/** Record that the student fused a compound in the Evolution Lab. */
+export function markEvolved(compoundId: string): void {
+    if (!evolvedState[compoundId]) { evolvedState[compoundId] = true; saveEvolved(); }
+}
+export function isEvolved(compoundId: string): boolean { return !!evolvedState[compoundId]; }
+export function evolvedIds(): string[] {
+    return Object.keys(evolvedState).filter(k => evolvedState[k]);
+}

@@ -1084,3 +1084,124 @@ html, body {
     .cr-stage { transform: none; }
     .city-reveal.cr-bridge-in .cr-stage { transform: none; transition: opacity 0.4s ease; }
 }
+
+/* ================= Evolution Lab overlay (see ui/EvolveOverlay.ts) =================
+   Reuses the GBA palette: dark card (#08101f), cream panels, blue accent (#6f9bd8),
+   gold highlight (#ffd166), success green. Auto-height + scrolls, unlike the fixed
+   battle card. No looping animations, so it's reduce-motion-safe as-is. */
+.evo-card {
+    position: relative;
+    width: min(560px, 94vw);
+    background: #08101f;
+    color: #f4f8ff;
+    border: 4px solid #f4f8ff;
+    border-radius: 8px;
+    box-shadow: 0 0 0 4px #08101f, 0 10px 30px rgba(0, 0, 0, 0.55);
+    padding: 14px;
+    box-sizing: border-box;
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+    font-family: var(--gba-font);
+}
+.evo-body { font-size: 10px; line-height: 1.6; }
+.evo-title { font-size: 13px; color: #ffd166; margin: 2px 0 6px; }
+.evo-sub { font-size: 9px; color: #b9c7e0; margin-bottom: 12px; line-height: 1.5; }
+
+/* Chamber select */
+.evo-chambers { display: grid; gap: 10px; }
+.evo-chamber {
+    display: grid; gap: 4px; text-align: left;
+    padding: 12px; border: 3px solid #6f9bd8; border-radius: 6px;
+    background: #0e1a30; color: #f4f8ff; cursor: pointer; font-family: var(--gba-font);
+}
+.evo-chamber:hover:not(:disabled) { background: #16294a; }
+.evo-chamber-name { font-size: 11px; }
+.evo-chamber-desc { font-size: 8px; color: #b9c7e0; line-height: 1.5; }
+.evo-chamber-status { font-size: 8px; color: #8fa6c8; }
+.evo-chamber-status--on { color: #7fe0a0; }
+.evo-chamber--locked { border-color: #3a4a66; color: #7c8aa3; cursor: not-allowed; opacity: 0.7; }
+
+/* Molecule list */
+.evo-list { display: grid; gap: 8px; }
+.evo-item {
+    display: grid; gap: 8px; text-align: left;
+    padding: 10px 12px; border: 3px solid #303030; border-radius: 6px;
+    background: #fffdf2; color: #303030; cursor: pointer; font-family: var(--gba-font);
+}
+.evo-item:hover { background: #ffe9a8; }
+.evo-item-head { display: flex; align-items: center; gap: 8px; }
+.evo-item-formula { font-size: 12px; font-weight: bold; }
+.evo-item-name { font-size: 9px; color: #5a5a5a; }
+.evo-badge { margin-left: auto; font-size: 8px; color: #1f7a3d; }
+.evo-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.evo-chip {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 8px;
+    padding: 2px 6px; border-radius: 10px; border: 2px solid #b8b088; background: #f4f0d8;
+}
+.evo-chip--have { border-color: #1f7a3d; }
+.evo-chip--need { border-color: #b3202f; opacity: 0.85; }
+.evo-chip-x { color: #8a7a4a; }
+.evo-sprite { width: 20px; height: 20px; object-fit: contain; image-rendering: pixelated; vertical-align: middle; }
+.evo-sprite--disc {
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; color: #fff; font-size: 8px;
+}
+
+/* Fusion arena */
+.evo-arena-head {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 9px; color: #ffd166; margin-bottom: 10px; gap: 8px;
+}
+.evo-stat { color: #b9c7e0; }
+.evo-reactants { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 10px; }
+.evo-react { display: inline-flex; align-items: center; gap: 2px; }
+.evo-react .evo-sprite { width: 34px; height: 34px; }
+.evo-plus, .evo-arrow { font-size: 12px; color: #b9c7e0; }
+.evo-slot {
+    width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+    border: 3px dashed #6f9bd8; border-radius: 8px; font-size: 16px; color: #f4f8ff;
+}
+.evo-target { text-align: center; font-size: 9px; color: #e7eefc; margin-bottom: 8px; line-height: 1.5; }
+.evo-target b { color: #ffd166; }
+.evo-warn { font-size: 8px; color: #ffb3b3; text-align: center; margin-bottom: 8px; line-height: 1.5; }
+.evo-dial { width: 100%; margin: 6px 0; accent-color: #6f9bd8; }
+.evo-dialrow { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; }
+.evo-readout { font-size: 11px; }
+.evo-deg { color: #ffd166; }
+.evo-dialbtn {
+    width: 40px; height: 40px; font-family: var(--gba-font); font-size: 12px;
+    background: #0e1a30; color: #f4f8ff; border: 2px solid #6f9bd8; border-radius: 8px; cursor: pointer;
+}
+.evo-dialbtn:active { transform: scale(0.94); }
+.evo-meter { height: 12px; background: #0e1a30; border: 2px solid #3a4a66; border-radius: 8px; overflow: hidden; }
+.evo-meter-fill { display: block; height: 100%; width: 0; background: #6f9bd8; transition: width 0.08s linear; }
+.evo-meter-fill--ok { background: #7fe0a0; }
+.evo-hint { min-height: 14px; margin: 8px 0; font-size: 9px; text-align: center; color: #b9c7e0; }
+.evo-hint--ok { color: #7fe0a0; }
+
+/* Actions (shared by every screen) */
+.evo-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+.evo-back, .evo-fuse {
+    font-family: var(--gba-font); font-size: 10px; min-height: 44px; padding: 0 14px;
+    border-radius: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.evo-back { background: #0e1a30; color: #f4f8ff; border: 2px solid #6f9bd8; }
+.evo-fuse { background: #ffd166; color: #3a2a00; border: 3px solid #303030; font-weight: bold; }
+.evo-fuse:disabled { opacity: 0.4; cursor: default; }
+.evo-back:active, .evo-fuse:active:not(:disabled) { transform: scale(0.97); }
+
+/* Success */
+.evo-success { text-align: center; padding: 6px 0; }
+.evo-form-disc {
+    width: 96px; height: 96px; margin: 6px auto 12px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px;
+    border: 4px solid rgba(255, 255, 255, 0.85); box-shadow: 0 0 24px rgba(255, 255, 255, 0.35);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.evo-done-title { font-size: 12px; color: #7fe0a0; margin-bottom: 6px; }
+.evo-done-name { font-size: 12px; }
+.evo-done-formula { color: #b9c7e0; }
+.evo-done-geo { font-size: 9px; color: #ffd166; margin: 6px 0; }
+.evo-fact { font-size: 9px; color: #e7eefc; line-height: 1.6; margin: 6px auto; max-width: 42ch; }
+.evo-note { font-size: 8px; color: #8fa6c8; margin-top: 8px; }
