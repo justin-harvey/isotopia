@@ -1,7 +1,7 @@
 # Isotopia — Session Handoff
 
 A running summary of what this is and where it stands, so work can resume after a
-context reset. Last updated 2026-09-27.
+context reset. Last updated 2026-09-29.
 
 ## Where things stand (2026-09-27) — read this first
 **Isotopia is a web app, full stop.** Native (iOS/Android) is **abandoned** — Justin
@@ -131,7 +131,7 @@ Chlorine is retired; `isotopia-next-batch.csv` lists the next candidates.
 | `src/ui/QuizOverlay.ts` | GBA battle quiz (round-based, HP bar, `startBattle` wipe) |
 | `src/ui/Isotopedex.ts` | Collection screen + student account bar (email/password sign-up / log in / verify) + hidden teacher-portal entrance (hold the title) |
 | `src/ui/CityReveal.ts` | The secret-path cutscene (bridge pan-out under sunset, dog on the bridge; tap → enter city) |
-| `src/ui/RadFinder.ts` + `data/elementalLocations.ts` | Equippable Geiger "Rad Finder" (dex Tools row): card location hints + in-game HUD meter that homes on the nearest uncaught Elemental. `GameScene` registers targets in `spawnElemental` and pushes readings from `update()` (`refreshRadFinder`) |
+| `src/ui/RadFinder.ts` + `data/elementalLocations.ts` | "Rad Finder" tool (dex Tools row). Tap **Track** on an uncaught dex card to target it (`getRadTarget`/`setRadTarget`, persisted); the in-game HUD then shows a **directional arrow** rotating toward that Elemental when it's in the current scene (heat by distance), its **location hint** when it's elsewhere, or falls back to the nearest when nothing's picked. `GameScene.refreshRadFinder` registers targets in `spawnElemental` and pushes `RadReading`s from `update()`; also unlocks per-card location hints. |
 | `src/ui/Intro.ts` / `NpcDialog.ts` / `icons.ts` | Help card, NPC dialog box, inline SVG icons (replaced emoji) |
 | `src/data/elements.ts` / `questions.ts` / `questionSource.ts` | Elements, local seed bank, local-vs-RTDB question source |
 | `src/data/progress.ts` | Seen/Caught + stats; localStorage cache, mirrors to `students/{uid}` when signed in |
@@ -234,9 +234,10 @@ Town interiors, building/bridge artwork, the dog) authored by Justin. Code is
 MIT. README credits reflect this.
 
 ## Open items / next
-- **Verify on a real iPad (now live — top untested risk):** student sign-up/login
-  (typing was broken until the 2026-09-27 keyboard fix), portrait/landscape layout,
-  Add to Home Screen (full-screen + dog icon), city walking + NPC dialog.
+- **Verify on a real iPad (now live — top untested risk):** the 2026-09-29 UX pass
+  (see `SESSION-HANDOFF-2026-09-29.md`) — student sign-up/login (inline errors +
+  auto-verify), the Rad Finder arrow + Track, the reduced-motion battle cover, dex
+  legibility/pinch-zoom, portrait/landscape, Add to Home Screen, city walking.
 - **PWA polish:** an "Install Isotopia" page with Add-to-Home-Screen steps for
   iPad/Android/Chromebook, then a **service worker** so it launches offline after
   the first visit.
@@ -254,6 +255,12 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-29 (UX/accessibility pass):** shipped the multi-agent code-review fixes
+(details in `SESSION-HANDOFF-2026-09-29.md`) — Rad Finder redesigned as a directional
+arrow toward a DEX-tracked target (+ a "LOOKOUT" woods cue); prefers-reduced-motion
+(dark battle cover, no white flashes); 9–10px legible dex/auth text + re-enabled
+pinch-zoom; paced-release empty-world messaging; auth polish (inline errors, busy
+states, auto-verify, iPad input hints); confirmed 3 questions per Elemental.
 **2026-09-27 (deploy + web-only):** decided Isotopia is **web-only** (native App
 Store abandoned — no Apple ID, Mac too old); merged the day's `web-fixes` work into
 `main` and pushed → Netlify deployed it live; `mobile` branch marked abandoned
