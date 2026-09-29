@@ -10,25 +10,14 @@ import { getElement, ELEMENTS } from '../data/elements'
 import { statusOf } from '../data/progress'
 import { elementalArtKey, elementalArtPath } from '../data/elementalArt'
 import { elementReleased } from '../data/classConfig'
+import { elementalLocation } from '../data/elementalLocations'
 import { startBattle } from '../ui/QuizOverlay'
 import { showNpcDialog } from '../ui/NpcDialog'
-import { isRadFinderEquipped, setRadReading } from '../ui/RadFinder'
+import { isRadFinderEquipped, getRadTarget, setRadReading } from '../ui/RadFinder'
 
 // Real Elemental art is a big single image; this scale reads it down to roughly
 // character size on the grid (the placeholder NPC spritesheet uses ~0.7).
 const ELEMENTAL_ART_SCALE = 0.05
-
-// 8-way arrow from a tile delta (dx east-positive, dy south-positive in grid
-// coords). Used by the Rad Finder to point toward the nearest Elemental.
-function compass(dx: number, dy: number): string {
-    if (dx === 0 && dy === 0) return '⚛'
-    const ns = dy < 0 ? 'N' : dy > 0 ? 'S' : ''
-    const ew = dx < 0 ? 'W' : dx > 0 ? 'E' : ''
-    const arrows: Record<string, string> = {
-        N: '↑', S: '↓', E: '→', W: '←', NE: '↗', NW: '↖', SE: '↘', SW: '↙',
-    }
-    return arrows[ns + ew] || '⚛'
-}
 
 export default abstract class GameScene extends Phaser.Scene {
 
@@ -206,31 +195,82 @@ export default abstract class GameScene extends Phaser.Scene {
         };
     }
 
-    // Rad Finder reading for the current room: nearest UNCAUGHT, released target to
-    // the player, plus a global count so the HUD can say "look elsewhere". Only
-    // recomputes when the player's tile changes (or when forced) to stay cheap.
+    // Degrees to rotate the up-pointing arrow so it points from the player toward a
+    // tile delta (east +x, south +y in grid coords). 0 = north, clockwise-positive.
+    private angleTo(dx: number, dy: number): number {
+        return (dx === 0 && dy === 0) ? 0 : Math.atan2(dx, -dy) * 180 / Math.PI
+    }
+
+    // Rad Finder reading for the current room. Points an arrow at the Elemental the
+    // student picked in the DEX (getRadTarget): in this room → the arrow rotates
+    // toward it and heats up as they approach; elsewhere → show its location hint;
+    // caught → say so. With nothing picked, fall back to the nearest uncaught here.
+    // Throttled to ~4 readings/sec to keep the DOM writes cheap.
     refreshRadFinder(): void {
         if (!isRadFinderEquipped() || !this.gridEngine) return
         const now = performance.now()
-        if (now - this.rfLastMs < 250) return   // ~4 readings/sec, catches DOM cost
+        if (now - this.rfLastMs < 250) return
         this.rfLastMs = now
         const p = this.gridEngine.getPosition(this.playerName)
 
+        const targetId = getRadTarget()
+        if (targetId) {
+            const el = getElement(targetId)
+            // Don't reveal an undiscovered creature's name in the HUD.
+            const name = (el && statusOf(targetId) !== 'unseen') ? el.monster : 'your target'
+            if (statusOf(targetId) === 'caught') {
+                setRadReading({ mode: 'caught', label: `${name} caught!`, detail: 'Pick another in the DEX.', heat: 'none' })
+                return
+            }
+            const here = this.elementalTargets.find(t => t.elementId === targetId)
+            if (here) {
+                const dx = here.x - p.x, dy = here.y - p.y
+                const d = Math.max(Math.abs(dx), Math.abs(dy))
+                setRadReading({
+                    mode: 'homing',
+                    label: `Tracking ${name}`,
+                    detail: d <= 1 ? 'RIGHT HERE!' : `${d} tiles away`,
+                    angleDeg: this.angleTo(dx, dy),
+                    heat: d <= 1 ? 'hot' : d <= 3 ? 'warm' : 'cool',
+                })
+            } else {
+                setRadReading({
+                    mode: 'elsewhere',
+                    label: `Tracking ${name}`,
+                    detail: `Head to: ${elementalLocation(targetId)}`,
+                    heat: 'none',
+                })
+            }
+            return
+        }
+
+        // Nothing picked: home on the nearest uncaught, released Elemental in the room.
         const live = this.elementalTargets.filter(t => statusOf(t.elementId) !== 'caught')
-        let nearest: { d: number; dx: number; dy: number } | null = null
+        let nearest: { d: number; dx: number; dy: number; id: string } | null = null
         for (const t of live) {
             const dx = t.x - p.x, dy = t.y - p.y
             const d = Math.max(Math.abs(dx), Math.abs(dy))   // Chebyshev tiles
-            if (!nearest || d < nearest.d) nearest = { d, dx, dy }
+            if (!nearest || d < nearest.d) nearest = { d, dx, dy, id: t.elementId }
         }
-        const totalUndiscovered = ELEMENTS.filter(
-            e => elementReleased(e.id) && statusOf(e.id) !== 'caught').length
-
+        if (!nearest) {
+            const totalUndiscovered = ELEMENTS.filter(
+                e => elementReleased(e.id) && statusOf(e.id) !== 'caught').length
+            setRadReading({
+                mode: 'none',
+                label: 'Rad Finder',
+                detail: totalUndiscovered > 0 ? 'No signal here — try another area.' : 'All Elementals found!',
+                heat: 'none',
+            })
+            return
+        }
+        const nm = getElement(nearest.id)
+        const nmName = (nm && statusOf(nearest.id) !== 'unseen') ? `Nearest: ${nm.monster}` : 'Nearest signal'
         setRadReading({
-            targetsInRoom: live.length,
-            nearestDist: nearest ? nearest.d : null,
-            dir: nearest ? compass(nearest.dx, nearest.dy) : null,
-            totalUndiscovered,
+            mode: 'homing',
+            label: nmName,
+            detail: nearest.d <= 1 ? 'RIGHT HERE!' : `${nearest.d} tiles · pick one in the DEX`,
+            angleDeg: this.angleTo(nearest.dx, nearest.dy),
+            heat: nearest.d <= 1 ? 'hot' : nearest.d <= 3 ? 'warm' : 'cool',
         })
     }
 

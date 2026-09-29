@@ -21,6 +21,7 @@ import { loadAndCacheSettings } from "./data/classConfig";
 import { initIsotopedex } from "./ui/Isotopedex";
 import { initIntro } from "./ui/Intro";
 import { mountRadFinder } from "./ui/RadFinder";
+import { refreshHud } from "./ui/hud";
 
 // Mount the persistent Isotopedex corner button (independent of Phaser scenes),
 // the first-run "how to play" card + "?" help button, and the Rad Finder HUD
@@ -63,6 +64,10 @@ const STARTUP_TIMEOUT_MS = 8000;
     } catch (err) {
         console.warn("Isotopia: using local questions (Firebase unavailable):", err);
     } finally {
+        // Now that the release schedule is loaded (or we've fallen back to
+        // defaults), update the HUD tip so a paced-release empty world explains
+        // itself instead of looking broken.
+        refreshHud();
         const game = new Phaser.Game(config);
         installFormKeyboardGuard(game);
         if (game.isRunning) fitGameToScreen(game);

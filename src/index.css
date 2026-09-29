@@ -620,7 +620,7 @@ html, body {
     background: #ffd166;
 }
 .dex-title.holding::after { width: 100%; transition: width 1s linear; }
-.dex-counts { font-size: 8px; line-height: 1.6; color: #ffe0b2; margin-left: auto; }
+.dex-counts { font-size: 9px; line-height: 1.6; color: #ffe0b2; margin-left: auto; }
 .dex-counts b { color: #fff; }
 .dex-close {
     font-family: var(--gba-font);
@@ -641,7 +641,7 @@ html, body {
     align-items: center;
     gap: 10px;
     padding: 8px 14px;
-    font-size: 8px;
+    font-size: 10px;
     line-height: 1.6;
     background: #e7dfae;
     color: #303030;
@@ -666,10 +666,12 @@ html, body {
     flex-wrap: wrap;
 }
 .dex-auth-form input {
-    font-family: var(--gba-font);
-    font-size: 8px;
-    padding: 7px 8px;
-    width: 120px;
+    /* Readable, and 16px stops iOS Safari from zooming the page on focus now that
+       pinch-zoom is allowed again. Fluid width so two fields fit a narrow phone. */
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    padding: 8px;
+    width: min(160px, 44vw);
     color: #303030;
     background: #fffdf2;
     border: 2px solid #303030;
@@ -677,15 +679,26 @@ html, body {
 }
 .dex-auth-link {
     font-family: var(--gba-font);
-    font-size: 8px;
-    padding: 4px;
-    color: #3a5a9c;
+    font-size: 9px;
+    padding: 8px 6px;
+    color: #2f4a80;
     background: none;
     border: none;
     text-decoration: underline;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
 }
+/* Inline auth status line (replaces alert()); takes its own row in the account bar. */
+.dex-auth-msg {
+    flex-basis: 100%;
+    margin-top: 2px;
+    font-size: 9px;
+    line-height: 1.6;
+    color: #4a4636;
+}
+.dex-auth-msg.ok  { color: #1f7a3d; }
+.dex-auth-msg.err { color: #b3202f; }
+.dex-auth-msg:empty { display: none; }
 
 /* ---- Dex tools row (Rad Finder) ---- */
 .dex-tools {
@@ -716,13 +729,13 @@ html, body {
 }
 .dex-tool.on { background: #b7f0c0; }
 .dex-tool-ico { font-size: 11px; }
-.dex-tool-state { font-weight: bold; opacity: .7; }
-.dex-tools-hint { flex: 1; color: #5a5140; }
+.dex-tool-state { font-weight: bold; }
+.dex-tools-hint { flex: 1; color: #47402f; }
 .dex-loc {
     margin-top: 4px;
-    font-size: 7px;
+    font-size: 9px;
     line-height: 1.5;
-    color: #2f6b3a;
+    color: #245c30;
 }
 
 /* ---- Rad Finder in-game HUD (bottom-left, hidden until equipped) ---- */
@@ -737,7 +750,7 @@ html, body {
     width: 152px;
     padding: 8px 10px;
     font-family: var(--gba-font);
-    font-size: 8px;
+    font-size: 9px;
     line-height: 1.5;
     color: #eafff0;
     background: rgba(18, 26, 20, 0.92);
@@ -748,24 +761,23 @@ html, body {
 }
 .radfinder.on { display: block; }
 .rf-title { color: #7cfc00; margin-bottom: 5px; letter-spacing: .5px; }
-.rf-meter {
-    height: 8px;
-    background: #223122;
-    border: 1px solid #3a5a3a;
-    border-radius: 4px;
-    overflow: hidden;
+.rf-main { display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+.rf-arrow {
+    font-size: 26px;
+    line-height: 1;
+    color: #7cfc00;
+    flex: 0 0 auto;
+    transition: transform .2s ease;   /* smoothly swing toward the target */
 }
-.rf-fill { height: 100%; width: 4%; background: #7cfc00; transition: width .2s ease; }
-.rf-read { margin-top: 5px; }
+.rf-info { flex: 1; min-width: 0; }
+.rf-label { color: #cfeecd; margin-bottom: 4px; }
+.rf-read { color: #eafff0; }
 .radfinder[data-heat="cool"] { border-color: #4fc3f7; }
-.radfinder[data-heat="cool"] .rf-fill { background: #4fc3f7; }
-.radfinder[data-heat="cool"] .rf-title { color: #4fc3f7; }
+.radfinder[data-heat="cool"] .rf-title, .radfinder[data-heat="cool"] .rf-arrow { color: #4fc3f7; }
 .radfinder[data-heat="warm"] { border-color: #ffb74d; }
-.radfinder[data-heat="warm"] .rf-fill { background: #ffb74d; }
-.radfinder[data-heat="warm"] .rf-title { color: #ffb74d; }
+.radfinder[data-heat="warm"] .rf-title, .radfinder[data-heat="warm"] .rf-arrow { color: #ffb74d; }
 .radfinder[data-heat="hot"] { border-color: #ff5252; animation: rf-pulse .5s infinite; }
-.radfinder[data-heat="hot"] .rf-fill { background: #ff5252; }
-.radfinder[data-heat="hot"] .rf-title { color: #ff5252; }
+.radfinder[data-heat="hot"] .rf-title, .radfinder[data-heat="hot"] .rf-arrow { color: #ff5252; }
 @keyframes rf-pulse {
     0%, 100% { box-shadow: 0 0 0 rgba(255, 82, 82, 0); }
     50% { box-shadow: 0 0 12px rgba(255, 82, 82, .8); }
@@ -778,6 +790,15 @@ html, body {
     padding: 16px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+}
+/* Friendly empty state when a paced release means nothing is out yet. */
+.dex-empty {
+    grid-column: 1 / -1;
+    padding: 40px 16px;
+    text-align: center;
+    font-size: 11px;
+    line-height: 2;
+    color: #4a4636;
 }
 
 /* ---- One creature card ---- */
@@ -801,7 +822,7 @@ html, body {
     top: 6px;
     left: 8px;
     font-size: 8px;
-    color: #7a7a55;
+    color: #5f5d3f;
 }
 .dex-portrait {
     width: 84px;
@@ -832,27 +853,44 @@ html, body {
 .dex-unseen .dex-art { filter: brightness(0); opacity: 0.5; }
 .dex-unseen .dex-art-disc { background: #0a1526; color: #0a1526; }
 
-.dex-name { font-size: 9px; color: #303030; }
-.dex-unseen .dex-name { color: #9a9a75; }
+.dex-name { font-size: 10px; color: #303030; }
+.dex-unseen .dex-name { color: #6f6c50; }
 .dex-el {
-    font-size: 7px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     color: #b3202f;
     margin-top: 4px;
 }
-.dex-stats { font-size: 7px; line-height: 1.7; margin-top: 8px; color: #555; }
+.dex-stats { font-size: 10px; line-height: 1.7; margin-top: 8px; color: #303030; }
 
 .dex-badge {
     margin-top: 10px;
-    font-size: 7px;
-    padding: 4px 8px;
+    font-size: 9px;
+    padding: 5px 8px;
     border: 2px solid #303030;
     border-radius: 4px;
 }
 .dex-badge.caught { background: #1f7a3d; color: #eaffef; }
 .dex-badge.seen { background: #e7dfae; color: #303030; }
-.dex-badge.locked { background: #cfc9a8; color: #6a664c; }
+.dex-badge.locked { background: #cfc9a8; color: #4f4c36; }
+
+/* "Track" button on uncaught cards → the Rad Finder points its arrow at this one. */
+.dex-track {
+    margin-top: 8px;
+    font-family: var(--gba-font);
+    font-size: 9px;
+    padding: 7px 10px;
+    min-height: 34px;
+    color: #303030;
+    background: #ffe08a;
+    border: 2px solid #303030;
+    border-radius: 5px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.dex-track.on { background: #7cf2c8; }
+.dex-card.tracking { border-color: #2aa198; box-shadow: 0 0 0 2px rgba(42, 161, 152, 0.6); }
 
 /* ================= First-run intro / help ================= */
 
@@ -1013,3 +1051,36 @@ html, body {
     -webkit-tap-highlight-color: transparent;
 }
 .npc-next:active { transform: scale(0.97); }
+
+/* ================= Respect prefers-reduced-motion =================
+   The battle-start wipe flashes the whole screen white twice on every encounter;
+   that, plus the looping enemy bob / Rad Finder pulse / blinking arrow and the 9s
+   city pan, can trigger migraine, vestibular or photosensitivity symptoms. When a
+   student's device asks to reduce motion, we drop the flashes and the loops (fades
+   are kept — they're not "motion"). Appended last so these win on source order. */
+@media (prefers-reduced-motion: reduce) {
+    /* Battle start: a quick plain-dark cover the quiz mounts under — no white flashes. */
+    .battle-transition {
+        background: #08101f;
+        animation: battle-cover 0.86s ease forwards;
+    }
+    @keyframes battle-cover {
+        0%   { opacity: 0; }
+        20%  { opacity: 1; }
+        62%  { opacity: 1; }
+        100% { opacity: 0; }
+    }
+    /* Elementals appear in place instead of sliding + bobbing; caught ones vanish. */
+    .battle-enemy .battle-sprite,
+    .battle-player .battle-sprite { animation: none; }
+    .battle-enemy.caught .battle-sprite { animation: none; opacity: 0; }
+    /* First-catch reaction: no scale bounce (the opacity fade stays). */
+    .dog-reaction img { animation: none; }
+    /* Stop the looping blink + Rad Finder "hot" pulse. */
+    .battle-arrow { animation: none; }
+    .radfinder[data-heat="hot"] { animation: none; }
+    .rf-arrow { transition: none; }   /* the arrow still points; it just doesn't swing */
+    /* City reveal: no slow pan — a quick fade to the settled view. */
+    .cr-stage { transform: none; }
+    .city-reveal.cr-bridge-in .cr-stage { transform: none; transition: opacity 0.4s ease; }
+}

@@ -34,13 +34,15 @@ export function playCityReveal(onEnter?: () => void): void {
     requestAnimationFrame(() => overlay.classList.add('cr-bridge-in'));
 
     // Once it has settled, let the player linger, then tap to cross into the
-    // city (or head back to the woods if there's nowhere to go).
+    // city (or head back to the woods if there's nowhere to go). With reduce-motion
+    // the slow pan is skipped (CSS), so don't make the student wait it out.
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const t = window.setTimeout(() => {
         caption.textContent = onEnter
             ? 'Cross the bridge…   (tap to enter the city)'
             : 'Across the bridge lies a city…   (tap to head back)';
         overlay.addEventListener('click', finish);
-    }, 9600);
+    }, reduce ? 1400 : 9600);
 
     function finish(): void {
         overlay.removeEventListener('click', finish);

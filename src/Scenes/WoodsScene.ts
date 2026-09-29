@@ -136,8 +136,12 @@ export default class WoodsScene extends GameScene {
         // Wild Elementals ambush you in the tall grass, Pokémon-style.
         this.enableGrassEncounters(WoodsScene.GRASS_POOL, WoodsScene.GRASS_GIDS);
 
-        // Secret lookout: walk up the hidden corridor (column 20) to the very top
-        // of the woods to trigger the city-reveal cutscene.
+        // Lookout: walk up the corridor (column 20) to the very top of the woods to
+        // trigger the city-reveal cutscene. A faint "LOOKOUT ▲" marker makes the
+        // path discoverable instead of a pixel-hunt (~a third of the Elementals live
+        // in the city beyond it); the Rad Finder also points here when a city
+        // Elemental is tracked.
+        drawDoorCue(this, 20, 1, 'LOOKOUT', '▲');
         const cityReveal = this.gridEngine.movementStopped().subscribe((o) => {
             if (o.charId !== this.playerName) return;
             if (GlobalInfo._gameProgress.inDialogue) return;

@@ -29,11 +29,38 @@ export function setRadFinderEquipped(on: boolean): void {
 
 export function onRadFinderChange(fn: () => void): void { listeners.push(fn); }
 
+// The Elemental the student is actively tracking (picked in the DEX). The Rad
+// Finder points its arrow at THIS one; if none is picked it falls back to the
+// nearest uncaught in the room. Persisted so it survives a reload.
+const TARGET_KEY = 'isotopia.radtarget.v1';
+let target: string | null = loadTarget();
+
+function loadTarget(): string | null {
+    try { return localStorage.getItem(TARGET_KEY) || null; } catch { return null; }
+}
+
+export function getRadTarget(): string | null { return target; }
+
+/** Track a specific Elemental (or stop, with null). Notifies listeners so the dex
+ *  re-renders its Track buttons. */
+export function setRadTarget(id: string | null): void {
+    target = id;
+    try {
+        if (id) localStorage.setItem(TARGET_KEY, id);
+        else localStorage.removeItem(TARGET_KEY);
+    } catch { /* private mode */ }
+    listeners.forEach(fn => fn());
+}
+
 export interface RadReading {
-    targetsInRoom: number;       // uncaught, released Elementals in the current scene
-    nearestDist: number | null;  // Chebyshev tiles to the nearest, or null if none here
-    dir: string | null;          // 8-way arrow toward the nearest, or null
-    totalUndiscovered: number;   // uncaught Elementals across the whole game
+    // homing: rotate the arrow (angleDeg) toward a target in THIS room.
+    // elsewhere: target is in another area — show its location hint, no arrow.
+    // caught: the tracked target is already caught. none: no signal here.
+    mode: 'homing' | 'elsewhere' | 'caught' | 'none';
+    label: string;         // e.g. "Tracking Oxypuff" / "Nearest: Ironclank"
+    detail: string;        // distance, location hint, or status line
+    angleDeg?: number;     // homing only — rotation for the up-pointing arrow
+    heat?: 'none' | 'cool' | 'warm' | 'hot';
 }
 
 /** Mount the HUD once at startup (hidden until equipped). Deferred via
@@ -46,8 +73,13 @@ export function mountRadFinder(): void {
         hud.dataset.heat = 'none';
         hud.innerHTML = `
             <div class="rf-title">⚛ Rad Finder</div>
-            <div class="rf-meter"><div class="rf-fill"></div></div>
-            <div class="rf-read">Scanning…</div>`;
+            <div class="rf-main">
+                <div class="rf-arrow" aria-hidden="true">↑</div>
+                <div class="rf-info">
+                    <div class="rf-label">Scanning…</div>
+                    <div class="rf-read">Tap Track on a card in the DEX to pick a target.</div>
+                </div>
+            </div>`;
         document.body.appendChild(hud);
         syncHud();
     });
@@ -60,23 +92,27 @@ function syncHud(): void {
 /** Push a fresh reading (called by the active scene as the player moves). */
 export function setRadReading(r: RadReading): void {
     if (!hud || !equipped) return;
-    const fill = hud.querySelector('.rf-fill') as HTMLElement;
+    const arrow = hud.querySelector('.rf-arrow') as HTMLElement;
+    const label = hud.querySelector('.rf-label') as HTMLElement;
     const read = hud.querySelector('.rf-read') as HTMLElement;
 
-    if (r.nearestDist == null) {
-        fill.style.width = '4%';
-        hud.dataset.heat = 'none';
-        read.textContent = r.totalUndiscovered > 0
-            ? 'No signal here — try another room'
-            : 'All Elementals found! 🎉';
-        return;
+    hud.dataset.heat = r.heat ?? 'none';
+    label.textContent = r.label;
+    read.textContent = r.detail;
+
+    if (r.mode === 'homing' && r.angleDeg != null) {
+        arrow.style.display = '';
+        arrow.textContent = '↑';
+        arrow.style.transform = `rotate(${Math.round(r.angleDeg)}deg)`;
+    } else if (r.mode === 'elsewhere') {
+        arrow.style.display = '';
+        arrow.style.transform = 'none';
+        arrow.textContent = '📍';      // it's in another area — the detail says where
+    } else if (r.mode === 'caught') {
+        arrow.style.display = '';
+        arrow.style.transform = 'none';
+        arrow.textContent = '✓';
+    } else {
+        arrow.style.display = 'none';   // none — no signal / all found
     }
-    // Closer = hotter. dist 0..~10 tiles → intensity 100..5%.
-    const intensity = Math.max(5, Math.min(100, 100 - r.nearestDist * 12));
-    fill.style.width = `${intensity}%`;
-    hud.dataset.heat = r.nearestDist <= 1 ? 'hot' : r.nearestDist <= 3 ? 'warm' : 'cool';
-    const cpm = Math.round(intensity * 3);
-    read.textContent = r.nearestDist <= 1
-        ? `${r.targetsInRoom} nearby · RIGHT HERE!`
-        : `${r.targetsInRoom} nearby · ${r.dir ?? ''} ${cpm} cpm`.trim();
 }

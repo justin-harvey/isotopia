@@ -17,7 +17,7 @@ import {
 } from '../data/studentAuth';
 import { isFirebaseConfigured } from '../data/firebase';
 import { elementalLocation } from '../data/elementalLocations';
-import { isRadFinderEquipped, setRadFinderEquipped } from './RadFinder';
+import { isRadFinderEquipped, setRadFinderEquipped, getRadTarget, setRadTarget } from './RadFinder';
 import { onBodyReady } from './domReady';
 
 const escHtml = (s: string): string =>
@@ -62,6 +62,9 @@ export function openIsotopedex(): void {
     const released = ELEMENTS.filter(el => elementReleased(el.id));
     const c = counts();
     const total = released.length;
+    const countsInner = total === 0
+        ? 'No Elementals released yet'
+        : `<b>${c.caught}</b>/${total} caught &nbsp;·&nbsp; <b>${c.seen}</b>/${total} discovered`;
 
     overlay = document.createElement('div');
     overlay.className = 'dex-overlay';
@@ -69,9 +72,7 @@ export function openIsotopedex(): void {
         <div class="dex-panel">
             <div class="dex-header">
                 <span class="dex-title">Isotopedex</span>
-                <span class="dex-counts">
-                    <b>${c.caught}</b>/${total} caught &nbsp;·&nbsp; <b>${c.seen}</b>/${total} discovered
-                </span>
+                <span class="dex-counts">${countsInner}</span>
                 <button class="dex-close" aria-label="Close">✕</button>
             </div>
             <div class="dex-account"></div>
@@ -119,16 +120,74 @@ function onKey(e: KeyboardEvent): void {
 
 export function closeIsotopedex(): void {
     if (!overlay) return;
+    stopVerifyPolling();
     document.removeEventListener('keydown', onKey);
     overlay.remove();
     overlay = null;
     setDialogue(false);
 }
 
+// Firebase auth error code -> a sentence a 13-year-old can act on. Raw codes like
+// "auth/email-already-in-use" used to be shown verbatim via alert().
+function authMessage(err: unknown): string {
+    const code = (err && typeof err === 'object' && 'code' in err)
+        ? String((err as { code: string }).code) : '';
+    switch (code) {
+        case 'auth/invalid-email':          return "That email doesn't look right — check for typos.";
+        case 'auth/email-already-in-use':   return 'That email already has an account — try Log in.';
+        case 'auth/weak-password':          return 'Use a password of at least 6 characters.';
+        case 'auth/missing-password':       return 'Enter your password.';
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':     return "Email and password don't match. Try again, or reset it.";
+        case 'auth/user-not-found':         return 'No account for that email yet — tap Sign up.';
+        case 'auth/too-many-requests':      return 'Too many tries — wait a minute, then try again.';
+        case 'auth/network-request-failed': return 'Network problem — check the Wi-Fi and try again.';
+        default:                            return 'Something went wrong — try again in a moment.';
+    }
+}
+
+// Inline status line inside the account bar (aria-live so it's announced), instead
+// of a native alert() that steals focus and can't be styled.
+function showAuthMsg(text: string, kind: 'ok' | 'err' | 'info'): void {
+    const m = overlay?.querySelector('.dex-auth-msg') as HTMLElement | null;
+    if (m) { m.textContent = text; m.className = `dex-auth-msg ${kind}`; }
+}
+
+// Run an async auth action with a busy button (disabled + relabelled), surfacing
+// any error inline. Mirrors the teacher portal's withBusy so double-taps on slow
+// school Wi-Fi can't fire a second sign-up.
+async function withBusy(btn: HTMLButtonElement, busyLabel: string, fn: () => Promise<void>): Promise<void> {
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = busyLabel;
+    try { await fn(); }
+    catch (err) { showAuthMsg(authMessage(err), 'err'); }
+    finally { btn.disabled = false; btn.textContent = label; }
+}
+
+// While waiting on email verification, auto-check so returning from the mail app
+// (window focus) or simply waiting flips the UI to "signed in" with no manual tap —
+// verification is the single biggest onboarding drop-off. Only runs while the
+// pending view is shown; cleaned up on re-render and on dex close.
+let verifyPoll: ReturnType<typeof setInterval> | undefined;
+let verifyOnFocus: (() => void) | undefined;
+function stopVerifyPolling(): void {
+    if (verifyPoll) { clearInterval(verifyPoll); verifyPoll = undefined; }
+    if (verifyOnFocus) { window.removeEventListener('focus', verifyOnFocus); verifyOnFocus = undefined; }
+}
+function startVerifyPolling(): void {
+    stopVerifyPolling();
+    const check = (): void => { void refreshVerification(); };   // flips to verified via emit -> re-render
+    verifyPoll = setInterval(check, 5000);
+    verifyOnFocus = check;
+    window.addEventListener('focus', verifyOnFocus);
+}
+
 // The account bar in the dex header: guest vs signed-in student, with a
 // sign-in / sign-out button. Re-rendered on auth changes while the dex is open.
 function renderAccount(): void {
     if (!overlay) return;
+    stopVerifyPolling();                 // (re)started only while the pending view shows
     const host = overlay.querySelector('.dex-account') as HTMLElement | null;
     if (!host) return;
     // Offline build (no Firebase): no sign-in, just say progress is local.
@@ -151,53 +210,69 @@ function renderAccount(): void {
     // Signed in but the email link hasn't been clicked yet.
     if (p) {
         host.innerHTML = `<span class="dex-acct-label">Check <b>${escHtml(p.email || 'your email')}</b> for a
-            verification link, then tap I'm verified to start saving.</span>
+            verification link — we'll sign you in automatically once you tap it.</span>
             <button class="dex-auth-btn" id="dex-verified">I'm verified</button>
             <button class="dex-auth-btn" id="dex-resend">Resend</button>
-            <button class="dex-auth-btn" id="dex-signout">Cancel</button>`;
-        (host.querySelector('#dex-verified') as HTMLButtonElement)
-            .addEventListener('click', async () => {
+            <button class="dex-auth-btn" id="dex-signout">Cancel</button>
+            <div class="dex-auth-msg info" role="status" aria-live="polite">Waiting for you to click the link…</div>`;
+        const verifiedBtn = host.querySelector('#dex-verified') as HTMLButtonElement;
+        verifiedBtn.addEventListener('click', () => {
+            void withBusy(verifiedBtn, 'Checking…', async () => {
                 const ok = await refreshVerification();
-                if (!ok) alert('Not verified yet. Click the link in your email, then try again.');
+                if (!ok) showAuthMsg("Not verified yet — click the link in your email, then try again.", 'err');
             });
-        (host.querySelector('#dex-resend') as HTMLButtonElement)
-            .addEventListener('click', () => {
-                resendVerification().then(() => alert('Verification email sent.')).catch(e => alert(e.message));
+        });
+        const resendBtn = host.querySelector('#dex-resend') as HTMLButtonElement;
+        resendBtn.addEventListener('click', () => {
+            void withBusy(resendBtn, 'Sending…', async () => {
+                await resendVerification();
+                showAuthMsg('Verification email sent. Check your inbox (and spam).', 'ok');
             });
+        });
         (host.querySelector('#dex-signout') as HTMLButtonElement)
             .addEventListener('click', () => { void signOutStudent(); });
+        startVerifyPolling();
         return;
     }
 
     // Guest — offer sign up / log in.
     host.innerHTML = `<span class="dex-acct-label">Playing as <b>guest</b> — saved on this device only.</span>
         <form class="dex-auth-form" id="dex-auth-form">
-            <input type="email" id="dex-email" placeholder="email" autocomplete="email" required>
-            <input type="password" id="dex-pass" placeholder="password (6+)" autocomplete="current-password" required minlength="6">
+            <input type="email" id="dex-email" placeholder="email" autocomplete="email"
+                inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false"
+                aria-label="Email" required>
+            <input type="password" id="dex-pass" placeholder="password (6+)" autocomplete="current-password"
+                aria-label="Password" required minlength="6">
             <button type="submit" class="dex-auth-btn" id="dex-login">Log in</button>
             <button type="button" class="dex-auth-btn" id="dex-signup">Sign up</button>
             <button type="button" class="dex-auth-link" id="dex-reset">Forgot password?</button>
-        </form>`;
+        </form>
+        <div class="dex-auth-msg" role="status" aria-live="polite"></div>`;
     const email = (): string => (host.querySelector('#dex-email') as HTMLInputElement).value;
     const pass = (): string => (host.querySelector('#dex-pass') as HTMLInputElement).value;
+    const loginBtn = host.querySelector('#dex-login') as HTMLButtonElement;
     (host.querySelector('#dex-auth-form') as HTMLFormElement)
         .addEventListener('submit', (e) => {
             e.preventDefault();
-            loginStudent(email(), pass()).catch(err => alert(err.message));
+            void withBusy(loginBtn, 'Logging in…', () => loginStudent(email(), pass()));
         });
-    (host.querySelector('#dex-signup') as HTMLButtonElement)
-        .addEventListener('click', () => {
-            if (!email() || pass().length < 6) { alert('Enter an email and a password of at least 6 characters.'); return; }
-            registerStudent(email(), pass())
-                .then(() => alert('Account created. Check your email for a verification link.'))
-                .catch(err => alert(err.message));
+    const signupBtn = host.querySelector('#dex-signup') as HTMLButtonElement;
+    signupBtn.addEventListener('click', () => {
+        if (!email() || pass().length < 6) {
+            showAuthMsg('Enter an email and a password of at least 6 characters.', 'err');
+            return;
+        }
+        // On success, onStudentAuth flips us to the pending view with next steps.
+        void withBusy(signupBtn, 'Creating…', () => registerStudent(email(), pass()));
+    });
+    const resetBtn = host.querySelector('#dex-reset') as HTMLButtonElement;
+    resetBtn.addEventListener('click', () => {
+        if (!email()) { showAuthMsg('Type your email above first, then tap Forgot password.', 'err'); return; }
+        void withBusy(resetBtn, 'Sending…', async () => {
+            await resetStudentPassword(email());
+            showAuthMsg('Password reset email sent. Check your inbox.', 'ok');
         });
-    (host.querySelector('#dex-reset') as HTMLButtonElement)
-        .addEventListener('click', () => {
-            if (!email()) { alert('Type your email above first, then tap Forgot password.'); return; }
-            resetStudentPassword(email())
-                .then(() => alert('Password reset email sent.')).catch(err => alert(err.message));
-        });
+    });
 }
 
 // The tools row: currently just the Rad Finder — a Geiger counter students can
@@ -215,8 +290,8 @@ function renderTools(): void {
             <span class="dex-tool-state">${on ? 'ON' : 'OFF'}</span>
         </button>
         <span class="dex-tools-hint">${on
-            ? 'Homing active. Locations shown below.'
-            : 'Equip to find hard-to-spot Elementals.'}</span>`;
+            ? 'On — tap Track on any card to point the arrow at it.'
+            : 'Equip, then Track a card to get an arrow to it.'}</span>`;
     (host.querySelector('#tool-rad') as HTMLButtonElement)
         .addEventListener('click', () => {
             setRadFinderEquipped(!isRadFinderEquipped());
@@ -232,9 +307,17 @@ function populateGrid(): void {
     const grid = overlay.querySelector('.dex-grid') as HTMLDivElement | null;
     if (!grid) return;
     grid.innerHTML = '';
-    ELEMENTS.filter(el => elementReleased(el.id))
-        .sort((a, b) => a.number - b.number)
-        .forEach(el => grid.appendChild(makeCard(el)));
+    const released = ELEMENTS.filter(el => elementReleased(el.id))
+        .sort((a, b) => a.number - b.number);
+    if (released.length === 0) {
+        // Paced-release day-0 (or before the first unlock): no empty grid — say why.
+        const empty = document.createElement('div');
+        empty.className = 'dex-empty';
+        empty.innerHTML = 'No Elementals have appeared yet.<br>Check back after your teacher releases them!';
+        grid.appendChild(empty);
+        return;
+    }
+    released.forEach(el => grid.appendChild(makeCard(el)));
 }
 
 // One creature card. Unseen → dark silhouette + "???"; seen/caught reveal the
@@ -264,6 +347,15 @@ function makeCard(el: ElementInfo): HTMLDivElement {
     const locLine = (isRadFinderEquipped() && status !== 'caught')
         ? `<div class="dex-loc">📍 ${escHtml(elementalLocation(el.id))}</div>` : '';
 
+    // Uncaught cards can be "tracked": the Rad Finder points its arrow at the one
+    // you pick, so you can go find the exact Elemental you're still missing.
+    const tracked = getRadTarget() === el.id;
+    const canTrack = status !== 'caught';
+    if (tracked) card.classList.add('tracking');
+    const trackBtn = canTrack
+        ? `<button class="dex-track${tracked ? ' on' : ''}">${tracked ? '◎ Tracking' : '⌖ Track'}</button>`
+        : '';
+
     card.innerHTML = `
         <div class="dex-num">#${el.number}</div>
         <div class="dex-portrait">${portrait}</div>
@@ -273,6 +365,20 @@ function makeCard(el: ElementInfo): HTMLDivElement {
             ? `Atomic #${el.number}<br>Protons ${el.number} · Electrons ${el.number}`
             : 'Find and meet it to reveal!'}</div>
         ${locLine}
-        ${badge}`;
+        ${badge}
+        ${trackBtn}`;
+
+    if (canTrack) {
+        (card.querySelector('.dex-track') as HTMLButtonElement).addEventListener('click', () => {
+            if (getRadTarget() === el.id) {
+                setRadTarget(null);        // untrack — stay in the dex
+                populateGrid();
+                return;
+            }
+            setRadTarget(el.id);           // track this one…
+            if (!isRadFinderEquipped()) setRadFinderEquipped(true);
+            closeIsotopedex();             // …and close so the arrow can guide you there
+        });
+    }
     return card;
 }

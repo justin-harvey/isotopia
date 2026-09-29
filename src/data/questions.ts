@@ -1,4 +1,4 @@
-// Seed question bank — the 21 MCQs from the Q1 spec (§4).
+// Seed question bank — three MCQs per Elemental (spec §4 angle taxonomy).
 // Shape matches the documented import format (spec §7) so these rows map 1:1 to
 // Firestore `questions/{questionId}` documents once Firebase is wired.
 
