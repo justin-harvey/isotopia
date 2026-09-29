@@ -98,6 +98,9 @@ export default class CityScene extends GameScene {
 
     create(): void {
         super.create();
+        // The city is a large map, so pull the camera back from the town's default
+        // 2.5 to show more of it — it felt too close at the shared zoom.
+        this.cameras.main.setZoom(1.8);
 
         // Real building art over the invisible collision footprints.
         BUILDINGS.forEach(b => this.drawBuilding(b));

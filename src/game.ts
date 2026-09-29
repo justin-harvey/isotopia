@@ -80,8 +80,8 @@ const STARTUP_TIMEOUT_MS = 8000;
 // stretches to match the screen: a portrait iPad gets a tall view of the world
 // instead of a 4:3 box between black bars, and a landscape iPad fills its width.
 // Extreme shapes are capped so a phone doesn't see an absurd strip of the map.
-// Re-runs on rotation / window resize; scenes react via the scale RESIZE event
-// (cameras resize automatically; interiors refit — GameScene.keepRoomFilled).
+// Re-runs on rotation / window resize; Phaser resizes each camera's viewport
+// automatically and the per-scene camera zoom stays fixed.
 const GAME_SHORT_SIDE = 600;
 const MAX_ASPECT = 16 / 9;
 

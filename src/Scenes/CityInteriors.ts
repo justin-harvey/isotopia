@@ -132,9 +132,9 @@ abstract class CityInteriorScene extends GameScene {
             .setDisplaySize(this.map.widthInPixels, this.map.heightInPixels)
             .setDepth(-100);
 
-        // Fill the screen with the room (same as the town interiors). Fitting only
-        // the width left a white band under these wide 11:6 rooms.
-        this.keepRoomFilled();
+        // Fixed camera zoom (same as the town interiors — see createCamera). The old
+        // cover-zoom over-zoomed these wide rooms on tall/portrait screens; any
+        // uncovered margin now letterboxes to black instead.
 
         if (this.nav) {
             this.createPortals();
@@ -317,12 +317,12 @@ export class CityMuseumScene extends CityInteriorScene {
     constructor() { super(SceneName.CityMuseum, { background: 'museum-interior.png', up: SceneName.City, upLabel: 'EXIT', down: SceneName.CityMuseumB1, collisionMap: 'museum_ground' }); }
 }
 export class CityMuseumB1Scene extends CityInteriorScene {
-    // First basement: the relocated "starter" Elementals — Hydrogen (was the town
-    // lake), Helium (was Home), and Carbon (was the North Woods).
-    constructor() { super(SceneName.CityMuseumB1, { background: 'museum-level-1.png', up: SceneName.CityMuseum, upLabel: 'UP', down: SceneName.CityMuseumB2, collisionMap: 'museum_b1', elementIds: ['hydrogen', 'helium', 'carbon'] }); }
+    // First basement: Hydrogen (was the town lake) and Helium (was Home).
+    constructor() { super(SceneName.CityMuseumB1, { background: 'museum-level-1.png', up: SceneName.CityMuseum, upLabel: 'UP', down: SceneName.CityMuseumB2, collisionMap: 'museum_b1', elementIds: ['hydrogen', 'helium'] }); }
 }
 export class CityMuseumB2Scene extends CityInteriorScene {
-    constructor() { super(SceneName.CityMuseumB2, { background: 'museum-level-2.png', up: SceneName.CityMuseumB1, upLabel: 'UP', down: SceneName.CityMuseumB3, collisionMap: 'museum_b2' }); }
+    // Second basement: Carbon (was the North Woods), moved down from B1.
+    constructor() { super(SceneName.CityMuseumB2, { background: 'museum-level-2.png', up: SceneName.CityMuseumB1, upLabel: 'UP', down: SceneName.CityMuseumB3, collisionMap: 'museum_b2', elementIds: ['carbon'] }); }
 }
 export class CityMuseumB3Scene extends CityInteriorScene {
     constructor() { super(SceneName.CityMuseumB3, { background: 'museum-level-3.png', up: SceneName.CityMuseumB2, upLabel: 'UP', down: SceneName.CityMuseumB4, collisionMap: 'museum_b3' }); }

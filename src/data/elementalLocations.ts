@@ -8,13 +8,14 @@
 const CITY = 'City (walk to the very top of the North Woods)';
 // Relocated starters now live down in the Museum basement (a city building).
 const MUSEUM_B1 = `${CITY} — in the Museum, first basement level`;
+const MUSEUM_B2 = `${CITY} — in the Museum, second basement level`;
 
 export const ELEMENTAL_LOCATION: Record<string, string> = {
     hydrogen:  MUSEUM_B1,
     neon:      'Town — the plaza',
     oxygen:    'North Woods',
     nitrogen:  'North Woods — tall grass',
-    carbon:    MUSEUM_B1,
+    carbon:    MUSEUM_B2,
     iron:      'Hardware store',
     sodium:    'Hannaford (grocery)',
     magnesium: 'Auto shop',
