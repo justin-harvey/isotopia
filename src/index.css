@@ -1205,3 +1205,44 @@ html, body {
 .evo-done-geo { font-size: 9px; color: #ffd166; margin: 6px 0; }
 .evo-fact { font-size: 9px; color: #e7eefc; line-height: 1.6; margin: 6px auto; max-width: 42ch; }
 .evo-note { font-size: 8px; color: #8fa6c8; margin-top: 8px; }
+
+/* Supplied product art sits over the fallback formula disc (shown only on load). */
+.evo-form-disc { position: relative; overflow: hidden; }
+.evo-form-label { position: relative; z-index: 1; }
+.evo-form-img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; image-rendering: pixelated; z-index: 2;
+}
+.evo-badge--no { color: #b3202f; }
+
+/* Hyper-Chamber: fizzle lesson + injected-reagent spikes */
+.evo-fizzle { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.evo-fizzle .evo-sprite { width: 56px; height: 56px; filter: grayscale(0.4) brightness(0.9); }
+.evo-fizzle-why { font-size: 9px; line-height: 1.6; color: #e7eefc; }
+.evo-react--core .evo-sprite { width: 46px; height: 46px; }
+.evo-spikes { display: inline-flex; gap: 4px; margin-left: 6px; flex-wrap: wrap; }
+.evo-spike {
+    width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 9px; border: 2px solid #3a4a66; border-radius: 6px; color: #7c8aa3; background: #0e1a30;
+}
+.evo-spike--on { border-color: #ffd166; color: #ffd166; background: #1a2438; }
+.evo-injectrow { display: flex; gap: 10px; justify-content: center; margin: 6px 0 2px; }
+.evo-injectrow .evo-dialbtn { width: auto; padding: 0 12px; }
+
+/* Tug-of-War: electronegativity readout + bond-type classify buttons */
+.evo-en { display: flex; align-items: center; justify-content: space-around; gap: 8px; margin: 6px 0 10px; text-align: center; }
+.evo-en-side { display: grid; justify-items: center; gap: 2px; font-size: 11px; }
+.evo-en-side .evo-sprite { width: 40px; height: 40px; }
+.evo-en-val { font-size: 8px; color: #b9c7e0; }
+.evo-en-tag { font-size: 7px; color: #8fa6c8; }
+.evo-en-mid { font-size: 9px; color: #ffd166; line-height: 1.4; }
+.evo-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.evo-choice {
+    font-family: var(--gba-font); font-size: 9px; min-height: 44px; padding: 8px;
+    color: #303030; background: #fffdf2; border: 3px solid #303030; border-radius: 4px; cursor: pointer;
+}
+.evo-choice:hover:not(:disabled) { background: #ffe9a8; }
+.evo-choice:disabled { opacity: 0.9; cursor: default; }
+.evo-choice--ok { background: #b6f0c2; border-color: #1f7a3d; }
+.evo-choice--no { background: #ffc2c8; border-color: #b3202f; }
+.evo-pe { color: #ffd166; }
