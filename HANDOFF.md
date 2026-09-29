@@ -79,10 +79,16 @@ cd /home/nah/Claudia/isotopia
 npm install
 npm run watch    # dev server + live reload → http://localhost:10001
 npm run build    # production build → dist/ (also builds dist/teacher.html)
-npm run package  # build + zip -> isotopia-offline.zip (download-and-play bundle)
+npm run package  # build + zip -> isotopia-offline.zip (see note — download offering is pulled)
 ```
 Runs fully offline with no config. Set `FIREBASE_*` env vars before building to
 enable the online features.
+
+**Download offering pulled (2026-09-29):** the public `isotopia-offline.zip`
+download was removed from the README and the old GitHub Release is stale. Don't
+re-advertise a download or publish a new Release until the build is re-verified.
+`npm run package` still works for a one-off local bundle; the preferred path for
+"play offline" going forward is a **service worker** (see Open items), not a zip.
 
 ## Controls / gameplay
 - **Tap / click** to walk (arrow keys too on desktop).
