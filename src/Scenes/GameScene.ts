@@ -349,15 +349,10 @@ export default abstract class GameScene extends Phaser.Scene {
         npc.proximityTrigger = true
         // Register as a Rad Finder target so the tool can home in on it.
         this.elementalTargets.push({ elementId, x, y })
-        // Cloak it: faint + glitchy, so it's hard to spot by eye and the Rad Finder
-        // becomes the way to find it. Phases in as the dog gets close.
+        // Cloak it: rendered very faint so it's hard to spot by eye — the Rad Finder
+        // is the way to find it (walking within a tile still auto-triggers the quiz).
         const sprite = this.gridEngine.getSprite(npc.name)
-        if (sprite) {
-            cloakElemental(this, sprite, {
-                tileX: x, tileY: y,
-                baseTint: artKey ? undefined : element.tint,
-            })
-        }
+        if (sprite) cloakElemental(sprite)
     }
 
     // A flavor NPC with real art that just wanders the map — no quiz, no plot.
