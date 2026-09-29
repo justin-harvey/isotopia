@@ -6,6 +6,7 @@ import GlobalInfo from '../GlobalInfo'
 import { GridEngine, Position, Direction, CollisionStrategy } from 'grid-engine'
 import { basicMovement, clickToMove } from './components/Characters'
 import { Npc } from './components/Npc'
+import { cloakElemental } from './components/Cloak'
 import { getElement, ELEMENTS } from '../data/elements'
 import { statusOf } from '../data/progress'
 import { elementalArtKey, elementalArtPath } from '../data/elementalArt'
@@ -348,6 +349,15 @@ export default abstract class GameScene extends Phaser.Scene {
         npc.proximityTrigger = true
         // Register as a Rad Finder target so the tool can home in on it.
         this.elementalTargets.push({ elementId, x, y })
+        // Cloak it: faint + glitchy, so it's hard to spot by eye and the Rad Finder
+        // becomes the way to find it. Phases in as the dog gets close.
+        const sprite = this.gridEngine.getSprite(npc.name)
+        if (sprite) {
+            cloakElemental(this, sprite, {
+                tileX: x, tileY: y,
+                baseTint: artKey ? undefined : element.tint,
+            })
+        }
     }
 
     // A flavor NPC with real art that just wanders the map — no quiz, no plot.
