@@ -74,7 +74,6 @@ export default class WoodsScene extends GameScene {
         tree:     { keys: ['woods_tree_1', 'woods_tree_2', 'woods_tree_3'], tilesW: 2,   depth: WoodsScene.OVERHEAD_DEPTH },
         rock:     { keys: ['woods_rock_1'],                                 tilesW: 1.4, depth: WoodsScene.GROUND_DEPTH },
         bush:     { keys: ['woods_bush_3', 'woods_bush_4', 'woods_bush_6'], tilesW: 1.1, depth: WoodsScene.GROUND_DEPTH },
-        signpost: { keys: ['woods_signpost'],                               tilesW: 1,   depth: WoodsScene.GROUND_DEPTH },
         grass:    { keys: ['woods_grass_3'],                                tilesW: 1,   depth: WoodsScene.GROUND_DEPTH - 1 },
     };
 
@@ -84,7 +83,7 @@ export default class WoodsScene extends GameScene {
         const files: Record<string, string> = {
             woods_tree_1: 'tree-1', woods_tree_2: 'tree-2', woods_tree_3: 'tree-3',
             woods_rock_1: 'rock-1', woods_bush_3: 'bush-3', woods_bush_4: 'bush-4',
-            woods_bush_6: 'bush-6', woods_signpost: 'signpost', woods_grass_3: 'grass-3',
+            woods_bush_6: 'bush-6', woods_grass_3: 'grass-3',
             woods_chest: 'treasure-chest',   // forest treasure chest (holds the Magic Key)
         };
         Object.entries(files).forEach(([key, file]) =>

@@ -23,7 +23,7 @@ const ELEMENTAL_ART_SCALE = 0.05
 // Treasure-chest art is small pixel art (32x31); scale it UP to sit a little
 // under Elemental size (which is 1024px * 0.05 ≈ 51px). ~45px reads as a tappable
 // woods prop. Tune this one value if the chest looks too big/small on device.
-const CHEST_ART_SCALE = 1.4
+const CHEST_ART_SCALE = 0.7
 
 export default abstract class GameScene extends Phaser.Scene {
 
