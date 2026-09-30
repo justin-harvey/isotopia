@@ -166,14 +166,15 @@ export default abstract class GameScene extends Phaser.Scene {
         });
     }
 
-    // Easter egg: mashing the dog's "sit"/"sniff" keys (S/D) four times in quick
+    // Easter egg: mashing the dog's "sit"/"sniff" keys (S/D) ten times in quick
     // succession (within ~2s between presses) plays the "what da dog doin" sting.
+    private static readonly DOG_COMBO_TARGET = 10;
     private registerDogAction(): void {
         const now = this.time.now;
         if (now - this.dogComboLast > 2000) this.dogComboCount = 0;
         this.dogComboLast = now;
         this.dogComboCount++;
-        if (this.dogComboCount >= 4) {
+        if (this.dogComboCount >= GameScene.DOG_COMBO_TARGET) {
             this.dogComboCount = 0;
             this.dogMeme?.play();
         }
