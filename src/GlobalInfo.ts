@@ -1,4 +1,8 @@
 // https://blog.ourcade.co/posts/2020/phaser3-how-to-communicate-between-scenes/
+import 'phaser';   // this module subclasses Phaser at load; make the dependency
+                   // explicit so the bundler always evaluates Phaser (which sets the
+                   // global) FIRST, no matter who imports GlobalInfo (otherwise the
+                   // top-level `new GlobalInfo()` can run before Phaser is defined).
 
 class GlobalInfo extends Phaser.Events.EventEmitter {
     _gameProgress: {

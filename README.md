@@ -25,12 +25,17 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
 - **Tap a choice / press 1–4** to answer. A correct answer catches the Elemental
   (or lands a hit, if the teacher set a multi-question capture).
 - Step on a glowing **▲ / ▼** pad to enter or leave a building, or take the
-  trail north into the **woods**, where wild Elementals appear in the tall grass.
-- Tap the **DEX** button (top-right) to open your **Isotopedex** collection.
+  trail north into the **woods**, home to wild Elementals and a hidden surprise.
+- Tap the **DEX** button (top-right) to open your **Isotopedex** collection, and
+  use the **Rad Finder** (Tools row) to home in on Elementals you haven't caught.
+- Explore the woods to find a hidden **treasure chest** — walk up to it to claim
+  the **Magic Key**.
 - Find the hidden city and its **Evolution Lab**, where you fuse your caught
   Elementals into real molecules by solving their chemistry — matching VSEPR bond
   angles, expanding an octet (SF₄/SF₆), and weighing electronegativity to lock in
   ionic bonds (NaF, MgO, and more).
+- Deep beneath the city **Museum**, the Magic Key opens a hidden tunnel to a secret
+  **Atlantis sanctum** — the Periodic Table of Crystals.
 
 ## Run it locally (for development)
 

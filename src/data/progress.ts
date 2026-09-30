@@ -167,3 +167,40 @@ export function isEvolved(compoundId: string): boolean { return !!evolvedState[c
 export function evolvedIds(): string[] {
     return Object.keys(evolvedState).filter(k => evolvedState[k]);
 }
+
+// ---- Inventory items (chests, keys, etc.) ---------------------------------
+// A tiny local-only key/value inventory, kept under its OWN localStorage key for
+// the same reason as the evolved store above: it stays outside the cloud-synced
+// students/{uid} schema so a new field can never reject the RTDB write. This is
+// what gates progression items — e.g. the Magic Key from the forest chest, which
+// opens the hidden tunnel in the Museum's lowest level (B4) to the Atlantis sanctum
+// (check with hasItem(MAGIC_KEY)). Local for now; wiring to cloud is a clean
+// follow-up (plus a database.rules.json update), exactly like evolved forms.
+const ITEMS_KEY = 'isotopia.items.v1';
+
+/** Well-known item ids. */
+export const MAGIC_KEY = 'magic-key';
+
+function loadItems(): Record<string, boolean> {
+    try {
+        const raw = localStorage.getItem(ITEMS_KEY);
+        if (raw) return JSON.parse(raw) as Record<string, boolean>;
+    } catch { /* ignore corrupt/unavailable storage */ }
+    return {};
+}
+
+let itemsState: Record<string, boolean> = loadItems();
+
+function saveItems(): void {
+    try { localStorage.setItem(ITEMS_KEY, JSON.stringify(itemsState)); }
+    catch { /* storage unavailable — stays in-memory this session */ }
+}
+
+/** Grant an inventory item (idempotent). */
+export function giveItem(id: string): void {
+    if (!itemsState[id]) { itemsState[id] = true; saveItems(); }
+}
+export function hasItem(id: string): boolean { return !!itemsState[id]; }
+export function itemIds(): string[] {
+    return Object.keys(itemsState).filter(k => itemsState[k]);
+}

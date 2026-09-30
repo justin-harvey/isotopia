@@ -107,6 +107,11 @@ export class NpcsAndObjects {
 
         scene.npcsAndObjectsArray.forEach(object => {
             if (!object.proximityTrigger) return
+            // Skip anything not (yet) registered in grid-engine: getPosition throws
+            // on an unknown id, and an uncaught throw here would abort the whole
+            // forEach — silently killing proximity for every object after it in the
+            // array (e.g. a treasure chest spawned after the Elementals).
+            if (!scene.gridEngine.hasCharacter(object.name)) return
 
             const pos = scene.gridEngine.getPosition(object.name)
             // Chebyshev distance: the 8 tiles around the player count as "one

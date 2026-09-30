@@ -53,18 +53,14 @@ export default class WoodsScene extends GameScene {
         this.loadObjectImages();
     }
 
-    // The wild Elementals that roam the woods (each has real art). Carbon moved
-    // down into the Museum basement (in the city).
+    // The wild Elementals in the woods — one dedicated spawn tile each (like every
+    // other Elemental in the game: fixed, cloaked, found with the Rad Finder). There
+    // are NO random tall-grass encounters here anymore; the tall grass is decoration.
+    // Carbon moved down into the Museum basement (in the city).
     private static readonly WILD: { elementId: string; x: number; y: number }[] = [
         { elementId: 'oxygen',   x: 16, y: 8 },    // up north in the meadow
-        { elementId: 'nitrogen', x: 25, y: 10 },   // in the tall grass
+        { elementId: 'nitrogen', x: 25, y: 10 },   // by the eastern tall grass
     ];
-
-    // Walkable tall-grass GIDs (from tools/gen_woods.py: TALL1/TALL2), and the
-    // pool of wild Elementals that can ambush you when you step through them.
-    // (Carbon and Hydrogen left the woods for the Museum basement.)
-    private static readonly GRASS_GIDS = [1852, 1853];
-    private static readonly GRASS_POOL = ['oxygen', 'nitrogen'];
 
     // Cainos "Pixel Art Top Down - Basic" props, sliced into src/assets/woods/ by
     // tools/slice_cainos.py. Each scenery object in the tilemap names a KIND; we
@@ -89,6 +85,7 @@ export default class WoodsScene extends GameScene {
             woods_tree_1: 'tree-1', woods_tree_2: 'tree-2', woods_tree_3: 'tree-3',
             woods_rock_1: 'rock-1', woods_bush_3: 'bush-3', woods_bush_4: 'bush-4',
             woods_bush_6: 'bush-6', woods_signpost: 'signpost', woods_grass_3: 'grass-3',
+            woods_chest: 'treasure-chest',   // forest treasure chest (holds the Magic Key)
         };
         Object.entries(files).forEach(([key, file]) =>
             this.load.image(key, `assets/woods/${file}.png`));
@@ -134,8 +131,8 @@ export default class WoodsScene extends GameScene {
         });
         drawDoorCue(this, WoodsScene.EXIT.x, WoodsScene.EXIT.y - 1, 'TOWN', '▼');
 
-        // Wild Elementals ambush you in the tall grass, Pokémon-style.
-        this.enableGrassEncounters(WoodsScene.GRASS_POOL, WoodsScene.GRASS_GIDS);
+        // (No random tall-grass encounters — each wild Elemental has its own
+        // dedicated spawn tile in createNpcs, found with the Rad Finder.)
 
         // Lookout: walk up the corridor (column 20) to the very top of the woods to
         // trigger the city-reveal cutscene. A faint "LOOKOUT ▲" marker makes the
@@ -155,6 +152,10 @@ export default class WoodsScene extends GameScene {
     createNpcs(): void {
         // Wild Elementals roaming the meadow — walk up to any to start its quiz.
         WoodsScene.WILD.forEach(w => this.spawnElemental(w.elementId, w.x, w.y));
+        // A treasure chest hidden off to the side — a tree-framed nook on the far
+        // eastern edge of the woods, well off the central trail. Walk up to it to
+        // claim the mysterious key.
+        this.spawnTreasureChest(37, 13);
     }
 
     update(): void {

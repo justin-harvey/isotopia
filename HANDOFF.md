@@ -98,10 +98,19 @@ re-advertise a download or publish a new Release until the build is re-verified.
   if `questionsToCatch` > 1 the enemy has a draining **HP bar**. A screen-wipe
   plays before every battle.
 - **Step on a glowing ▲/▼ pad** to enter/leave a building; follow the **trail
-  north** into the woods, where wild Elementals appear in the **tall grass**.
+  north** into the woods (wild Elementals sit at **fixed cloaked spots**, found with
+  the Rad Finder — no random tall-grass encounters anymore).
 - **DEX** button (top-right) → the **Isotopedex** collection.
 - **Secret path:** walk **north up column 20 of the woods to the very top** → a
   cutscene reveals the distant city → tap **"enter the city"** to walk it.
+- **Treasure chest:** hidden in a far-eastern nook of the North Woods (tile 37,13,
+  well off the central trail) — walk up to it to open a dialog and claim the **Magic
+  Key** (a one-time pickup, saved locally).
+- **Hidden Atlantis sanctum:** the Magic Key unlocks a **hidden tunnel in the Museum's
+  lowest level (B4)** — a `custom` portal that only appears once you own the key —
+  which warps to the **Atlantis sanctum** (`AtlantisScene`, the "Periodic Table of
+  Crystals" room). No public entrance; the old always-open B3 "Cloud City" portal was
+  removed.
 
 ## The Elementals (16 active)
 Original, copyright-safe display names (no "-mon"), set in `data/elements.ts`
@@ -136,10 +145,10 @@ Chlorine is retired; `isotopia-next-batch.csv` lists the next candidates.
 |---|---|
 | `src/game.ts` | Bootstrap: mounts DEX/intro, inits student auth, loads questions + class settings, then starts Phaser. Scene list incl. CityScene |
 | `src/Scenes/TestScene.ts` | Town (building-art overlays over invisible collision, lake, doors, north trail) |
-| `src/Scenes/WoodsScene.ts` | Woods; wild grass encounters, the secret city-reveal trigger (col 20, top) |
+| `src/Scenes/WoodsScene.ts` | Woods; fixed wild-Elemental spawns + the hidden **treasure chest** (37,13), the secret city-reveal trigger (col 20, top) |
 | `src/Scenes/CityScene.ts` | **Walkable city** — buildings, streets, plaza props, pedestrians, talking NPCs |
 | `src/Scenes/InteriorScene.ts` + Home/Hardware/Hannaford/Auto/Library | Building interiors (image backgrounds + shared collision grid) |
-| `src/Scenes/GameScene.ts` | Base scene: `spawnElemental` (release-gated), `enableGrassEncounters`, `spawnPedestrian`, `spawnTalkingNpc`, `spawnCompanionNpc`, camera, embedded-map loading |
+| `src/Scenes/GameScene.ts` | Base scene: `spawnElemental` (release-gated), `spawnTreasureChest`, `spawnPedestrian`, `spawnTalkingNpc`, `spawnCompanionNpc`, camera, embedded-map loading (`enableGrassEncounters` still defined but **unused** — no random grass encounters) |
 | `src/ui/QuizOverlay.ts` | GBA battle quiz (round-based, HP bar, `startBattle` wipe) |
 | `src/ui/EvolveOverlay.ts` + `src/data/evolution.ts` | **Evolution Lab** (city Power Station). Three chambers — VSEPR Fusion, Hyper-Chamber (expanded octet), ΔEN Tug-of-War — fuse Elementals into compounds. `evolution.ts` holds recipes + real chemistry (EN table, geometries); products record via `progress.markEvolved`. Product art auto-loads from `assets/compounds/<id>.png` (formula-disc fallback) |
 | `src/Scenes/components/Cloak.ts` | Cloaks Elementals on spawn: a steady very-faint alpha so they're hard to spot by eye (the Rad Finder is the intended way to find them). Called from `GameScene.spawnElemental` |
@@ -148,7 +157,8 @@ Chlorine is retired; `isotopia-next-batch.csv` lists the next candidates.
 | `src/ui/RadFinder.ts` + `data/elementalLocations.ts` | "Rad Finder" tool (dex Tools row). Tap **Track** on an uncaught dex card to target it (`getRadTarget`/`setRadTarget`, persisted); the in-game HUD then shows a **directional arrow** rotating toward that Elemental when it's in the current scene (heat by distance), its **location hint** when it's elsewhere, or falls back to the nearest when nothing's picked. `GameScene.refreshRadFinder` registers targets in `spawnElemental` and pushes `RadReading`s from `update()`; also unlocks per-card location hints. |
 | `src/ui/Intro.ts` / `NpcDialog.ts` / `icons.ts` | Help card, NPC dialog box, inline SVG icons (replaced emoji) |
 | `src/data/elements.ts` / `questions.ts` / `questionSource.ts` | Elements, local seed bank, local-vs-RTDB question source |
-| `src/data/progress.ts` | Seen/Caught + stats; localStorage cache, mirrors to `students/{uid}` when signed in |
+| `src/data/progress.ts` | Seen/Caught + stats; localStorage cache, mirrors to `students/{uid}` when signed in. Also the local-only **inventory store** (`giveItem`/`hasItem`/`MAGIC_KEY`, key `isotopia.items.v1`) that gates the Atlantis tunnel, and the evolved-forms store |
+| `src/Scenes/CityInteriors.ts` | City building interiors + the museum floor chain (ground→B4); painted-portal nav; the **key-gated Atlantis sanctum portal** (`createSanctumPortalIfUnlocked`, B4) and `AtlantisScene` (`wisdom-of-atlantis.png`) |
 | `src/data/classConfig.ts` | Class settings + 40-day release schedule; `elementReleased()` cache the game reads |
 | `src/data/firebase.ts` | Firebase config from `FIREBASE_*` env (blank ⇒ offline) + lazy init |
 | `src/data/auth.ts` / `studentAuth.ts` / `adminAuth.ts` | Guest anon sign-in / student **email+password** register+verify / portal sign-in (super via Google, admin via email+password) + role gate |
@@ -294,6 +304,11 @@ MIT. README credits reflect this.
   `assets/compounds/`, filenames in its README); tighten gating to "must own the
   reactants"; add the compounds to the DEX/collection; cloud-sync evolved forms (+ a
   rules update); difficulty tuning (hide target angles, allow Hyper-Chamber overshoot).
+- **Atlantis sanctum follow-ups (tunnel now DONE — see history):** an open-chest
+  sprite (drop `assets/woods/treasure-chest-open.png` = key `woods_chest_open`, auto-
+  swaps once looted); populate the sanctum (crystal nodes / gameplay) — it's a plain
+  background room today; optionally a locked-door hint at the B4 tunnel tile before the
+  key (currently fully invisible until unlocked).
 - **PWA polish:** an "Install Isotopia" page with Add-to-Home-Screen steps for
   iPad/Android/Chromebook, then a **service worker** so it launches offline after
   the first visit.
@@ -311,6 +326,48 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-29 (forest treasure chest + Magic Key):** Added a **treasure chest** in the
+North Woods — a tree-framed clearing at tile **(27,6)**, east of the trail on the way
+up to the LOOKOUT (placement BFS-verified reachable/walkable/off-trail). Walk up to it
+(same proximity trigger as an Elemental) and a **dialog box** opens revealing the
+**Magic Key**. Chest art `src/assets/woods/treasure-chest.png` (32×31; Justin supplied
+it — moved out of the build-only `dist/` and de-spaced); key art
+`src/assets/items/magic-key.png` (orange bg edge-flood-filled off Justin's sprite,
+inner element tiles preserved). Taking it calls `progress.giveItem(MAGIC_KEY)` — a new
+**local-only inventory store** (`isotopia.items.v1`; `giveItem`/`hasItem`/`itemIds` +
+the `MAGIC_KEY` id), same out-of-cloud pattern as evolved forms so it can't reject the
+RTDB write. The key persists across reloads; the chest then reads as empty. New pieces:
+`GameScene.spawnTreasureChest`, `CHEST_ART_SCALE` (tune if size looks off),
+`showNpcDialog` gained an optional `{image}` to show a sprite, `.npc-portrait` CSS.
+Chest initially at (27,6); moved to a hidden far-east nook and the tunnel built the
+same day (next entry).
+**2026-09-29 (Atlantis sanctum + woods bug fixes):** Built the Magic Key's payoff and
+fixed two woods bugs. **(1) Hidden Atlantis sanctum:** repurposed the old `CloudCity`
+scene into **`AtlantisScene`** (SceneName `atlantis`), background
+`src/assets/rooms/wisdom-of-atlantis.png` (the "Periodic Table of Crystals" art,
+1408×768). **Removed** the always-open **B3 "Cloud City" purple portal** and added a
+**key-gated `custom` portal in the Museum's lowest level (B4)** via the painted-mask
+pipeline (edited `/home/nah/museum-collision/museum-level-3&4_PAINT-ME.png`: cleared
+B3 (4,3), painted B4 (18,4); re-ran `gen_interior_collision.py` + `embed-maps.mjs` —
+only `interiorNav.ts` changed, verified by git diff). New
+`CityInteriorScene.createSanctumPortalIfUnlocked()` creates the portal **only when
+`hasItem(MAGIC_KEY)`** (fully hidden otherwise — no pad, plain floor), re-checked on
+`wake` so it appears if the key is found after B4 was first entered. **(2) Woods grass
+bug:** removed `enableGrassEncounters` from `WoodsScene` — no more random any-grass
+encounters; each wild Elemental (oxygen 16,8; nitrogen 25,10) is a dedicated cloaked
+spawn tile (Rad-Finder-found), like everywhere else. **(3) Chest fix:** hardened
+`NpcsAndObjects.checkProximity` to skip objects not in grid-engine (a throwing
+`getPosition` on one object was silently killing proximity for every object after it —
+the likely chest-dialog culprit); reworded the reveal to "a mysterious key"; moved the
+chest to a hidden far-east nook **(37,13)**. **(4) Bundle-order fix:** `GlobalInfo.ts`
+subclasses Phaser at load but didn't import it; added `import 'phaser'` so the bundler
+always evaluates Phaser (which sets `global.Phaser`) first. **E2E-VERIFIED** end-to-end
+via headless Playwright (cached chromium + Node 22; a `?e2e`/`?debug`-guarded hook in
+`game.ts` exposes `window.__isotopia`): walk-up → dialog → "a mysterious key" + key image
+→ `giveItem` persisted → chest then empty; and the B4 sanctum portal is hidden without
+the key, present with it, and the Atlantis scene boots with its background. Still worth a
+real-device pass. (To re-see the reveal after looting once, clear localStorage
+`isotopia.items.v1`.) Throwaway test scripts live in `/tmp/pw/*.mjs`.
 **2026-09-29 (camera zoom fix + museum spread):** Interiors had regressed ~50% closer
 because the 2026-09-27 `keepRoomFilled` cover-zoom over-zoomed wide/short rooms on tall
 (portrait) screens — **removed `keepRoomFilled`**; interiors use the fixed per-scene

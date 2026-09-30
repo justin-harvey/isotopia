@@ -13,6 +13,7 @@ import { showNpcDialog } from '../ui/NpcDialog';
 import { openEvolveOverlay } from '../ui/EvolveOverlay';
 import { MAPS } from '../data/maps';
 import { INTERIOR_NAV, InteriorFloorNav } from '../data/interiorNav';
+import { hasItem, MAGIC_KEY } from '../data/progress';
 
 // The interiors of the City buildings (reached by stepping onto a building's
 // door in CityScene). Unlike the square Luna-Town rooms, the city interior art
@@ -60,6 +61,7 @@ abstract class CityInteriorScene extends GameScene {
     private readonly elementIds: string[];
     private readonly nav?: InteriorFloorNav;   // set for painted rooms (portal nav)
     private readonly sceneKey: SceneName;
+    private sanctumPortalCreated = false;      // the key-gated Atlantis tunnel (B4)
 
     constructor(sceneName: SceneName, cfg: CityRoomConfig) {
         const nav = cfg.collisionMap ? INTERIOR_NAV[cfg.collisionMap] : undefined;
@@ -142,7 +144,10 @@ abstract class CityInteriorScene extends GameScene {
             // and the dog is left standing on whatever portal it exited by. Put it
             // back on the arrival portal (museum hops) or the safe start tile
             // (door re-entry) so it never wakes up sitting on a trigger.
-            this.events.on('wake', () => this.repositionOnWake());
+            this.events.on('wake', () => {
+                this.createSanctumPortalIfUnlocked();   // may have found the key since
+                this.repositionOnWake();
+            });
         } else {
             this.createDoors();
         }
@@ -174,7 +179,7 @@ abstract class CityInteriorScene extends GameScene {
 
     // Museum floors: place a teleport tile for each painted portal group. ascend
     // (green) -> the floor above (cfg.up), descend (blue) -> the floor below
-    // (cfg.down), custom (purple) -> Cloud City. Arriving via one lands the player
+    // (cfg.down), custom (purple) -> Atlantis sanctum (key-gated). Arriving via one lands the player
     // on the opposite portal of the destination floor (see MUSEUM_ARRIVAL).
     private createPortals(): void {
         const nav = this.nav!;
@@ -198,11 +203,24 @@ abstract class CityInteriorScene extends GameScene {
             new Portal(this, descend, this.cfg.down,
                 { color: 0x4098ff, symbol: '▼', label: 'DOWN' }, 'ascend');
         }
-        const custom = tilesOf('custom');
-        if (custom.length) {
-            new Portal(this, custom, SceneName.CloudCity,
-                { color: 0xc94fff, symbol: '✦', label: 'CLOUD' });
-        }
+        // The 'custom' portal is the HIDDEN sanctum tunnel (museum B4). It is not a
+        // public square — it only exists once the player has the Magic Key. See below.
+        this.createSanctumPortalIfUnlocked();
+    }
+
+    // The tunnel to the Atlantis sanctum: a 'custom' portal that stays completely
+    // hidden (no pad, no trigger — the tile reads as plain floor) until the player
+    // has found the Magic Key in the forest chest. Guarded so it's created at most
+    // once, and re-checked on `wake` so it appears if the key was picked up AFTER
+    // this floor was first entered (scenes don't re-run create on wake).
+    private createSanctumPortalIfUnlocked(): void {
+        if (this.sanctumPortalCreated || !this.nav) return;
+        if (!hasItem(MAGIC_KEY)) return;
+        const custom = this.nav.portals.filter(p => p.type === 'custom').map(p => ({ x: p.x, y: p.y }));
+        if (!custom.length) return;
+        new Portal(this, custom, SceneName.Atlantis,
+            { color: 0x8fd6ff, symbol: '✦', label: 'SANCTUM' });
+        this.sanctumPortalCreated = true;
     }
 
     // Pending portal arrival tile for this floor, or undefined. Consumes the
@@ -312,7 +330,7 @@ export class CityRadioTower2Scene extends CityInteriorScene {
 
 // ---- Museum: ground floor + four basement levels, each deeper ----
 // Each floor uses its own painted collision grid and navigates via painted
-// portals (green=up, blue=down, purple=Cloud City) instead of fixed doors.
+// portals (green=up, blue=down, purple=Atlantis sanctum) instead of fixed doors.
 export class CityMuseumScene extends CityInteriorScene {
     constructor() { super(SceneName.CityMuseum, { background: 'museum-interior.png', up: SceneName.City, upLabel: 'EXIT', down: SceneName.CityMuseumB1, collisionMap: 'museum_ground' }); }
 }
@@ -331,9 +349,11 @@ export class CityMuseumB4Scene extends CityInteriorScene {
     constructor() { super(SceneName.CityMuseumB4, { background: 'museum-level-4.png', up: SceneName.CityMuseumB3, upLabel: 'UP', collisionMap: 'museum_b4' }); }
 }
 
-// Placeholder destination for the museum B3 purple/custom portal until real cloud
-// art exists. Plain open room; the Leave button (and the EXIT door) return to the
-// city. Swap the background for real art when it's ready.
-export class CloudCityScene extends CityInteriorScene {
-    constructor() { super(SceneName.CloudCity, { background: 'cloud-city.png', up: SceneName.City, upLabel: 'EXIT' }); }
+// The hidden Atlantis sanctum — the destination of the key-gated 'custom' tunnel in
+// the museum's lowest level (B4). A plain open room showing the "Periodic Table of
+// Crystals" art; the Leave button and the EXIT door return to the city. It has no
+// public entrance: the only way in is the sanctum portal, which itself only appears
+// once the player owns the Magic Key (see createSanctumPortalIfUnlocked).
+export class AtlantisScene extends CityInteriorScene {
+    constructor() { super(SceneName.Atlantis, { background: 'wisdom-of-atlantis.png', up: SceneName.City, upLabel: 'EXIT' }); }
 }

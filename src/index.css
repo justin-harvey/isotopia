@@ -1035,6 +1035,14 @@ html, body {
     padding: 14px 16px 16px;
 }
 .npc-speaker { font-size: 14px; font-weight: bold; color: #7cf2c8; margin-bottom: 4px; }
+.npc-portrait {
+    display: block;
+    height: 128px;
+    width: auto;
+    margin: 4px auto 8px;
+    image-rendering: pixelated;                 /* keep the sprite crisp */
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+}
 .npc-line { font-size: 16px; line-height: 1.45; min-height: 44px; }
 .npc-next {
     margin-top: 12px;

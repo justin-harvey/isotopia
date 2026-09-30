@@ -10,16 +10,27 @@ function setDialogue(active: boolean): void {
     GlobalInfo.emit('inDialogue', active);
 }
 
-export function showNpcDialog(speaker: string, lines: string[], onDone?: () => void): void {
+// Optional extras: `image` shows an item/portrait sprite above the text (e.g. the
+// Magic Key revealed by the forest chest).
+export function showNpcDialog(
+    speaker: string,
+    lines: string[],
+    onDone?: () => void,
+    opts?: { image?: string },
+): void {
     if (overlay || lines.length === 0) return;
     setDialogue(true);
 
     let idx = 0;
     overlay = document.createElement('div');
     overlay.className = 'npc-dialog-overlay';
+    const imgHtml = opts?.image
+        ? `<img class="npc-portrait" src="${opts.image}" alt="">`
+        : '';
     overlay.innerHTML = `
         <div class="npc-dialog">
             <div class="npc-speaker">${speaker}</div>
+            ${imgHtml}
             <div class="npc-line"></div>
             <button class="npc-next"></button>
         </div>`;

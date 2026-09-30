@@ -1,5 +1,6 @@
 import { GridEngine } from "grid-engine";
 
+import GlobalInfo from "./GlobalInfo";
 import TestScene from "./Scenes/TestScene";
 import HomeScene from "./Scenes/HomeScene";
 import HardwareScene from "./Scenes/HardwareScene";
@@ -12,7 +13,7 @@ import {
     CityPowerTowerScene, CityFinanceScene, CityLargeTowerScene, CityChurchScene,
     CityFashionScene, CityRadioTowerScene, CityPowerStationScene, CityRadioTower2Scene,
     CityMuseumScene, CityMuseumB1Scene, CityMuseumB2Scene, CityMuseumB3Scene, CityMuseumB4Scene,
-    CloudCityScene,
+    AtlantisScene,
 } from "./Scenes/CityInteriors";
 import { ensureSignedIn } from "./data/auth";
 import { initStudentAuth } from "./data/studentAuth";
@@ -69,6 +70,9 @@ const STARTUP_TIMEOUT_MS = 8000;
         // itself instead of looking broken.
         refreshHud();
         const game = new Phaser.Game(config);
+        // Debug hook (opt-in via ?e2e / ?debug) so automated tests can drive the
+        // game; not exposed in normal play.
+        if (/[?&](e2e|debug)\b/.test(location.search)) (window as any).__isotopia = { game, GlobalInfo };
         installFormKeyboardGuard(game);
         if (game.isRunning) fitGameToScreen(game);
         else game.events.once(Phaser.Core.Events.READY, () => fitGameToScreen(game));
@@ -148,7 +152,7 @@ const config = {
         CityPowerTowerScene, CityFinanceScene, CityLargeTowerScene, CityChurchScene,
         CityFashionScene, CityRadioTowerScene, CityPowerStationScene, CityRadioTower2Scene,
         CityMuseumScene, CityMuseumB1Scene, CityMuseumB2Scene, CityMuseumB3Scene, CityMuseumB4Scene,
-        CloudCityScene,
+        AtlantisScene,
     ],
     plugins: {
         scene: [

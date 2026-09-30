@@ -8,7 +8,7 @@ import { basicMovement, clickToMove } from './components/Characters'
 import { Npc } from './components/Npc'
 import { cloakElemental } from './components/Cloak'
 import { getElement, ELEMENTS } from '../data/elements'
-import { statusOf } from '../data/progress'
+import { statusOf, giveItem, hasItem, MAGIC_KEY } from '../data/progress'
 import { elementalArtKey, elementalArtPath } from '../data/elementalArt'
 import { elementReleased } from '../data/classConfig'
 import { elementalLocation } from '../data/elementalLocations'
@@ -19,6 +19,11 @@ import { isRadFinderEquipped, getRadTarget, setRadReading } from '../ui/RadFinde
 // Real Elemental art is a big single image; this scale reads it down to roughly
 // character size on the grid (the placeholder NPC spritesheet uses ~0.7).
 const ELEMENTAL_ART_SCALE = 0.05
+
+// Treasure-chest art is small pixel art (32x31); scale it UP to sit a little
+// under Elemental size (which is 1024px * 0.05 ≈ 51px). ~45px reads as a tappable
+// woods prop. Tune this one value if the chest looks too big/small on device.
+const CHEST_ART_SCALE = 1.4
 
 export default abstract class GameScene extends Phaser.Scene {
 
@@ -424,6 +429,48 @@ export default abstract class GameScene extends Phaser.Scene {
             },
         })
         // Walk within one tile to start the dialog (same as an Elemental).
+        npc.proximityTrigger = true
+    }
+
+    // A treasure chest you walk up to (proximity, like an Elemental) to open a
+    // dialog. The first time, it reveals the Magic Key and persists it via
+    // giveItem(MAGIC_KEY) so it survives reloads — that flag gates the hidden tunnel
+    // in the Museum's lowest level (B4) that opens to the Atlantis sanctum (see
+    // CityInteriors.createSanctumPortalIfUnlocked). After looting it reads as empty.
+    // The chest sprite is small pixel art loaded as `woods_chest`. Drop in an
+    // `assets/woods/treasure-chest-open.png` (texture key `woods_chest_open`) and
+    // it swaps to the opened art once looted — no code change needed.
+    spawnTreasureChest(x: number, y: number): void {
+        const OPEN = 'woods_chest_open'
+        const looted = (): boolean => hasItem(MAGIC_KEY)
+        const openTexture = (): string => this.textures.exists(OPEN) ? OPEN : 'woods_chest'
+
+        const npc = new Npc({
+            scene: this,
+            xPosition: x,
+            yPosition: y,
+            texture: looted() ? openTexture() : 'woods_chest',
+            scale: CHEST_ART_SCALE,
+            action: () => {
+                npc.proximityTrigger = false
+                if (looted()) {
+                    showNpcDialog('Treasure Chest',
+                        ['The old chest lies open and empty.'],
+                        () => { npc.proximityTrigger = true })
+                    return
+                }
+                showNpcDialog('Treasure Chest', [
+                    'A weathered chest is half-buried in the ferns. With a groan, the lid creaks open…',
+                    'Inside lies a mysterious key — etched with elements and a bubbling flask. Legend says it opens a tunnel sealed deep beneath the Museum…',
+                ], () => {
+                    giveItem(MAGIC_KEY)
+                    const sprite = this.gridEngine.getSprite(npc.name)
+                    if (sprite && this.textures.exists(OPEN)) sprite.setTexture(OPEN)
+                    npc.proximityTrigger = true
+                }, { image: 'assets/items/magic-key.png' })
+            },
+        })
+        // Walk within one tile to open it (same proximity trigger as an Elemental).
         npc.proximityTrigger = true
     }
 

@@ -24,6 +24,7 @@ export enum SceneName {
     CityMuseumB3 = 'city-museum-b3',
     CityMuseumB4 = 'city-museum-b4',
 
-    // Reached from the museum B3 "custom" (purple) portal. Placeholder art for now.
-    CloudCity = 'cloud-city'
+    // The hidden Atlantis sanctum. Reached ONLY via the key-gated "custom" (purple)
+    // tunnel in the museum's lowest level (B4) — no public entrance.
+    Atlantis = 'atlantis'
 }
