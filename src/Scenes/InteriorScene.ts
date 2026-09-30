@@ -30,6 +30,7 @@ export abstract class InteriorScene extends GameScene {
     private readonly elementIds: string[];
     private readonly backgroundKey: string;
     private readonly backgroundPath: string;
+    private bgImage?: Phaser.GameObjects.Image;
     private readonly nav?: InteriorFloorNav;   // set for painted rooms (portal exit)
 
     constructor(sceneName: SceneName, backgroundFile: string, elementIds: string[], collisionMap?: string) {
@@ -84,11 +85,13 @@ export abstract class InteriorScene extends GameScene {
         super.create();
 
         // The room art, stretched to cover the whole collision grid and sat
-        // behind every sprite.
-        this.add.image(0, 0, this.backgroundKey)
-            .setOrigin(0, 0)
-            .setDisplaySize(this.map.widthInPixels, this.map.heightInPixels)
-            .setDepth(-100);
+        // behind every sprite. Freed when the scene sleeps and reloaded on wake
+        // (see addBackground/freeBackground) so visited interiors don't accumulate
+        // GPU texture memory — the "page unresponsive" cause on iPad.
+        this.addBackground();
+        this.events.on('sleep', () => this.freeBackground());
+        this.events.on('wake', () => this.reloadBackground());
+        this.events.on('shutdown', () => this.freeBackground());
 
         // Interiors keep the town's fixed camera zoom (see createCamera). The old
         // cover-zoom "filled" the room but over-zoomed it ~50% on tall/portrait
@@ -168,6 +171,37 @@ export abstract class InteriorScene extends GameScene {
             }
         });
         return chosen;
+    }
+
+    // ---- room-background lifecycle (GPU-memory hygiene) ----
+    // The room art is a single large image (the biggest asset a room holds). Scenes
+    // are never destroyed — switch() sleeps/wakes them — so without this every
+    // interior the player has visited would keep its texture resident, growing GPU
+    // memory until iOS Safari drops the WebGL context ("page unresponsive"). We free
+    // the texture on sleep/shutdown and lazily reload it on wake, so at most the
+    // current room's background is resident.
+    private addBackground(): void {
+        this.bgImage = this.add.image(0, 0, this.backgroundKey)
+            .setOrigin(0, 0)
+            .setDisplaySize(this.map.widthInPixels, this.map.heightInPixels)
+            .setDepth(-100);
+    }
+
+    private freeBackground(): void {
+        this.bgImage?.destroy();
+        this.bgImage = undefined;
+        if (this.textures.exists(this.backgroundKey)) this.textures.remove(this.backgroundKey);
+    }
+
+    private reloadBackground(): void {
+        // Already resident (e.g. a sleep/wake that didn't free it) — just re-add.
+        if (this.textures.exists(this.backgroundKey)) { this.addBackground(); return; }
+        this.load.image(this.backgroundKey, this.backgroundPath);
+        this.load.once(Phaser.Loader.Events.COMPLETE, () => {
+            // Guard: the scene may have slept again before the load finished.
+            if (this.scene.isActive() && this.textures.exists(this.backgroundKey) && !this.bgImage) this.addBackground();
+        });
+        this.load.start();
     }
 
     update(): void {

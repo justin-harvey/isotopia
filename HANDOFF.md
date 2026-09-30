@@ -371,6 +371,35 @@ MIT. README credits reflect this.
   reproduce by hammering the real door enter→exit loop headlessly (onto door pad → interior →
   onto exit pad → town, fast, ×many) while watching active-scene count, live tween/timer counts,
   and pageerrors; secondary suspect stays retained memory. Diag harness: `/tmp/pw/diag-perf.mjs`.
+  **ROOT CAUSE FOUND (2026-09-30, retained-memory confirmed):** built a door-driving harness
+  (`/tmp/pw/hammer-doors.mjs`) then a texture-retention probe (`/tmp/pw/texture-retention.mjs`).
+  Hammering the REAL door path into the *same* building was totally flat (scenes=22, children=6,
+  listeners plateau 7, DOM 45, heap ~17MB, 0 pageerrors, thread responsive) — so it is **NOT** a
+  per-transition leak, tween/DOM churn, or a re-entrant-switch crash. The real cause is **unbounded
+  resident scenes + GPU textures across DISTINCT buildings**: touring all 13 city interiors once,
+  alive (created, never-shutdown/sleeping) scenes climb **2 → 15** and `game.textures` count climbs
+  **32 → 65**, one step per *new* building, monotonic, never released. Re-visiting the same
+  buildings is FLAT (textures/scenes reused). **JS heap barely moves (+3 MB)** because the weight is
+  GPU texture memory (each interior bg is 1408×768 ≈ ~4 MB VRAM, + the big city bg), which
+  `performance.memory` doesn't see — which is why same-building hammering looked clean and why it
+  never repros in headless swiftshader (17 GB RAM, no GPU cap) but DOES bite a real iPad (iOS Safari
+  WebGL has a hard texture-memory cap → context loss / tab killed = "page unresponsive"). Matches
+  Justin's "entering/exiting buildings rapidly" repro: each distinct building adds a never-freed
+  resident scene+texture. **FIX SHIPPED (2026-09-30, verified):** both `InteriorScene` and
+  `CityInteriorScene` now free the room background on `sleep`/`shutdown` and lazily reload it on
+  `wake` — `addBackground()` / `freeBackground()` (`bgImage.destroy()` + `textures.remove(bgKey)`) /
+  `reloadBackground()` (`load.image` + re-add on `Loader.COMPLETE`). So at most the CURRENT
+  interior's ~4 MB bg is resident instead of all 13. `texture-retention.mjs` confirms: full tour
+  texture growth dropped **+33 → +20** (the 13 room backgrounds freed), Pass 2 (re-visits) is FLAT
+  (no leak from the reload cycle), all transitions succeed, 0 pageerrors; `verify-reload.mjs` + a
+  screenshot confirm the bg frees on exit and re-renders on re-entry (no black room). Residual +20
+  is small per-interior sprites (elemental/NPC sheets), negligible for the iOS WebGL cap. NOTE: only
+  the bg texture is freed, not the scene — sleeping scenes stay resident but are now cheap; if this
+  still isn't enough on-device, the next lever is `scene.stop` on exit to fully drop the scenes.
+  Trade-off: rapid re-entry reloads the bg from HTTP cache (possible 1-frame black before it paints;
+  margins already letterbox black). **Still needs a real-iPad confirmation.** Removing the scene
+  alone would NOT have freed the texture (TextureManager is global) — the explicit `textures.remove`
+  is the load-bearing part.
   **(2) "Guest device" growth is Firebase _Auth_, not the Realtime Database.** Guests get an
   **anonymous Auth** user (`data/auth.ts ensureSignedIn` → `signInAnonymously`) purely so the
   rules (`auth != null`) let them *read* the live question bank + schedule; they never write to
@@ -405,6 +434,21 @@ MIT. README credits reflect this.
   `data/resonance.ts`; wire `isEnlightened()` to an actual **next zone** once one exists;
   optional polish — a "×5" beam or a multiple-choice-calc variant if single-tap stepping to
   Z=13 feels long on a phone, and a locked-door hint at the B4 tunnel tile before the key.
+- **Church interior showed the FASHION room (asset bug) — FIXED 2026-09-30.** `src/assets/rooms/
+  church-interior.png` had been overwritten with the fashion textile art (wiring + collision were
+  always correct). The real church art (cathedral + atom stained-glass + periodic-table floor)
+  still existed at `sprites/city/church interior.png` (md5 027f809) and
+  `/home/nah/interior-collision/_canvas_original/church-interior.png`. Restored by copying
+  `sprites/city/church interior.png` → `src/assets/rooms/church-interior.png`, then re-ran the
+  collision exercise (`python3 tools/gen_interior_collision.py`) which came back **byte-identical**
+  for every room's tilemap + `interiorNav.ts` — confirming only the art was corrupt, not the
+  collision. Rebuilt (`node tools/embed-maps.mjs && npm run build`) and verified in-game
+  (headless screenshot) + via the fresh verify overlay `/tmp/interior_grid/church-interior_verify.png`.
+  NOTE for future collision work: `gen_interior_collision.py` does NOT write room art — it only
+  reads `src/assets/rooms/<art>.png` for the verify overlay and emits tilemap JSON + nav; room art
+  is copied in separately from `sprites/city/` (that copy step is where church got clobbered).
+  Paint sources live in `/home/nah/interior-collision` (12 city/town) + `/home/nah/museum-collision`
+  (5 museum); both intact. Still needs redeploy.
 - **Forest chest art:** `assets/woods/treasure-chest.png` is currently a **byte-for-byte
   copy of the old `signpost.png`** (it was never real chest art), so the chest reads as a
   now-half-size signpost in-world. Supply a real chest sprite, plus an open-chest
@@ -427,6 +471,16 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-30 (freeze ROOT CAUSE + FIX + church asset bug):** Built headless harnesses
+(`/tmp/pw/hammer-doors.mjs` drives the real door enter/exit path; `/tmp/pw/texture-retention.mjs`
+tours every interior). Found the "page unresponsive" freeze is **unbounded resident GPU textures**:
+interiors are never destroyed, so each DISTINCT building visited kept its ~4 MB room bg resident
+(invisible to JS heap — why it never repro'd headless and looked flat when hammering one building).
+**Fixed** by freeing the room bg on `sleep`/`shutdown` and reloading on `wake` in `InteriorScene`
++ `CityInteriorScene` (`addBackground`/`freeBackground`/`reloadBackground`); verified tour texture
+growth +33→+20, re-visits flat, bg re-renders on re-entry. Also **diagnosed** the church interior
+showing the fashion room: `church-interior.png` IS the fashion art (wiring is correct; the PNG was
+saved as a copy) — needs real church art. Both in Open items. Still needs real-iPad confirmation.
 **2026-09-30 (perf/DB investigation + "what da dog doin" easter egg):** (a) **Easter egg** —
 mashing the dog's **S/D keys 4× quickly** (≤2s between presses) plays
 `assets/music/what-da-dog-doin.mp3` (`GameScene.registerDogAction`, counter fed from the existing
