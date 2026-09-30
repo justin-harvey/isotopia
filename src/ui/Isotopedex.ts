@@ -8,7 +8,7 @@
 
 import GlobalInfo from '../GlobalInfo';
 import { ELEMENTS, ElementInfo } from '../data/elements';
-import { statusOf, counts } from '../data/progress';
+import { statusOf, counts, hasItem, MAGIC_KEY, isEnlightened } from '../data/progress';
 import { elementalArtKey } from '../data/elementalArt';
 import { elementReleased } from '../data/classConfig';
 import {
@@ -62,9 +62,13 @@ export function openIsotopedex(): void {
     const released = ELEMENTS.filter(el => elementReleased(el.id));
     const c = counts();
     const total = released.length;
+    // Bonus secrets (the Magic Key, the attuned Giza Core) are not periodic-table
+    // Elementals, so they get their own ✦ tally instead of inflating "/N caught".
+    const secrets = (hasItem(MAGIC_KEY) ? 1 : 0) + (isEnlightened() ? 1 : 0);
+    const secretNote = secrets ? `✦ <b>${secrets}</b> secret${secrets > 1 ? 's' : ''}` : '';
     const countsInner = total === 0
-        ? 'No Elementals released yet'
-        : `<b>${c.caught}</b>/${total} caught &nbsp;·&nbsp; <b>${c.seen}</b>/${total} discovered`;
+        ? (secrets ? `${secretNote} found` : 'No Elementals released yet')
+        : `<b>${c.caught}</b>/${total} caught &nbsp;·&nbsp; <b>${c.seen}</b>/${total} discovered${secrets ? ` &nbsp;·&nbsp; ${secretNote}` : ''}`;
 
     overlay = document.createElement('div');
     overlay.className = 'dex-overlay';
@@ -309,7 +313,9 @@ function populateGrid(): void {
     grid.innerHTML = '';
     const released = ELEMENTS.filter(el => elementReleased(el.id))
         .sort((a, b) => a.number - b.number);
-    if (released.length === 0) {
+    const hasKey = hasItem(MAGIC_KEY);
+    const enlightened = isEnlightened();
+    if (released.length === 0 && !hasKey && !enlightened) {
         // Paced-release day-0 (or before the first unlock): no empty grid — say why.
         const empty = document.createElement('div');
         empty.className = 'dex-empty';
@@ -318,6 +324,10 @@ function populateGrid(): void {
         return;
     }
     released.forEach(el => grid.appendChild(makeCard(el)));
+    // Bonus secret cards after the Elementals (not part of the periodic-table roster):
+    // the Magic Key from the forest chest, and the Giza Core once the sanctum is attuned.
+    if (hasKey) grid.appendChild(makeMagicKeyCard());
+    if (enlightened) grid.appendChild(makeEnlightenmentCard());
 }
 
 // One creature card. Unseen → dark silhouette + "???"; seen/caught reveal the
@@ -380,5 +390,43 @@ function makeCard(el: ElementInfo): HTMLDivElement {
             closeIsotopedex();             // …and close so the arrow can guide you there
         });
     }
+    return card;
+}
+
+// The Magic Key is not an Elemental, but once the student loots the forest chest
+// (hasItem(MAGIC_KEY)) it earns a card here like a caught creature: gold, with a
+// star marker and flavor text in place of atomic stats. It is a bonus secret and
+// never counts toward the "/N caught" element tally.
+function makeMagicKeyCard(): HTMLDivElement {
+    const card = document.createElement('div');
+    card.className = 'dex-card dex-caught dex-special';
+    card.innerHTML = `
+        <div class="dex-num">✦</div>
+        <div class="dex-portrait">
+            <img class="dex-art" src="assets/items/magic-key.png" alt="The Magic Key, a secret treasure">
+        </div>
+        <div class="dex-name">Magic Key</div>
+        <div class="dex-el">Secret Treasure</div>
+        <div class="dex-stats">A mysterious key etched with elements and a bubbling flask.<br>Said to open a passage sealed beneath the Museum.</div>
+        <div class="dex-badge caught">✓ Obtained</div>`;
+    return card;
+}
+
+// The Giza Crystalline Core: awarded once the Atlantis sanctum is fully attuned
+// (isEnlightened()). Same caught-style special card as the Magic Key, drawn with a
+// crystal disc instead of a PNG. Also a bonus secret, outside the element tally.
+function makeEnlightenmentCard(): HTMLDivElement {
+    const card = document.createElement('div');
+    card.className = 'dex-card dex-caught dex-special';
+    card.innerHTML = `
+        <div class="dex-num">✦</div>
+        <div class="dex-portrait">
+            <div class="dex-art dex-art-disc" style="--tint:#7fd4ff" role="img"
+                aria-label="The Giza Crystalline Core, fully resonant">◈</div>
+        </div>
+        <div class="dex-name">Giza Core</div>
+        <div class="dex-el">Enlightenment</div>
+        <div class="dex-stats">You re-attuned every crystal in the Atlantis sanctum.<br>The Core resonates in perfect harmony.</div>
+        <div class="dex-badge caught">✓ Resonant</div>`;
     return card;
 }

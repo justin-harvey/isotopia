@@ -14,6 +14,8 @@ import { openEvolveOverlay } from '../ui/EvolveOverlay';
 import { MAPS } from '../data/maps';
 import { INTERIOR_NAV, InteriorFloorNav } from '../data/interiorNav';
 import { hasItem, MAGIC_KEY } from '../data/progress';
+import GlobalInfo from '../GlobalInfo';
+import { openResonanceOverlay } from '../ui/ResonanceOverlay';
 
 // The interiors of the City buildings (reached by stepping onto a building's
 // door in CityScene). Unlike the square Luna-Town rooms, the city interior art
@@ -355,5 +357,24 @@ export class CityMuseumB4Scene extends CityInteriorScene {
 // public entrance: the only way in is the sanctum portal, which itself only appears
 // once the player owns the Magic Key (see createSanctumPortalIfUnlocked).
 export class AtlantisScene extends CityInteriorScene {
+    // The Giza Crystalline Core sits at the centre of the shrine art. Step onto it to
+    // open the Crystalline Resonance puzzle (re-attune the mislabeled crystals).
+    private static readonly CORE = { x: 11, y: 5 };
+
     constructor() { super(SceneName.Atlantis, { background: 'wisdom-of-atlantis.png', up: SceneName.City, upLabel: 'EXIT' }); }
+
+    create(): void {
+        super.create();
+        const { x, y } = AtlantisScene.CORE;
+        drawDoorCue(this, x, y, 'ATTUNE', '✦');
+        // Step onto the Core tile at rest (not mid-walk) to open the puzzle. Guarded by
+        // inDialogue so it never fires while the overlay is already up.
+        const sub = this.gridEngine.movementStopped().subscribe((o) => {
+            if (o.charId !== this.playerName) return;
+            if (GlobalInfo._gameProgress.inDialogue) return;
+            const p = this.gridEngine.getPosition(this.playerName);
+            if (p.x === x && p.y === y) openResonanceOverlay();
+        });
+        this.events.once('shutdown', () => sub.unsubscribe());
+    }
 }

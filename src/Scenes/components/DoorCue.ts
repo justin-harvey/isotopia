@@ -4,12 +4,13 @@ import GameScene from '../GameScene';
 // exits are visible instead of invisible trigger tiles (new players couldn't
 // tell buildings were enterable). `arrow` points from the pad toward the door:
 // ▲ when the door is above the pad (town entrances), ▼ when below (interior exit).
+// ✦ is a non-directional point-of-interest marker (e.g. the Atlantis Core pad).
 export function drawDoorCue(
     scene: GameScene,
     padTileX: number,
     padTileY: number,
     label: string,
-    arrow: '▲' | '▼',
+    arrow: '▲' | '▼' | '✦',
 ): void {
     const tw = scene.map.tileWidth;
     const th = scene.map.tileHeight;
@@ -19,8 +20,9 @@ export function drawDoorCue(
     const mat = scene.add.rectangle(cx, cy, tw, th, 0xffd166, 0.22)
         .setStrokeStyle(1, 0xffd166, 0.85)
         .setDepth(5);
-    // Keep the arrow next to the door: on top for ▲, on the bottom for ▼.
-    const text = arrow === '▲' ? `${arrow}\n${label}` : `${label}\n${arrow}`;
+    // Keep the arrow next to the door: below the label for ▼ (door is under the pad),
+    // above it otherwise (▲ entrances, ✦ point-of-interest markers).
+    const text = arrow === '▼' ? `${label}\n${arrow}` : `${arrow}\n${label}`;
     const t = scene.add.text(cx, cy, text, {
         fontFamily: 'Courier New',
         fontSize: '9px',

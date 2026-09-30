@@ -892,6 +892,183 @@ html, body {
 .dex-track.on { background: #7cf2c8; }
 .dex-card.tracking { border-color: #2aa198; box-shadow: 0 0 0 2px rgba(42, 161, 152, 0.6); }
 
+/* Special non-element collectible (the Magic Key): a caught-style card with a gold
+   wash and a star marker in place of an atomic number. */
+.dex-card.dex-special { background: linear-gradient(#fffdf2, #fff2cc); }
+.dex-special .dex-num { color: #c99a1e; font-size: 12px; }
+.dex-special .dex-el { color: #b8860b; }
+
+/* ===================== Atlantis: Crystalline Resonance ===================== */
+.res-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(6, 10, 26, 0.72);
+    z-index: 1000;
+    font-family: var(--gba-font);
+    padding: 16px;
+    box-sizing: border-box;
+}
+.res-panel {
+    width: min(920px, 96vw);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    color: #dff6ff;
+    background: linear-gradient(160deg, #10204a 0%, #0b1636 60%, #10113a 100%);
+    border: 4px solid #5fe0ff;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 3px rgba(95, 224, 255, 0.25),
+                0 0 34px rgba(95, 224, 255, 0.35), 0 14px 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+.res-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(90deg, #1b2f66, #24507f);
+    border-bottom: 3px solid #5fe0ff;
+}
+.res-title { font-size: 12px; color: #9af0ff; text-shadow: 0 0 8px rgba(95, 224, 255, 0.7); }
+.res-close {
+    font-family: var(--gba-font);
+    font-size: 14px;
+    width: 44px; height: 44px;
+    margin-left: auto;
+    color: #dff6ff;
+    background: #17244d;
+    border: 2px solid #5fe0ff;
+    border-radius: 8px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.res-intro { font-size: 9px; line-height: 1.9; color: #bfe3f5; margin: 0; padding: 12px 16px 0; }
+.res-intro b { color: #9af0ff; }
+
+.res-meter {
+    position: relative;
+    height: 22px;
+    margin: 12px 16px;
+    background: #0a1330;
+    border: 2px solid #4bd6ff;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.res-meter-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #2aa9c9, #6ff0ff);
+    box-shadow: 0 0 14px rgba(111, 240, 255, 0.8);
+    transition: width 0.5s ease;
+}
+.res-meter-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: #eafcff;
+    text-shadow: 0 1px 2px #000;
+}
+.res-meter.full { border-color: #ffd869; }
+.res-meter.full .res-meter-fill {
+    background: linear-gradient(90deg, #ffd869, #fff3c4);
+    box-shadow: 0 0 16px rgba(255, 216, 105, 0.9);
+}
+
+.res-banner {
+    margin: 0 16px 4px;
+    padding: 12px;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.8;
+    color: #201a06;
+    background: linear-gradient(90deg, #ffe08a, #fff6d8);
+    border: 3px solid #ffd869;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(255, 216, 105, 0.6);
+}
+.res-banner span { display: block; margin-top: 6px; font-size: 8px; line-height: 1.9; color: #3a2f0c; }
+
+.res-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    padding: 12px 16px 18px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.res-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 12px 10px 14px;
+    background: rgba(12, 22, 52, 0.85);
+    border: 3px solid #3a6ea5;
+    border-radius: 10px;
+}
+.res-node.res-attuned {
+    border-color: #6ff0c8;
+    box-shadow: 0 0 0 2px rgba(111, 240, 200, 0.4), 0 0 18px rgba(111, 240, 200, 0.3);
+}
+.res-crystal {
+    width: 62px; height: 62px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #0a1024;
+    background: var(--gem, #7fd4ff);
+    /* faceted gem silhouette */
+    clip-path: polygon(50% 0%, 90% 28%, 78% 100%, 22% 100%, 10% 28%);
+    filter: saturate(1.1);
+}
+.res-crystal.res-lit { box-shadow: 0 0 20px var(--gem, #7fd4ff); animation: res-pulse 2.2s ease-in-out infinite; }
+@keyframes res-pulse { 0%, 100% { filter: brightness(1) saturate(1.1); } 50% { filter: brightness(1.4) saturate(1.3); } }
+
+.res-inscribed { margin-top: 8px; font-size: 8px; color: #ff9db0; letter-spacing: 0.5px; }
+.res-inscribed s { color: #ff6f87; }
+.res-q { margin-top: 8px; font-size: 8px; line-height: 1.7; color: #d7ecff; }
+.res-q b { color: #9af0ff; }
+
+.res-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; width: 100%; }
+.res-choice {
+    font-family: var(--gba-font);
+    font-size: 8px;
+    line-height: 1.4;
+    min-height: 38px;
+    padding: 6px 4px;
+    color: #eafcff;
+    background: #1c3568;
+    border: 2px solid #4bd6ff;
+    border-radius: 6px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.res-choice:hover { background: #244481; }
+.res-choice.wrong { background: #5a1626; border-color: #ff6f87; color: #ffd7de; opacity: 0.7; cursor: not-allowed; }
+.res-hint { margin-top: 8px; font-size: 7px; line-height: 1.7; color: #ffb3c0; min-height: 12px; }
+
+.res-true { margin-top: 8px; font-size: 10px; color: #7ff0c8; }
+.res-fact { margin-top: 6px; font-size: 7px; line-height: 1.8; color: #bfe3f5; }
+.res-tag { margin-top: 8px; font-size: 8px; padding: 4px 8px; color: #06231a; background: #6ff0c8; border-radius: 4px; }
+
+.res-node.shake { animation: res-shake 0.4s; }
+@keyframes res-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .res-crystal.res-lit { animation: none; }
+    .res-node.shake { animation: none; }
+    .res-meter-fill { transition: none; }
+}
+
 /* ================= First-run intro / help ================= */
 
 /* Small "?" help button (bottom-left, clear of the interior Leave button up top). */

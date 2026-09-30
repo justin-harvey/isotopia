@@ -204,3 +204,45 @@ export function hasItem(id: string): boolean { return !!itemsState[id]; }
 export function itemIds(): string[] {
     return Object.keys(itemsState).filter(k => itemsState[k]);
 }
+
+// ---- Atlantis sanctum: Crystalline Resonance puzzle -----------------------
+// Which crystal nodes the student has correctly re-attuned, plus whether the whole
+// shrine reached full resonance ("Enlightenment"). Kept in its OWN local-only key
+// for the same schema-safety reason as the items/evolved stores above: it stays
+// outside the cloud-synced students/{uid} object so a new field can never reject the
+// RTDB write. Local for now; cloud sync is a clean follow-up.
+const RESONANCE_KEY = 'isotopia.resonance.v1';
+
+interface ResonanceState { attuned: Record<string, boolean>; enlightened: boolean; }
+
+function loadResonance(): ResonanceState {
+    try {
+        const raw = localStorage.getItem(RESONANCE_KEY);
+        if (raw) {
+            const v = JSON.parse(raw) as Partial<ResonanceState>;
+            return { attuned: v.attuned ?? {}, enlightened: !!v.enlightened };
+        }
+    } catch { /* ignore corrupt/unavailable storage */ }
+    return { attuned: {}, enlightened: false };
+}
+
+let resonanceState: ResonanceState = loadResonance();
+
+function saveResonance(): void {
+    try { localStorage.setItem(RESONANCE_KEY, JSON.stringify(resonanceState)); }
+    catch { /* storage unavailable — stays in-memory this session */ }
+}
+
+/** Record that a crystal node was correctly attuned (idempotent). */
+export function attuneNode(id: string): void {
+    if (!resonanceState.attuned[id]) { resonanceState.attuned[id] = true; saveResonance(); }
+}
+export function isNodeAttuned(id: string): boolean { return !!resonanceState.attuned[id]; }
+export function attunedCount(): number {
+    return Object.keys(resonanceState.attuned).filter(k => resonanceState.attuned[k]).length;
+}
+/** Mark the shrine fully resonant — set when the final node is attuned. */
+export function markEnlightened(): void {
+    if (!resonanceState.enlightened) { resonanceState.enlightened = true; saveResonance(); }
+}
+export function isEnlightened(): boolean { return resonanceState.enlightened; }
