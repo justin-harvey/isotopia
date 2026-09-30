@@ -448,7 +448,12 @@ MIT. README credits reflect this.
   reads `src/assets/rooms/<art>.png` for the verify overlay and emits tilemap JSON + nav; room art
   is copied in separately from `sprites/city/` (that copy step is where church got clobbered).
   Paint sources live in `/home/nah/interior-collision` (12 city/town) + `/home/nah/museum-collision`
-  (5 museum); both intact. Still needs redeploy.
+  (5 museum); both intact. **DONE + LIVE:** Justin then dropped final church + fashion interior art
+  into `src/assets/rooms/` and it's pushed to `main`/deployed (verified live md5 matches). Asset/
+  deploy pipeline is now documented in README ("Art, assets & deploying"): Netlify builds `main`,
+  `npm run build` copies `src/assets/*` → `dist/assets`, so `src/assets/` is the ONLY art source;
+  `dist/`, `sprites/`, `www/`, `android/`, `ios/` are generated/stale dead-ends. Same-filename cache
+  means a hard-refresh may be needed after redeploy.
 - **Forest chest art:** `assets/woods/treasure-chest.png` is currently a **byte-for-byte
   copy of the old `signpost.png`** (it was never real chest art), so the chest reads as a
   now-half-size signpost in-world. Supply a real chest sprite, plus an open-chest
@@ -471,6 +476,12 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-30 (final church + fashion interior art + easter-egg tweaks + deploy docs):** Justin
+supplied final church (cathedral) + fashion (textile-room) interior art into `src/assets/rooms/`
+(verified not swapped, 1408×768) — pushed + live. "what da dog doin" easter egg: raised combo 4→10
+and made it require STRICT S/D alternation (`sdsdsdsdsd`; same key twice restarts). Documented the
+art/deploy pipeline in README so future art updates land in the right place (`src/assets/`, deploy
+from `main`). The freeze texture-fix + these all shipped to `main`.
 **2026-09-30 (freeze ROOT CAUSE + FIX + church asset bug):** Built headless harnesses
 (`/tmp/pw/hammer-doors.mjs` drives the real door enter/exit path; `/tmp/pw/texture-retention.mjs`
 tours every interior). Found the "page unresponsive" freeze is **unbounded resident GPU textures**:

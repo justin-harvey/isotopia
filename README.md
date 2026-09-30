@@ -49,6 +49,35 @@ npm run build      # production build into dist/  (serve the dist/ folder)
 
 No configuration is required — it runs on the local question seed.
 
+## Art, assets & deploying
+
+**Netlify deploys from the `main` branch** of this repo (`netlify.toml`: build
+command `npm run build`, publish dir `dist/`). The build copies `src/assets/*`
+into `dist/assets/` — so **`src/assets/` is the single source of truth for art**,
+and `dist/` is generated (never edit it; it's git-ignored and rebuilt every time).
+
+To update artwork, replace the file **in `src/assets/…` with the exact same
+filename**, commit, and push to `main`:
+
+| Art | Where to put it |
+|---|---|
+| Building interiors (church, fashion, museum floors, …) | `src/assets/rooms/<name>-interior.png` (city rooms are `1408×768`) |
+| Building exteriors / city props | `src/assets/city/` |
+| Elemental creatures | `src/assets/elementals/` |
+| Town buildings, woods, tiles, characters | `src/assets/{buildings,woods,tiles,Characters}/` |
+
+Editing copies elsewhere (`sprites/`, `www/`, `android/`, `ios/`) does **nothing** —
+`www/android/ios` are stale artifacts of the abandoned native-app port, and
+`sprites/` is just a staging area the build doesn't read. Because filenames are
+stable, a browser (or an "Add to Home Screen" install) may cache an old image
+under the same name — hard-refresh / clear site data after a redeploy to see it.
+
+Interior **collision** (walls + exit portals) is authored separately by painting
+mask canvases — see `tools/gen_interior_collision.py` (paint sources live outside
+the repo in `/home/nah/interior-collision` + `/home/nah/museum-collision`). That
+tool emits `src/assets/tilemap/*.json` + `src/data/interiorNav.ts` and does **not**
+touch room art; after re-running it, run `node tools/embed-maps.mjs && npm run build`.
+
 ## How it's organized
 
 | Path | What |
