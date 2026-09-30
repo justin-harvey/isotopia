@@ -354,19 +354,37 @@ MIT. README credits reflect this.
   legibility/pinch-zoom, portrait/landscape, Add to Home Screen, city walking.
 - **Performance & database hygiene (NEXT — Justin flagged "page unresponsive" + DB growth):**
   two separate concerns.
-  **(1) "Page unresponsive" is client-side, not the backend.** Audit scene-lifecycle cleanup —
-  grid-engine `movementStopped` subscriptions and `GlobalInfo`/event listeners added on scene
-  *enter* that aren't torn down on `shutdown` accumulate across the many town↔interior↔city
-  transitions and can jank a long session. `AtlantisScene` already unsubscribes on `shutdown`
-  (use it as the pattern to check the other scenes). RTDB uses one-shot `get()`, not streaming
-  `.on()`, so it isn't DB listeners. Profile memory across repeated scene switches.
+  **(1) "Page unresponsive" is client-side, not the backend.** MEASURED headless (2026-09-30):
+  transitions use `scene.switch` = Phaser **sleep/wake**, so `create()` runs **once per scene**
+  and `shutdown` **never fires during play**. The `inDialogue` listener count is flat/bounded
+  (3 → 5 after visiting a second scene, then steady across 8+ switches), so the earlier
+  "listeners accumulate per transition" theory is **disproven** — there is no subscription leak,
+  and the existing `shutdown` cleanups only run on game destroy. Real suspects given this
+  architecture: scenes are never destroyed, so the whole world (incl. the 52×72 city) stays
+  resident. **REPRO CLUE (Justin, 2026-09-30): it happens entering/exiting buildings RAPIDLY.**
+  That path is `Door`/`Portal` → `movementStopped` → `scene.switch` (sleep/wake), gated by a
+  `characterMoved` arming flag with a `wake` reposition (`Door.ts`, `Portal.ts`,
+  `InteriorScene.create`). `diag-perf.mjs` drove `switch()` directly and was clean (flat
+  listeners, no scene stacking), so the lead is the **door-trigger path / rapid-switch timing**:
+  re-entrant or overlapping switches, a tap queued mid-transition, per-switch churn of
+  tweens/graphics (`showTapRipple`) or the Leave-button DOM, or a wake/arming race. NEXT SESSION:
+  reproduce by hammering the real door enter→exit loop headlessly (onto door pad → interior →
+  onto exit pad → town, fast, ×many) while watching active-scene count, live tween/timer counts,
+  and pageerrors; secondary suspect stays retained memory. Diag harness: `/tmp/pw/diag-perf.mjs`.
   **(2) "Guest device" growth is Firebase _Auth_, not the Realtime Database.** Guests get an
   **anonymous Auth** user (`data/auth.ts ensureSignedIn` → `signInAnonymously`) purely so the
   rules (`auth != null`) let them *read* the live question bank + schedule; they never write to
   RTDB (`students/{uid}` write needs `email_verified`, and `progress.pushCloud` only runs for
   verified students). So RTDB nodes don't balloon from guests — but **anonymous Auth accounts
   accumulate forever** (every new device / cleared storage / private tab mints a fresh anon UID
-  that never expires). That is the "ballooning."
+  that never expires). That is the "ballooning." MEASURED read-only (2026-09-30, census script
+  `/tmp/isotopia-admin/measure.mjs`): **223 total Auth users, 207 anonymous (93%)** vs 16 real,
+  in the project's first ~2 months; **99 anon idle >30d** (cleanup candidates). So the trend is
+  real and worth a cleanup, but it is tiny today (223 is nothing for Firebase Auth) and does
+  **not** cause the client freeze — hygiene, not the fix. **Parked as backlog / nice-to-have per
+  Justin (2026-09-30); the freeze is the priority.** When picked up: cleanup script (delete anon
+  idle >30d, dry-run first, pattern of `firebase/set-teacher.mjs`) and/or drop anon auth so guests
+  use the local seed. Census script kept at `/tmp/isotopia-admin/measure.mjs`.
     - **Cleanup job:** a `firebase-admin` script (same pattern as `firebase/set-teacher.mjs` —
       service account, Node 18) that paginates `auth().listUsers()`, selects anonymous users
       (`providerData.length === 0`) whose `metadata.lastRefreshTime`/`lastSignInTime` is older
@@ -409,6 +427,18 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-30 (perf/DB investigation + "what da dog doin" easter egg):** (a) **Easter egg** —
+mashing the dog's **S/D keys 4× quickly** (≤2s between presses) plays
+`assets/music/what-da-dog-doin.mp3` (`GameScene.registerDogAction`, counter fed from the existing
+S=sit / D=sniff handlers; audio loaded + added like bark/sniff). Headless-checked: asset loads,
+sound adds, combo fires with no errors. (b) **"Page unresponsive" investigation** — MEASURED
+headless that transitions are sleep/wake with flat/bounded listeners, so the "listener leak per
+transition" theory was **disproven**; a started shutdown-cleanup fix was **reverted** as a no-op.
+Justin's repro clue is **rapid building enter/exit**, so the lead is now the door-trigger /
+rapid-switch path (see Open items → Performance). (c) **Read-only Auth census** — 223 users, 207
+anonymous (93%), 99 idle >30d: real but tiny; anon-cleanup parked as backlog. Handoff Open-items
++ Atlantis section updated to match. **Not yet committed at time of writing → committed with the
+easter egg push.**
 **2026-09-30 (Atlantis final test reworked → subatomic "Crystalline Core Attunement"):**
 Replaced the symbol→name Crystalline Resonance puzzle with a **syllabus-focused final test**
 (see its section). The Giza Core now opens a one-crystal-at-a-time **forge**: per crystal,

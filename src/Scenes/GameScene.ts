@@ -59,6 +59,9 @@ export default abstract class GameScene extends Phaser.Scene {
     // action sounds
     bark: Phaser.Sound.BaseSound;
     sniff: Phaser.Sound.BaseSound;
+    dogMeme!: Phaser.Sound.BaseSound;   // "what da dog doin" easter-egg sting
+    private dogComboCount = 0;
+    private dogComboLast = 0;
 
     sceneName!: string;
     map!: Tilemaps.Tilemap;
@@ -116,6 +119,7 @@ export default abstract class GameScene extends Phaser.Scene {
         this.load.image('emptyDoorGraphic', 'assets/images/emptyDoorGraphic.png')
         this.load.audio('bark', 'assets/music/bark.wav');
         this.load.audio('sniff', 'assets/music/sniffing.wav');
+        this.load.audio('whatDaDogDoin', 'assets/music/what-da-dog-doin.mp3');
     }
 
     create(): void {
@@ -130,6 +134,7 @@ export default abstract class GameScene extends Phaser.Scene {
         // add sounds
         this.bark = this.sound.add('bark', { loop: false });
         this.sniff = this.sound.add('sniff', { loop: false });
+        this.dogMeme = this.sound.add('whatDaDogDoin', { loop: false });
 
         //add special animations for actions from main player
         createSpecialAnimations(this)
@@ -161,6 +166,19 @@ export default abstract class GameScene extends Phaser.Scene {
         });
     }
 
+    // Easter egg: mashing the dog's "sit"/"sniff" keys (S/D) four times in quick
+    // succession (within ~2s between presses) plays the "what da dog doin" sting.
+    private registerDogAction(): void {
+        const now = this.time.now;
+        if (now - this.dogComboLast > 2000) this.dogComboCount = 0;
+        this.dogComboLast = now;
+        this.dogComboCount++;
+        if (this.dogComboCount >= 4) {
+            this.dogComboCount = 0;
+            this.dogMeme?.play();
+        }
+    }
+
     update(): void {
         this.refreshRadFinder();
 
@@ -181,6 +199,7 @@ export default abstract class GameScene extends Phaser.Scene {
             this.gridEngine.getFacingDirection(this.playerName) === "right"
                 ? this.playerSprite.anims.play("sitRight", true)
                 : this.playerSprite.anims.play("sit", true);
+            this.registerDogAction();
         };
 
         if (Phaser.Input.Keyboard.JustDown(this.keyD)) {
@@ -189,6 +208,7 @@ export default abstract class GameScene extends Phaser.Scene {
             this.gridEngine.getFacingDirection(this.playerName) === "right"
                 ? this.playerSprite.anims.play("sniffRight", true)
                 : this.playerSprite.anims.play("sniff", true);
+            this.registerDogAction();
         };
 
         // TODO: fix this to keep player running
