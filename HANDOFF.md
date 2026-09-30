@@ -260,38 +260,57 @@ Filenames + spec in `src/assets/compounds/README.md`. Justin is supplying the ar
 **Soft-gated:** attempts are allowed without owning the reactants (marked a "practice
 simulation") so it's testable; flip to strict "must be caught" later.
 
-## The Atlantis sanctum (Crystalline Resonance)
-The hidden **`AtlantisScene`** (key-gated tunnel from Museum B4, see history) is no
-longer a plain room. Stepping onto the **Giza Core** pad (`ATTUNE ✦`, tile
-`AtlantisScene.CORE = {11,5}`, drawn with `drawDoorCue`) opens
-**`ui/ResonanceOverlay.ts`**, an *error-correction* puzzle that turns the room art's
-garbled labels into the mechanic.
+## The Atlantis sanctum — Crystalline Core Attunement (the final test)
+The hidden **`AtlantisScene`** (key-gated tunnel from Museum B4, see history) holds the
+game's **final test**. Stepping onto the **Giza Core** pad (`ATTUNE ✦`, tile
+`AtlantisScene.CORE = {11,5}`, drawn with `drawDoorCue`) opens **`ui/ResonanceOverlay.ts`**,
+a one-crystal-at-a-time **forge** that drills the whole intro atomic-structure syllabus:
+protons/neutrons/electrons → ions → a net-zero circuit.
 
-- **The puzzle:** each crystal shows a real element **symbol** under a **wrong** name;
-  the player picks its **true** element from 4 choices. Correct gives a WebAudio chime
-  plus a lit crystal and raises the **Core resonance meter**; wrong gives a "dissonance"
-  buzz plus a shake and disables that choice (the answer is never revealed). Attune all
-  of them to reach **100%, i.e. Enlightenment**.
-- **Nodes:** `data/resonance.ts`, 6 crystals with symbol-confusion distractors
-  (K vs Carbon → Potassium, Na vs Calcium → Sodium, Al vs Gallium → Aluminum,
-  Fe vs Fluorine → Iron, Mg vs Manganese → Magnesium, O vs Osmium → Oxygen). Add or edit
-  entries there to change the puzzle; the meter and completion derive from the list length.
+- **Forge (3 phases per crystal, a phase tracker walks you through them):** ① **Protons** —
+  tap ＋/− to inject protons until the count equals the atomic number; the tile's identity
+  morphs live as protons are added (Z6 → Carbon, Z7 → Nitrogen…): *protons = identity*.
+  ② **Neutrons** — add neutrons until `mass = protons + neutrons` hits the stable isotope;
+  off-target the tile **vibrates** (decays), dead-on it goes still: *mass = p + n*.
+  ③ **Electrons** — tune electrons so `charge = protons − electrons` reaches the target ion;
+  losing e⁻ → **cation** (metals, LEFT, "cats!"), gaining → **anion** (non-metals, RIGHT),
+  equal → neutral. Steppers repeat on **press-and-hold**; the live derived readout is the
+  lesson. A per-phase confirm button (Anchor identity / Stabilize isotope / Harmonize) only
+  enables when the count is exactly right.
+- **Circuit finale:** once every crystal is forged, the floor grid shows the ions in two
+  columns (cations left, anions right; neutral Carbon is the centre "heart"). Tap a cation
+  then an anion — if the charges cancel to **net zero** they link (chime + compound label
+  NaF / MgO / AlN); mismatched magnitudes buzz "net charge ≠ 0" and clear. Balance all three
+  pairs → **100% = Enlightenment**.
+- **Crystals (all data-driven):** `data/resonance.ts` — `CORE_ELEMENTS` (Carbon tutorial +
+  Na/F, Mg/O, Al/N, all also catchable Elementals), `ION_PAIRS` (the three net-zero pairs),
+  an `IDENTITY_BY_Z` table (Z 1-20) for the live proton morph, and
+  `neutronsFor`/`electronsFor`/`chargeLabel` helpers. Add/trim crystals or pairs there and the
+  tracker, meter and finale all follow.
 - **Persistence:** `progress.ts` resonance store (`isotopia.resonance.v1`:
-  `attuneNode`/`isNodeAttuned`/`attunedCount`/`markEnlightened`/`isEnlightened`), its own
-  local key, kept out of the cloud `students/{uid}` schema like items/evolved.
-- **Reward + dex secret cards:** on Enlightenment `isEnlightened()` awards a **"Giza
-  Core"** card in the Isotopedex (`makeEnlightenmentCard`). The dex also shows the
-  **Magic Key** as a **"Secret Treasure"** card once looted (`makeMagicKeyCard`), both in
-  the gold `dex-special` style, both listed after the Elementals and kept OUT of the
-  "/N caught" element tally (a separate header **✦ secrets** count). `isEnlightened()` is
-  also left as a **hook to unlock a future zone**.
-- **Trigger wiring:** `AtlantisScene.create()` subscribes to `movementStopped` and opens
-  the overlay when the player rests on the Core tile (guarded by `inDialogue`), mirroring
-  WoodsScene's city-reveal. `DoorCue` was widened to allow the non-directional `✦` marker.
-- **Status:** verified by a clean TypeScript build and present in the dist bundle, but
-  **not yet run through a headless playthrough** (the `playwright` npm package is not
-  installed here, only the cached browsers). Quick manual jump for testing: load
-  `?debug`, then in the console run `__isotopia.game.scene.start('atlantis')`.
+  `attuneNode`/`isNodeAttuned` [now = a crystal fully forged] / `markEnlightened` /
+  `isEnlightened`), its own local key, kept out of the cloud `students/{uid}` schema like
+  items/evolved. A returning player resumes at the first un-forged crystal (or straight to the
+  circuit if all are forged).
+- **Reward + dex secret cards:** on Enlightenment `isEnlightened()` awards a **"Giza Core"**
+  card in the Isotopedex (`makeEnlightenmentCard`, copy updated for the forge). The **Magic
+  Key** also shows as a **"Secret Treasure"** card once looted (`makeMagicKeyCard`), both gold
+  `dex-special`, both listed after the Elementals and OUT of the "/N caught" tally (separate
+  header **✦ secrets** count). `isEnlightened()` is the **hook to unlock a future zone**
+  ("the path to the next realm opens").
+- **Trigger wiring:** `AtlantisScene.create()` subscribes to `movementStopped` and opens the
+  overlay when the player rests on the Core tile (guarded by `inDialogue`), mirroring
+  WoodsScene's city-reveal. `DoorCue` allows the non-directional `✦` marker. The `inDialogue`
+  guard means the puzzle only fires when no dialog is open — true during normal walking, so a
+  no-op in play (headless tests must clear the boot intro's flag first).
+- **Status: E2E-VERIFIED** (2026-09-30) end-to-end via headless Playwright (cached
+  chromium-1243 + Node 22; `?e2e` hook → `window.__isotopia`; **launch with
+  `--disable-dev-shm-usage`** or the heavy sanctum background crashes swiftshader): walk onto
+  the Core → forge all 7 crystals through all 21 phases → 7 attuned persisted → circuit renders
+  → a +1/−2 pick rejected (net ≠ 0) → the 3 net-zero pairs link → Enlightenment persisted,
+  banner shown, meter 100%, overlay closes and clears `inDialogue`; **14/14 checks, zero page
+  errors**. Throwaway test: `/tmp/pw/test-sanctum-final.mjs`. Quick manual jump: load `?debug`,
+  then `__isotopia.game.scene.start('atlantis')` and walk up onto the Core.
 
 ## Gotchas
 - **Netlify needs the 8 `FIREBASE_*` env vars** or the live site loses online features.
@@ -333,17 +352,41 @@ MIT. README credits reflect this.
   (see `SESSION-HANDOFF-2026-09-29.md`) — student sign-up/login (inline errors +
   auto-verify), the Rad Finder arrow + Track, the reduced-motion battle cover, dex
   legibility/pinch-zoom, portrait/landscape, Add to Home Screen, city walking.
+- **Performance & database hygiene (NEXT — Justin flagged "page unresponsive" + DB growth):**
+  two separate concerns.
+  **(1) "Page unresponsive" is client-side, not the backend.** Audit scene-lifecycle cleanup —
+  grid-engine `movementStopped` subscriptions and `GlobalInfo`/event listeners added on scene
+  *enter* that aren't torn down on `shutdown` accumulate across the many town↔interior↔city
+  transitions and can jank a long session. `AtlantisScene` already unsubscribes on `shutdown`
+  (use it as the pattern to check the other scenes). RTDB uses one-shot `get()`, not streaming
+  `.on()`, so it isn't DB listeners. Profile memory across repeated scene switches.
+  **(2) "Guest device" growth is Firebase _Auth_, not the Realtime Database.** Guests get an
+  **anonymous Auth** user (`data/auth.ts ensureSignedIn` → `signInAnonymously`) purely so the
+  rules (`auth != null`) let them *read* the live question bank + schedule; they never write to
+  RTDB (`students/{uid}` write needs `email_verified`, and `progress.pushCloud` only runs for
+  verified students). So RTDB nodes don't balloon from guests — but **anonymous Auth accounts
+  accumulate forever** (every new device / cleared storage / private tab mints a fresh anon UID
+  that never expires). That is the "ballooning."
+    - **Cleanup job:** a `firebase-admin` script (same pattern as `firebase/set-teacher.mjs` —
+      service account, Node 18) that paginates `auth().listUsers()`, selects anonymous users
+      (`providerData.length === 0`) whose `metadata.lastRefreshTime`/`lastSignInTime` is older
+      than ~30 days, and `deleteUsers()` in batches of 1000. Run manually first; promote to a
+      Cloud Scheduler cron (Blaze) later.
+    - **Prevention (bigger lever, product decision):** stop minting anon users — let guests fall
+      back to the **local seed bank** (already fully supported offline) and authenticate only
+      registered students. Eliminates the accumulation; trade-off is guests play the built-in
+      seed, not the teacher's live custom questions/schedule. (Making `questions`/`dailySchedule`
+      publicly readable is rejected — it would expose every question + correct answer.)
 - **Evolution Lab follow-ups:** wire in Justin's evolved artwork (drop PNGs into
   `assets/compounds/`, filenames in its README); tighten gating to "must own the
   reactants"; add the compounds to the DEX/collection; cloud-sync evolved forms (+ a
   rules update); difficulty tuning (hide target angles, allow Hyper-Chamber overshoot).
-- **Atlantis sanctum follow-ups (tunnel + Crystalline Resonance puzzle now DONE, see
-  history + its section):** run it through a **headless playthrough** to confirm the Core
-  trigger and attune flow (compile-verified only so far); **cloud-sync** the resonance
-  store (plus a rules update), like evolved/items; **tune or extend** the puzzle (crystal
-  count, difficulty, Core pad tile) via `data/resonance.ts`; wire `isEnlightened()` to an
-  actual **next zone** once one exists; optionally add a locked-door hint at the B4 tunnel
-  tile before the key (fully invisible until unlocked).
+- **Atlantis sanctum follow-ups (final test DONE + E2E-verified, see history + its
+  section):** **cloud-sync** the resonance store (plus a rules update), like evolved/items;
+  **tune/extend** the forge (crystal count, add ion pairs, Core pad tile) via
+  `data/resonance.ts`; wire `isEnlightened()` to an actual **next zone** once one exists;
+  optional polish — a "×5" beam or a multiple-choice-calc variant if single-tap stepping to
+  Z=13 feels long on a phone, and a locked-door hint at the B4 tunnel tile before the key.
 - **Forest chest art:** `assets/woods/treasure-chest.png` is currently a **byte-for-byte
   copy of the old `signpost.png`** (it was never real chest art), so the chest reads as a
   now-half-size signpost in-world. Supply a real chest sprite, plus an open-chest
@@ -366,6 +409,22 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-30 (Atlantis final test reworked → subatomic "Crystalline Core Attunement"):**
+Replaced the symbol→name Crystalline Resonance puzzle with a **syllabus-focused final test**
+(see its section). The Giza Core now opens a one-crystal-at-a-time **forge**: per crystal,
+inject **protons** (identity morphs live), add **neutrons** (mass/isotope; the tile vibrates
+until stable), tune **electrons** (charge → cation/anion), then a **net-zero circuit** finale
+links Na⁺/F⁻, Mg²⁺/O²⁻, Al³⁺/N³⁻ (Carbon is the neutral tutorial "heart"). Rewrote
+`data/resonance.ts` (`CORE_ELEMENTS`/`ION_PAIRS`/`IDENTITY_BY_Z` + helpers) and
+`ui/ResonanceOverlay.ts` (phase state machine, press-and-hold steppers, live derived readouts,
+circuit linker); reworked the `.res-*` theme in `index.css` (tile / phase tracker / stepper /
+circuit); updated the "Giza Core" dex card copy in `Isotopedex.ts`. Kept the **same**
+`openResonanceOverlay` entry point, the **same** `isotopia.resonance.v1` store (`attuneNode`
+now means "crystal forged"), and the **same** `markEnlightened`/`isEnlightened` reward +
+future-zone hook — so `CityInteriors.ts` trigger wiring and the dex secret cards were
+untouched. Clean TS build; **E2E-VERIFIED** end-to-end via headless Playwright (14/14 checks,
+zero page errors; `/tmp/pw/test-sanctum-final.mjs`, launch chromium with
+`--disable-dev-shm-usage`). **Not yet committed/pushed.**
 **2026-09-30 (Isotopedex Magic Key card + Atlantis Crystalline Resonance):** Two
 additions, both live on `main`. **(1) Isotopedex secret cards:** once the forest chest is
 looted, the **Magic Key** shows as a caught-style **"Secret Treasure"** card

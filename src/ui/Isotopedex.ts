@@ -426,7 +426,7 @@ function makeEnlightenmentCard(): HTMLDivElement {
         </div>
         <div class="dex-name">Giza Core</div>
         <div class="dex-el">Enlightenment</div>
-        <div class="dex-stats">You re-attuned every crystal in the Atlantis sanctum.<br>The Core resonates in perfect harmony.</div>
+        <div class="dex-stats">You forged every crystal from its protons, neutrons and electrons,<br>then balanced the ion circuit to net-zero charge.</div>
         <div class="dex-badge caught">✓ Resonant</div>`;
     return card;
 }
