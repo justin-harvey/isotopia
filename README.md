@@ -35,7 +35,9 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
   angles, expanding an octet (SF₄/SF₆), and weighing electronegativity to lock in
   ionic bonds (NaF, MgO, and more).
 - Deep beneath the city **Museum**, the Magic Key opens a hidden tunnel to a secret
-  **Atlantis sanctum** — the Periodic Table of Crystals.
+  **Atlantis sanctum** — the Periodic Table of Crystals. Step onto the **Giza Core** to
+  play **Crystalline Resonance**: the ancient crystals are mislabeled, so re-attune each
+  one to its true element to restore the Core to full resonance.
 
 ## Run it locally (for development)
 
@@ -60,7 +62,8 @@ No configuration is required — it runs on the local question seed.
 | `src/data/classConfig.ts` | Per-class settings + the release schedule |
 | `src/ui/QuizOverlay.ts` | The GBA-style battle quiz |
 | `src/ui/EvolveOverlay.ts` + `src/data/evolution.ts` | The Evolution Lab — fuse Elementals into compounds (VSEPR Fusion / Hyper-Chamber / ΔEN Tug-of-War chambers) |
-| `src/ui/Isotopedex.ts` | The creature-collection screen |
+| `src/ui/Isotopedex.ts` | The creature-collection screen (Elementals + secret "Magic Key" / "Giza Core" cards) |
+| `src/ui/ResonanceOverlay.ts` + `src/data/resonance.ts` | The Atlantis sanctum's Crystalline Resonance puzzle (re-attune the mislabeled crystals) |
 | `src/teacher.ts` + `teacher.html` | The teacher admin portal (separate page) |
 | `firebase/` | Security rules, seed data, and setup docs |
 

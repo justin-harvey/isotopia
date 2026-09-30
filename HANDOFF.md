@@ -1,7 +1,7 @@
 # Isotopia — Session Handoff
 
 A running summary of what this is and where it stands, so work can resume after a
-context reset. Last updated 2026-09-29.
+context reset. Last updated 2026-09-30.
 
 ## Where things stand (2026-09-27) — read this first
 **Isotopia is a web app, full stop.** Native (iOS/Android) is **abandoned** — Justin
@@ -260,6 +260,39 @@ Filenames + spec in `src/assets/compounds/README.md`. Justin is supplying the ar
 **Soft-gated:** attempts are allowed without owning the reactants (marked a "practice
 simulation") so it's testable; flip to strict "must be caught" later.
 
+## The Atlantis sanctum (Crystalline Resonance)
+The hidden **`AtlantisScene`** (key-gated tunnel from Museum B4, see history) is no
+longer a plain room. Stepping onto the **Giza Core** pad (`ATTUNE ✦`, tile
+`AtlantisScene.CORE = {11,5}`, drawn with `drawDoorCue`) opens
+**`ui/ResonanceOverlay.ts`**, an *error-correction* puzzle that turns the room art's
+garbled labels into the mechanic.
+
+- **The puzzle:** each crystal shows a real element **symbol** under a **wrong** name;
+  the player picks its **true** element from 4 choices. Correct gives a WebAudio chime
+  plus a lit crystal and raises the **Core resonance meter**; wrong gives a "dissonance"
+  buzz plus a shake and disables that choice (the answer is never revealed). Attune all
+  of them to reach **100%, i.e. Enlightenment**.
+- **Nodes:** `data/resonance.ts`, 6 crystals with symbol-confusion distractors
+  (K vs Carbon → Potassium, Na vs Calcium → Sodium, Al vs Gallium → Aluminum,
+  Fe vs Fluorine → Iron, Mg vs Manganese → Magnesium, O vs Osmium → Oxygen). Add or edit
+  entries there to change the puzzle; the meter and completion derive from the list length.
+- **Persistence:** `progress.ts` resonance store (`isotopia.resonance.v1`:
+  `attuneNode`/`isNodeAttuned`/`attunedCount`/`markEnlightened`/`isEnlightened`), its own
+  local key, kept out of the cloud `students/{uid}` schema like items/evolved.
+- **Reward + dex secret cards:** on Enlightenment `isEnlightened()` awards a **"Giza
+  Core"** card in the Isotopedex (`makeEnlightenmentCard`). The dex also shows the
+  **Magic Key** as a **"Secret Treasure"** card once looted (`makeMagicKeyCard`), both in
+  the gold `dex-special` style, both listed after the Elementals and kept OUT of the
+  "/N caught" element tally (a separate header **✦ secrets** count). `isEnlightened()` is
+  also left as a **hook to unlock a future zone**.
+- **Trigger wiring:** `AtlantisScene.create()` subscribes to `movementStopped` and opens
+  the overlay when the player rests on the Core tile (guarded by `inDialogue`), mirroring
+  WoodsScene's city-reveal. `DoorCue` was widened to allow the non-directional `✦` marker.
+- **Status:** verified by a clean TypeScript build and present in the dist bundle, but
+  **not yet run through a headless playthrough** (the `playwright` npm package is not
+  installed here, only the cached browsers). Quick manual jump for testing: load
+  `?debug`, then in the console run `__isotopia.game.scene.start('atlantis')`.
+
 ## Gotchas
 - **Netlify needs the 8 `FIREBASE_*` env vars** or the live site loses online features.
 - **Reload the game** after changing schedule/settings (startup-cached).
@@ -304,11 +337,18 @@ MIT. README credits reflect this.
   `assets/compounds/`, filenames in its README); tighten gating to "must own the
   reactants"; add the compounds to the DEX/collection; cloud-sync evolved forms (+ a
   rules update); difficulty tuning (hide target angles, allow Hyper-Chamber overshoot).
-- **Atlantis sanctum follow-ups (tunnel now DONE — see history):** an open-chest
-  sprite (drop `assets/woods/treasure-chest-open.png` = key `woods_chest_open`, auto-
-  swaps once looted); populate the sanctum (crystal nodes / gameplay) — it's a plain
-  background room today; optionally a locked-door hint at the B4 tunnel tile before the
-  key (currently fully invisible until unlocked).
+- **Atlantis sanctum follow-ups (tunnel + Crystalline Resonance puzzle now DONE, see
+  history + its section):** run it through a **headless playthrough** to confirm the Core
+  trigger and attune flow (compile-verified only so far); **cloud-sync** the resonance
+  store (plus a rules update), like evolved/items; **tune or extend** the puzzle (crystal
+  count, difficulty, Core pad tile) via `data/resonance.ts`; wire `isEnlightened()` to an
+  actual **next zone** once one exists; optionally add a locked-door hint at the B4 tunnel
+  tile before the key (fully invisible until unlocked).
+- **Forest chest art:** `assets/woods/treasure-chest.png` is currently a **byte-for-byte
+  copy of the old `signpost.png`** (it was never real chest art), so the chest reads as a
+  now-half-size signpost in-world. Supply a real chest sprite, plus an open-chest
+  `treasure-chest-open.png` (key `woods_chest_open`, auto-swaps once looted). The
+  standalone woods **signpost decoration was deleted** this session.
 - **PWA polish:** an "Install Isotopia" page with Add-to-Home-Screen steps for
   iPad/Android/Chromebook, then a **service worker** so it launches offline after
   the first visit.
@@ -326,6 +366,26 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-09-30 (Isotopedex Magic Key card + Atlantis Crystalline Resonance):** Two
+additions, both live on `main`. **(1) Isotopedex secret cards:** once the forest chest is
+looted, the **Magic Key** shows as a caught-style **"Secret Treasure"** card
+(`makeMagicKeyCard`, gold `dex-special` style, `assets/items/magic-key.png`), and the dex
+header gained a **✦ secrets** tally. Both are kept OUT of the `ELEMENTS` roster and the
+"/N caught" element count, so the periodic table, quizzes, and cloud schema are untouched.
+**(2) Atlantis "Crystalline Resonance" puzzle** (see its section above): the sanctum's
+Giza Core `ATTUNE ✦` pad opens `ui/ResonanceOverlay.ts`, an error-correction game (fix 6
+mislabeled crystals to 100%, i.e. Enlightenment, which awards a "Giza Core" secret dex
+card). New: `data/resonance.ts`, `ui/ResonanceOverlay.ts`; touched `progress.ts`
+(resonance store), `CityInteriors.ts` (AtlantisScene Core trigger), `DoorCue.ts` (`✦`
+marker), `index.css` (`.res-*` theme), `Isotopedex.ts`. Build clean, **not yet
+headless-tested** (no `playwright` package installed locally). Commit `68d4ba7`.
+**2026-09-30 (woods signpost removed + chest shrunk):** The forest "treasure chest" was
+found to be a **duplicate of the signpost** (`treasure-chest.png` equals the old
+`signpost.png`, identical MD5). Deleted the standalone **signpost** scenery object
+(removed from `woods_map.json`, the `WoodsScene` SCENERY table and texture load, and
+`signpost.png` itself) and **halved the chest scale** (`CHEST_ART_SCALE` 1.4 to 0.7). The
+chest still draws the (signpost) image, so it needs real chest art (see Open items).
+Commit `1f19725`.
 **2026-09-29 (forest treasure chest + Magic Key):** Added a **treasure chest** in the
 North Woods — a tree-framed clearing at tile **(27,6)**, east of the trail on the way
 up to the LOOKOUT (placement BFS-verified reachable/walkable/off-trail). Walk up to it
