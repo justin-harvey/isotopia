@@ -28,6 +28,26 @@ def load(rel):
 def cell(im, c, r):
     return im.crop((c * TS, r * TS, c * TS + TS, r * TS + TS))
 
+def flatten(tile, amount):
+    """Blend every pixel toward the tile's mean colour by `amount` (0..1), muting
+    internal detail. Used to calm the desert cracked-dirt so it reads as plainer
+    earth in the jungle (amount 0.75 = cracks ~75% less busy)."""
+    px = tile.load(); W, H = tile.size
+    rs = gs = bs = n = 0
+    for y in range(H):
+        for x in range(W):
+            R, G, B, A = px[x, y]
+            if A > 8: rs += R; gs += G; bs += B; n += 1
+    if n == 0: return tile
+    mr, mg, mb = rs // n, gs // n, bs // n
+    out = tile.copy(); opx = out.load()
+    for y in range(H):
+        for x in range(W):
+            R, G, B, A = px[x, y]
+            opx[x, y] = (int(R + (mr - R) * amount), int(G + (mg - G) * amount),
+                         int(B + (mb - B) * amount), A)
+    return out
+
 def tint(tile, mr, mg, mb):
     """Multiply a tile's RGB (keep alpha) -> recolour. The pack's grass is a
     bright lime meadow; we deepen it toward a rainforest green."""
@@ -54,8 +74,8 @@ def dcell(c, r): return DESERT.crop((c * TS, r * TS, c * TS + TS, r * TS + TS))
 grass_fill = tint(cell(grass, 0, 3), 0.60, 0.74, 0.50)   # r3c0: only opaque grass
 grass_v1 = tint(grass_fill, 0.88, 0.90, 0.86)            # a touch darker
 grass_v2 = tint(grass_fill, 1.10, 1.07, 1.05)            # a touch lighter
-dirt_fill = dcell(1, 6)                 # desert cracked-dirt (DIRT_A block)
-dirt_v    = dcell(2, 7)
+dirt_fill = flatten(dcell(1, 6), 0.75)  # desert cracked-dirt, cracks muted 75%
+dirt_v    = flatten(dcell(2, 7), 0.75)
 stone_fill = cell(stone, 1, 1)          # solid stone centre (unused by the map now)
 water_fill = dcell(4, 2)                # desert oasis deep water
 water_v    = dcell(5, 1)
