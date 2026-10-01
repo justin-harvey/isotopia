@@ -43,9 +43,12 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
   **Atlantis sanctum** — the Periodic Table of Crystals. Step onto the **Giza Core** to
   play **Crystalline Resonance**: the ancient crystals are mislabeled, so re-attune each
   one to its true element to restore the Core to full resonance.
-- Carry the sanctum's **crystal** back to the **Desert**: buried in the sand sleeps a vast
-  **pyramid** that only the crystal can raise. (Its chambers — a lesson in light, color and
-  atomic emission — are coming soon.)
+- Carry the sanctum's **crystal** back to the **Desert**, where a vast **pyramid** sleeps
+  beneath the sand. The crystal wakes three cold **flame-test beacons** at its buried apex;
+  light each by burning an **Elemental you've caught** whose flame colour matches (Sodium
+  burns yellow, Boron green, Sulfur blue — Magnesium's brilliant white is a decoy). Match all
+  three and the pyramid **rises from the sand** — a lesson in atomic emission: excited
+  electrons fall back to lower shells and cast off light of one fixed colour.
 
 ## Run it locally (for development)
 
@@ -105,6 +108,7 @@ touch room art; after re-running it, run `node tools/embed-maps.mjs && npm run b
 | `src/ui/EvolveOverlay.ts` + `src/data/evolution.ts` | The Evolution Lab — fuse Elementals into compounds (VSEPR Fusion / Hyper-Chamber / ΔEN Tug-of-War chambers) |
 | `src/ui/Isotopedex.ts` | The creature-collection screen (Elementals + secret "Magic Key" / "Giza Core" cards) |
 | `src/ui/ResonanceOverlay.ts` + `src/data/resonance.ts` | The Atlantis sanctum's Crystalline Resonance puzzle (re-attune the mislabeled crystals) |
+| `src/ui/BeaconOverlay.ts` + `src/data/flameTest.ts` | The Desert's flame-test beacon puzzle (burn caught Elementals to match each beacon's flame colour; solving it raises the pyramid) |
 | `src/teacher.ts` + `teacher.html` | The teacher admin portal (separate page) |
 | `firebase/` | Security rules, seed data, and setup docs |
 

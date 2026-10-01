@@ -1136,6 +1136,174 @@ html, body {
     .res-meter-fill { transition: none; }
 }
 
+/* ================= Flame-Test Beacons (desert Lesson Three) ================= */
+/* Warm sandstone/fire counterpart to the blue crystal .res-* overlay above. */
+.beacon-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(24, 12, 4, 0.74);
+    z-index: 1000;
+    font-family: var(--gba-font);
+    padding: 16px;
+    box-sizing: border-box;
+}
+.beacon-panel {
+    width: min(880px, 96vw);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    color: #ffe9cf;
+    background: linear-gradient(160deg, #3a2410 0%, #2a1808 60%, #37210e 100%);
+    border: 4px solid #e8a14a;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 3px rgba(232, 161, 74, 0.25),
+                0 0 34px rgba(232, 161, 74, 0.35), 0 14px 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+.beacon-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(90deg, #5a3414, #7a4a1c);
+    border-bottom: 3px solid #e8a14a;
+}
+.beacon-title { font-size: 12px; color: #ffcf8a; text-shadow: 0 0 8px rgba(255, 180, 90, 0.7); }
+.beacon-close {
+    font-family: var(--gba-font);
+    font-size: 14px;
+    width: 44px; height: 44px;
+    margin-left: auto;
+    color: #ffe9cf;
+    background: #4a2c12;
+    border: 2px solid #e8a14a;
+    border-radius: 8px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.beacon-intro { font-size: 9px; line-height: 1.9; color: #f1d7b6; margin: 0; padding: 12px 16px 0; }
+.beacon-intro b { color: #ffcf8a; }
+
+.beacon-meter {
+    position: relative;
+    height: 22px;
+    margin: 12px 16px;
+    background: #231405;
+    border: 2px solid #e8a14a;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.beacon-meter-fill {
+    height: 100%; width: 0;
+    background: linear-gradient(90deg, #c9702a, #ffb24a);
+    box-shadow: 0 0 14px rgba(255, 178, 74, 0.8);
+    transition: width 0.5s ease;
+}
+.beacon-meter-label {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; color: #fff3e2; text-shadow: 0 1px 2px #000;
+}
+.beacon-meter.full { border-color: #ffd869; }
+.beacon-meter.full .beacon-meter-fill {
+    background: linear-gradient(90deg, #ffd869, #fff3c4);
+    box-shadow: 0 0 16px rgba(255, 216, 105, 0.9);
+}
+
+.beacon-banner {
+    margin: 0 16px 4px;
+    padding: 12px;
+    text-align: center;
+    font-size: 11px; line-height: 1.8;
+    color: #2a1705;
+    background: linear-gradient(90deg, #ffd48a, #fff0cf);
+    border: 3px solid #ffd869;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(255, 196, 105, 0.6);
+}
+.beacon-banner span { display: block; margin-top: 6px; font-size: 8px; line-height: 1.9; color: #3a2a0c; }
+
+.beacon-body { padding: 12px 16px 6px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.beacon-row-head { font-size: 9px; color: #ffcf8a; margin: 8px 0 8px; letter-spacing: 1px; }
+
+.beacon-pillars { display: flex; gap: 12px; flex-wrap: wrap; }
+.beacon-pillar {
+    flex: 1 1 140px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    min-height: 44px;
+    padding: 12px 10px;
+    font-family: var(--gba-font);
+    color: #ffe9cf;
+    background: #2c1a0a;
+    border: 2px solid #7a4a1c;
+    border-radius: 10px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.beacon-pillar.sel { border-color: #ffcf8a; box-shadow: 0 0 0 2px rgba(255, 207, 138, 0.5); }
+.beacon-pillar.lit {
+    border-color: var(--flame);
+    background: #2c1a0a;
+    box-shadow: 0 0 16px var(--flame), inset 0 0 20px rgba(255, 245, 220, 0.1);
+    cursor: default;
+}
+.beacon-flame { font-size: 20px; line-height: 1; }
+.beacon-pillar.lit .beacon-flame { color: var(--flame); text-shadow: 0 0 12px var(--flame); }
+.beacon-color { font-size: 9px; color: var(--flame); text-transform: uppercase; }
+.beacon-hint { font-size: 7px; line-height: 1.7; color: #d9bf9e; text-align: center; }
+
+.beacon-status { font-size: 8px; line-height: 1.8; color: #ffe0b8; margin: 10px 2px 2px; min-height: 2.6em; }
+
+.beacon-tray { margin-top: 6px; }
+.beacon-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.beacon-chip {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    min-width: 64px; min-height: 44px;
+    padding: 8px 10px;
+    font-family: var(--gba-font);
+    color: #ffe9cf;
+    background: #39230f;
+    border: 2px solid #8a5a2a;
+    border-radius: 10px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.beacon-chip-sym { font-size: 12px; color: #ffcf8a; }
+.beacon-chip-swatch {
+    width: 28px; height: 8px; border-radius: 4px;
+    background: var(--flame); box-shadow: 0 0 8px var(--flame);
+}
+.beacon-chip-el { font-size: 7px; color: #d9bf9e; }
+.beacon-empty { font-size: 8px; color: #d9bf9e; padding: 6px 2px; }
+
+.beacon-primary {
+    margin: 10px 16px 18px;
+    padding: 14px;
+    font-family: var(--gba-font);
+    font-size: 11px;
+    color: #2a1705;
+    background: linear-gradient(90deg, #ffd48a, #ffb24a);
+    border: 3px solid #ffd869;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 0 18px rgba(255, 196, 105, 0.5);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.beacon-pillars.shake { animation: beacon-shake 0.4s; }
+@keyframes beacon-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .beacon-pillars.shake { animation: none; }
+    .beacon-meter-fill { transition: none; }
+}
+
 /* ================= First-run intro / help ================= */
 
 /* Small "?" help button (bottom-left, clear of the interior Leave button up top). */

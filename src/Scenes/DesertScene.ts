@@ -9,6 +9,8 @@ import { drawDoorCue } from './components/DoorCue';
 import { SceneName } from './enums/SceneNames';
 import { MAPS } from '../data/maps';
 import { showNpcDialog } from '../ui/NpcDialog';
+import { openBeaconOverlay } from '../ui/BeaconOverlay';
+import { BEACONS } from '../data/flameTest';
 import { hasItem, GIZA_CRYSTAL, isPyramidRisen, markPyramidRisen } from '../data/progress';
 
 // The Desert (level 2) — a wide sun-bleached basin reached south from the city.
@@ -18,20 +20,29 @@ import { hasItem, GIZA_CRYSTAL, isPyramidRisen, markPyramidRisen } from '../data
 // layer, same pattern as the woods). A south exit pad leads back to the city.
 //
 // LESSON THREE set-piece (see DESERT-LESSON3-PLAN.md): a massive hidden pyramid
-// sleeps under the sand. Carry the Atlantis sanctum crystal (GIZA_CRYSTAL) here and
-// step on the buried marker to RAISE it in a cutscene (camera pan + shaking + a slow
-// emerge-from-the-ground with dirt shedding off and fading). Once risen it stays
-// risen (progress.isPyramidRisen). The pyramid sprite is tile-composed by
-// tools/gen_pyramid.py (pyramid.png / pyramid-buried.png). Interior chambers +
-// collision footprint are the next increment (currently the door is a sealed stub).
+// sleeps under the sand, guarded by three cold flame-test beacons. Carry the Atlantis
+// sanctum crystal (GIZA_CRYSTAL) to the altar at the buried apex to wake the beacons,
+// then solve the FLAME-TEST puzzle (ui/BeaconOverlay): light each beacon by burning an
+// Elemental you've CAUGHT whose flame colour matches (Sodium=yellow, Boron=green,
+// Sulfur=blue). Match all three and the pyramid RISES in a cutscene (the three braziers
+// catch, then a camera pan + shaking + a slow emerge-from-the-ground with dirt shedding
+// off). Once risen it stays risen (progress.isPyramidRisen). The pyramid sprite is
+// tile-composed by tools/gen_pyramid.py (pyramid.png / pyramid-buried.png).
 export default class DesertScene extends GameScene {
     private static readonly EXIT = { x: 40, y: 49 };
     private static readonly START = { x: 40, y: 47 };
 
     // Pyramid placement (tile coords). base-centre = column cx, resting on row by.
     private static readonly PYRAMID = { cx: 40, by: 22 };
-    private static readonly MARKER = { x: 40, y: 24 };   // step here (with the crystal) to raise it
+    private static readonly MARKER = { x: 40, y: 24 };   // the flame-test altar (open the puzzle here)
     private static readonly DOOR = { x: 40, y: 22 };     // sealed entrance (once risen)
+
+    // The three flame-test braziers flanking the buried apex (tile coords). They sit
+    // dark until the puzzle is solved, then catch (one per beacon colour) as the
+    // pyramid rises. Order matches BEACONS (yellow, green, blue).
+    private static readonly BEACON_TILES = [
+        { x: 37, y: 25 }, { x: 40, y: 26 }, { x: 43, y: 25 },
+    ];
 
     private rising = false;
     private hintedCrystal = false;
@@ -144,12 +155,14 @@ export default class DesertScene extends GameScene {
 
         // --- Lesson-three pyramid -------------------------------------------------
         this.ensureDirtTexture();
+        this.ensureBeaconTexture();
         if (isPyramidRisen()) {
             this.addPyramidSprite('desert_pyramid');               // already up
             drawDoorCue(this, DesertScene.DOOR.x, DesertScene.DOOR.y, 'TOMB', '▲');
         } else {
             this.buriedSprite = this.addPyramidSprite('desert_pyramid_buried');
-            drawDoorCue(this, DesertScene.MARKER.x, DesertScene.MARKER.y, 'RELIC', '✦');
+            this.placeBeacons();                                   // three cold braziers
+            drawDoorCue(this, DesertScene.MARKER.x, DesertScene.MARKER.y, 'ALTAR', '✦');
         }
 
         const sub = this.gridEngine.movementStopped().subscribe((o) => {
@@ -157,7 +170,7 @@ export default class DesertScene extends GameScene {
             if (GlobalInfo._gameProgress.inDialogue || this.rising) return;
             const p = this.gridEngine.getPosition(this.playerName);
             if (!isPyramidRisen()) {
-                if (p.x === DesertScene.MARKER.x && p.y === DesertScene.MARKER.y) this.tryRaisePyramid();
+                if (p.x === DesertScene.MARKER.x && p.y === DesertScene.MARKER.y) this.onApproachAltar();
             } else if (p.x === DesertScene.DOOR.x && p.y === DesertScene.DOOR.y) {
                 showNpcDialog('The Pyramid', [
                     'The great door is sealed — bound by light and flame.',
@@ -197,17 +210,65 @@ export default class DesertScene extends GameScene {
         g.destroy();
     }
 
-    private tryRaisePyramid(): void {
+    // Walk onto the altar at the buried apex. The sanctum crystal is the key that
+    // wakes the beacons (plan: "crystal unlocks puzzle"); without it, a one-time hint.
+    // With it, open the flame-test puzzle — solving it (all three beacons lit) raises
+    // the pyramid. `?dev`/`?debug`/`?e2e` bypasses the crystal for testing.
+    private onApproachAltar(): void {
         if (this.rising || isPyramidRisen()) return;
         if (!hasItem(GIZA_CRYSTAL) && !this.isDev()) {
             if (!this.hintedCrystal) {
                 this.hintedCrystal = true;
-                showNpcDialog('', ['The sand hums faintly here… something buried answers to a crystal you do not yet carry.']);
+                showNpcDialog('', ['The sand hums faintly here… the three cold beacons answer only to a crystal you do not yet carry.']);
             }
             return;
         }
-        this.rising = true;
-        this.playPyramidRise();
+        openBeaconOverlay(
+            () => { this.rising = true; this.playPyramidRise(); },   // onSolved → rise
+            () => { /* onClose: nothing; the altar re-opens on the next walk-up */ },
+        );
+    }
+
+    // ---- flame-test beacons ------------------------------------------------------
+
+    private beaconSprites: Phaser.GameObjects.Image[] = [];
+
+    /** A soft glowing orb we tint per beacon colour (no art needed). */
+    private ensureBeaconTexture(): void {
+        if (this.textures.exists('beacon_orb')) return;
+        const g = this.make.graphics({ x: 0, y: 0 }, false);
+        g.fillStyle(0xffffff, 0.22); g.fillCircle(16, 16, 15);
+        g.fillStyle(0xffffff, 0.5);  g.fillCircle(16, 16, 10);
+        g.fillStyle(0xffffff, 1.0);  g.fillCircle(16, 16, 6);
+        g.generateTexture('beacon_orb', 32, 32);
+        g.destroy();
+    }
+
+    /** Drop the three cold braziers flanking the buried apex (dark until solved). */
+    private placeBeacons(): void {
+        const tw = this.map.tileWidth, th = this.map.tileHeight;
+        this.beaconSprites = DesertScene.BEACON_TILES.map((t) => {
+            const img = this.add.image(t.x * tw + tw / 2, (t.y + 1) * th, 'beacon_orb')
+                .setOrigin(0.5, 1)
+                .setScale((th * 1.1) / 32)
+                .setTint(0x5a5a66)        // unlit grey stone
+                .setAlpha(0.8)
+                .setDepth(DesertScene.GROUND_DEPTH);
+            return img;
+        });
+    }
+
+    /** Catch all three braziers in their beacon colours (called as the rise begins). */
+    private lightBeacons(): void {
+        this.beaconSprites.forEach((img, i) => {
+            const hex = BEACONS[i]?.color.hex ?? '#ffd21e';
+            img.setTint(parseInt(hex.slice(1), 16));
+            img.setAlpha(1);
+            this.tweens.add({
+                targets: img, scale: img.scale * 1.15, alpha: { from: 0.75, to: 1 },
+                duration: 320, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+            });
+        });
     }
 
     private setDialogue(active: boolean): void {
@@ -223,12 +284,15 @@ export default class DesertScene extends GameScene {
         const cam = this.cameras.main;
         this.setDialogue(true);
         this.input.enabled = false;
+        this.lightBeacons();            // the three true flames catch, then the ground stirs
         this.buriedSprite?.destroy();
 
         const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
         const finish = (): void => {
             markPyramidRisen();
+            this.beaconSprites.forEach(img => img.destroy());   // their work is done
+            this.beaconSprites = [];
             drawDoorCue(this, DesertScene.DOOR.x, DesertScene.DOOR.y, 'TOMB', '▲');
             this.showRiseTitle();
             cam.pan(this.playerSprite.x, this.playerSprite.y, 900, 'Sine.easeInOut');

@@ -3,6 +3,29 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-01.
 
+## New this session (2026-10-01b) — Flame-test puzzle raises the pyramid (model pivot)
+**The flame-test puzzle is OUTSIDE in the desert and solving it raises the pyramid.** Justin
+pivoted the design mid-build: the earlier plan put the flame test *inside* a risen pyramid
+interior; that interior (`PyramidScene`) was built then **deleted**. There is no pyramid
+interior — do not rebuild one unless asked. Shipped (Phase 2 / Puzzle A, see
+`DESERT-LESSON3-PLAN.md`):
+- **Flame-test fuels = Elementals you've CAUGHT** (not dusts, not new creatures). Beacons use
+  roster elements with real flame colours: **Na→yellow, B→green, S→blue** (**Mg→white** =
+  distractor). Data: `src/data/flameTest.ts`.
+- **Puzzle UI:** `src/ui/BeaconOverlay.ts` (pure DOM, cloned from `ResonanceOverlay`): tap a
+  beacon, tap one of your caught Elementals to "burn" it; match lights the beacon, mismatch
+  fizzles + teaches. All three lit → "Raise the pyramid ▸" → runs the rise. CSS `.beacon-*`
+  in `src/index.css` (warm sandstone/fire theme). Dev/e2e sees all fuels.
+- **Gate = the sanctum crystal.** `DesertScene.onApproachAltar()` (renamed from
+  `tryRaisePyramid`) opens the puzzle only if `hasItem(GIZA_CRYSTAL)` (dev bypass); solving it
+  (overlay `onSolved`) calls the existing `playPyramidRise()`. Three `beacon_orb` braziers sit
+  dark by the buried apex and `lightBeacons()` catches them in colour as the pyramid rises.
+- **Verified:** `npm run build` clean; headless (chrome-1243 + Node 22 CDP, `?e2e&dev`) — desert
+  boots with 3 braziers, overlay = 3 beacons + 4 fuels, solving lights all 3 → raise button →
+  confirm closes overlay + `rising=true`, **0 console errors**. Still needs a real-browser look
+  at the rise *animation* (software-GL starves headlessly) and the **no-crystal gate** path
+  (the `?e2e` flag also trips the dev bypass, so it's unobservable headlessly).
+
 ## New this session (2026-10-01) — Desert "Lesson Three": the pyramid rises
 **Started the desert's lesson-three set-piece** — a hidden pyramid that the Atlantis sanctum
 crystal raises from the sand. Full design + phased plan: **`DESERT-LESSON3-PLAN.md`** (topic:

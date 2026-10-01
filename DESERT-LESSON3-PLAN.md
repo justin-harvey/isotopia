@@ -1,32 +1,37 @@
 # Desert — Lesson Three: Light, EM Radiation & Atomic Emission
 
-Phased build plan for the desert finale. **Status: DESIGN / not started.** The desert
-(`DesertScene.ts`) is still explore-only (`createNpcs()` is an empty stub) — this is where
-lesson three lands. Full topic/vision notes also live in `HANDOFF.md` → Open items.
+Phased build plan for the desert finale. **Status: Phase 1 + Puzzle A (flame test) SHIPPED
+(2026-10-01).** The flame-test puzzle lives **OUTSIDE in the desert** and solving it is what
+raises the pyramid. Full topic/vision notes also live in `HANDOFF.md`.
+
+> **⚠️ Model pivot (2026-10-01, Justin): the puzzle is OUTSIDE; there is NO pyramid interior.**
+> Earlier drafts of this plan put the flame test *inside* a risen `PyramidScene`. That was
+> cut. The flame-test beacons stand in the desert by the buried apex; the **sanctum crystal
+> unlocks** the puzzle and **solving it raises the pyramid**. A `PyramidScene` interior was
+> built and then deleted — do NOT re-create it unless Justin asks.
 
 ## The player story (one paragraph)
-Finish the **Atlantis sanctum** → walk out carrying the **giant crystal** (a new inventory
-item). In the **desert**, the crystal + the right elements trigger a grand cutscene: a
-**massive hidden pyramid rises from the sand**. Inside, three light-and-flame puzzles
-(flame-test beacons → solar prism → energy locks) build to the capstone, teaching
-`c = λν`, `E = hν`, the EM spectrum, and atomic emission. It's the pedagogical sequel to the
-sanctum: the sanctum taught *electrons in shells*; the pyramid teaches *what those electrons
-emit when excited and relax* — the game should say that out loud at the entrance.
+Finish the **Atlantis sanctum** → walk out carrying the **giant crystal** (`GIZA_CRYSTAL`).
+In the **desert**, approach the altar at the buried pyramid's apex: the crystal wakes three
+cold **flame-test beacons**. Light each by burning an **Elemental you've CAUGHT** whose flame
+colour matches (Sodium = yellow, Boron = green, Sulfur = blue). Match all three and a
+**massive hidden pyramid rises from the sand**. It's the pedagogical sequel to the sanctum:
+the sanctum taught *electrons in shells*; the beacons teach *what those electrons emit when
+excited and relax* — the puzzle says that out loud.
 
-## Three decisions, baked in (veto any of these)
-1. **Flame-test fuels = collectible "dusts" (items), NOT new Elementals.** Scatter dusts
-   (Na, Li, K, Cu, Sr, Ca, Ba) as pickups in the risen pyramid, stored in the existing item
-   store (`isotopia.items.v1`, Magic Key pattern). Avoids inventing 6 new creatures. The
-   **pyramid-rise gate** = the sanctum crystal + having **caught the sanctum's core ion
-   elements** already on the journey (Na, Mg, O, F, Al, N — the `CORE_ELEMENTS` you forged the
-   crystal from). *Soft-gated for testing (crystal alone triggers), tightened later* — same
-   convention the Evolution Lab and sanctum already use.
-2. **Pyramid interior = a NEW scene** `PyramidScene` (clone the `AtlantisScene`/interior
-   pattern), reached by a door pad that only appears after the rise. Keeps the 80×50 desert
-   map clean and mirrors how Atlantis works. The **rise cutscene reuses `CityReveal`'s** pan
-   pattern (`ui/CityReveal.ts` → a new `ui/PyramidReveal.ts`).
-3. **Build in phases, playable spine first.** Crystal item + rise cutscene + an explorable
-   (empty) pyramid ships before any puzzle. Then one puzzle at a time, simplest first.
+## Decisions, baked in (veto any of these)
+1. **Flame-test fuels = Elementals you've CAUGHT, used from the Isotopedex** (Justin's call,
+   2026-10-01). NOT collectible dusts and NOT new creatures. Constraint: every beacon element
+   must be a real catchable Elemental, so the beacons use roster elements with genuine flame
+   colours — **Sodium → yellow, Boron → green, Sulfur → blue** (**Magnesium → brilliant white**
+   is an honest distractor). Of the classic flame-test set only Na is in the roster, which is
+   why Cu/K/Ba/Li/Sr/Ca are *not* used. See `src/data/flameTest.ts`.
+2. **Gate = the sanctum crystal.** "Crystal unlocks puzzle": `hasItem(GIZA_CRYSTAL)` is
+   required to open the beacon puzzle (`?dev`/`?debug`/`?e2e` bypasses for testing). Solving
+   the puzzle calls the existing `DesertScene.playPyramidRise()`.
+3. **No interior scene.** The puzzle and the payoff (the rise) are entirely in `DesertScene`.
+   The risen pyramid's `TOMB` door stays a "coming soon" stub (future phases, if any, are TBD
+   — likely also outside).
 
 ## Reuse map (why this is mostly assembly, not net-new engines)
 | New mechanic | Existing pattern to clone |
@@ -78,9 +83,11 @@ All in `DesertScene.ts` + the `progress.ts` pyramid store. Implemented this pass
 - **✅ Buried marker:** the `desert_pyramid_buried` sprite sits at base-centre tile **(40,22)**
   with a `RELIC ✦` cue; the rise trigger tile is **(40,24)** (player walks up col 40 from the
   city entrance and sees it dead ahead). Placement validated by a static map render.
-- **✅ Gate check:** step on (40,24) → `tryRaisePyramid()`. Needs `hasItem(GIZA_CRYSTAL)`
-  (soft; `?dev`/`?debug`/`?e2e` bypasses for testing). Without the crystal it drops a one-time
-  hint ("…answers to a crystal you do not yet carry"). *Later: also require the caught core elements.*
+- **✅ Gate check (now opens the flame puzzle):** step on the altar (40,24) → `onApproachAltar()`
+  (renamed from `tryRaisePyramid`). Needs `hasItem(GIZA_CRYSTAL)` (`?dev`/`?debug`/`?e2e`
+  bypasses). Without the crystal it drops a one-time hint. **With** it, opens the flame-test
+  beacon puzzle (Puzzle A); the rise now fires only when that puzzle is SOLVED (its `onSolved`
+  callback calls `playPyramidRise()`), not on bare step-on.
 - **✅ Rise cutscene (in-scene Phaser, NOT a DOM clone of CityReveal):** freezes the dog
   (`inDialogue` + `input.enabled=false`), camera pans/zooms to the site, the full pyramid
   **emerges from the ground** behind a geometry mask at the ground line, **jitters side-to-side**
@@ -91,10 +98,9 @@ All in `DesertScene.ts` + the `progress.ts` pyramid store. Implemented this pass
 - **✅ Persistence:** `progress.markPyramidRisen()` / `isPyramidRisen()` → `isotopia.pyramid.v1`
   (own local key, out of cloud schema). On return visits the risen pyramid shows immediately
   (no buried sprite, no re-animation) + a `TOMB ▲` door cue.
-- **⏳ Interior stubbed:** the `TOMB ▲` door currently opens a "sealed — coming soon" dialog.
-  `PyramidScene` (clone `AtlantisScene`) + the **collision footprint** are the next increment
-  (grid-engine collision is tilemap-baked, so the footprint should be carved into `gen_desert.py`
-  + re-embedded; today the risen pyramid is decorative/no-collision).
+- **✅ Interior CUT (2026-10-01):** the `TOMB ▲` door stays a "sealed — coming soon" dialog on
+  purpose. A `PyramidScene` interior was built then **deleted** per Justin's pivot — the whole
+  lesson plays outside. The risen pyramid is decorative/no-collision (fine; nothing to walk into).
 - **Verification (2026-10-01):** build clean (Node 18); headless (chrome-headless-shell-1243 +
   Node 22 CDP, `?e2e&dev`) confirms the **desert loads with the buried pyramid, player at START,
   0 page errors**, and the geometry-mask + particle primitives each render fine. The **animated
@@ -104,17 +110,27 @@ All in `DesertScene.ts` + the `progress.ts` pyramid store. Implemented this pass
   walk onto (40,24) (dev bypasses the crystal) → watch it rise. (Regular headful Chrome crashes
   in this sandbox, so no on-device check was possible here.) Throwaway harnesses in `/tmp/pw/`.
 
-## Phase 2 — Puzzle A: Flame-Test Beacon Pillars (simplest; do first)
-**Goal:** collect elemental dusts, match emission colors to open the outer temple gate.
-- **Dust pickups:** scatter dust items in the pyramid (reuse the chest/key pickup pattern);
-  add `DUST_*` ids to the item store. Start with a **subset** for the lock (e.g. Na/Cu/K) so
-  it isn't overloaded; keep the full palette available.
-- **Altar/beacon interaction:** proximity NPC/pad → pick a dust → the brazier lights its
-  **emission color** (Na yellow, Cu green, K purple, …). Match the required color sequence to
-  open the gate. Can be an inline dialog or a small `ui/BeaconOverlay.ts`.
-- **Teachable gotcha:** Cu and Ba both read "green"; K's lilac is masked by Na's yellow (the
-  cobalt-glass trick). Bake at least one into the puzzle.
-- **Verify:** wrong color → buzz/no-open; correct sequence → gate opens + progress flag.
+## Phase 2 — Puzzle A: Flame-Test Beacon Pillars — ✅ SHIPPED (2026-10-01)
+**Goal (met):** match flame colours to raise the pyramid — the puzzle IS the rise gate.
+- **Data:** `src/data/flameTest.ts` — `FLAME_COLORS`, `FLAME_FUELS` (caught-Elemental fuels:
+  Na=yellow, B=green, S=blue, Mg=white distractor), `BEACONS` (the three required colours).
+- **Puzzle UI:** `src/ui/BeaconOverlay.ts` (pure DOM, cloned from `ResonanceOverlay`): tap a
+  beacon → tap one of **your caught Elementals** → it burns its flame colour; a match lights
+  the beacon, a mismatch fizzles + teaches. Fuel tray = `FLAME_FUELS` filtered by
+  `isCaught(id)` (dev/e2e sees all). All three lit → a "Raise the pyramid ▸" button →
+  `onSolved()`.
+- **World:** `DesertScene` places three `beacon_orb` braziers (dark) by the buried apex;
+  `onApproachAltar()` opens the overlay (crystal-gated); on solve, `lightBeacons()` tints them
+  to their colours and `playPyramidRise()` runs. CSS: `.beacon-*` block in `src/index.css`.
+- **Teachable chemistry:** every fuel is a real, catchable Elemental with a genuine flame
+  colour; Mg (brilliant white) is an honest distractor. The emission "why" is stated in the
+  overlay intro (excited electrons fall back → photon of fixed colour).
+- **Verified (2026-10-01):** `npm run build` clean; headless (chrome-1243 + Node 22 CDP,
+  `?e2e&dev`) — desert boots with 3 braziers, overlay shows 3 beacons + 4 fuels, solving
+  lights all 3 and reveals the raise button, confirming closes the overlay and sets
+  `rising=true`, **0 console errors**. The rise *animation* needs a real-browser look
+  (software-GL starves headlessly). The **no-crystal gate** path can't be seen under `?e2e`
+  (that flag also trips the dev bypass) — confirm in a real browser as a non-enlightened player.
 
 ## Phase 3 — Puzzle B: Solar Prism / EMS alignment
 **Goal:** steer a sunbeam along the spectrum with a λ/ν dial to trip hidden sensors.
