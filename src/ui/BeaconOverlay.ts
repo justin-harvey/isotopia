@@ -156,7 +156,7 @@ function render(): void {
     const banner = overlay.querySelector('.beacon-banner') as HTMLElement;
     if (done) {
         banner.hidden = false;
-        banner.innerHTML = `🔥 THREE TRUE FLAMES 🔥<br>
+        banner.innerHTML = `🔥 EVERY BEACON BURNS TRUE 🔥<br>
             <span>Each colour was an element announcing itself by the light its electrons emit.
             The sand begins to tremble…</span>`;
     } else {
