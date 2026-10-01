@@ -25,7 +25,9 @@ wild Elementals yet). Verified in-engine headlessly (0 runtime errors, 335 colli
 tiles, screenshots).
 
 - **Art:** `src/assets/tiles/desert_tileset.png` (GrayCatGames PixelWorlds, 14×13 @16,
-  free for commercial use). Props auto-sliced to `src/assets/desert/*.png`.
+  free for commercial use). Props auto-sliced to `src/assets/desert/*.png`. *(Fixed a
+  slicing bug: `cactus-short.png` had a rock blob baked in above the cactus — re-cropped
+  to the cactus only.)*
 - **Map generator:** `tools/gen_desert.py` → `src/assets/tilemap/desert_map.json`.
   Technique: flat sand base (tile 24 + speckle variants) + **stamp pre-arranged
   blocks** (oasis / dirt-pit / cliff) skipping transparent cells, so features keep
@@ -58,11 +60,14 @@ in the build (0 runtime errors, 399 scenery objects, screenshots).
   as fully licensed; see `sprites/jungle/LICENSE.txt`.
 - **Slicer:** `tools/slice_jungle.py` **composes one ground sheet**
   `src/assets/tiles/jungle_tileset.png` (8×1 @16: grass / 2 grass-variants / dirt /
-  dirt-var / stone / 2 water) from the pack's separate Standart tilesets, and
-  `tint()`-recolours them (the pack's bright-lime grass → deep jungle green; its pink
-  clay → earthy brown; water deepened). Props cut to tight bounding boxes into
-  `src/assets/jungle/`: `tree-1..4` (green-first), `fern-1..6`, `rock-1..8`,
+  dirt-var / stone / 2 water). Grass is the pack's, `tint()`-deepened lime→rainforest
+  green; **dirt + water are borrowed from `desert_tileset.png`** (cracked earth + teal
+  oasis) so the biomes feel of a piece. Props cut to tight bounding boxes into
+  `src/assets/jungle/`: `tree-1..4` (unused extras), `fern-1..6`, `rock-1..8`,
   `moss-1..3`, plus the `slime-sheet.png` (4×4 @36×28, idle frames 0–3).
+  **Canopy is shared with the woods:** `JungleScene` loads `woods_tree_1..3` (dominant)
+  + `jungle_tree_1..2` (accents); `loadObjectImages` picks the asset folder from each
+  key's prefix (`woods_*`→`assets/woods/`, `jungle_*`→`assets/jungle/`).
 - **Map generator:** `tools/gen_jungle.py` → `src/assets/tilemap/jungle_map.json`.
   Deep-grass base + speckled variants, **organic blob** dirt clearings / water ponds
   (not rectangles), a tree-wall border that thins inward (`edge_p` density, cap 125,

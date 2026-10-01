@@ -61,7 +61,9 @@ export default class JungleScene extends GameScene {
     private static readonly GROUND_DEPTH = JungleScene.CHAR_DEPTH - 4;
     private static readonly SCENERY: Record<string,
         { keys: string[]; tilesW: number; depth: number }> = {
-        tree: { keys: ['jungle_tree_1', 'jungle_tree_2', 'jungle_tree_3', 'jungle_tree_4'],
+        // Canopy shared with the North Woods (woods_tree_*) plus the two green
+        // jungle trees as accents, so the biomes feel of a piece.
+        tree: { keys: ['woods_tree_1', 'woods_tree_2', 'woods_tree_3', 'jungle_tree_1', 'jungle_tree_2'],
                 tilesW: 3, depth: JungleScene.OVERHEAD_DEPTH },
         fern: { keys: ['jungle_fern_1', 'jungle_fern_2', 'jungle_fern_3',
                        'jungle_fern_4', 'jungle_fern_5', 'jungle_fern_6'],
@@ -81,11 +83,16 @@ export default class JungleScene extends GameScene {
     };
 
     loadObjectImages(): void {
-        const files: Record<string, string> = {};
+        // Key prefix picks the asset folder: woods_tree_1 -> assets/woods/tree-1.png,
+        // jungle_moss_1 -> assets/jungle/moss-1.png. Lets the jungle borrow woods art.
+        const seen = new Set<string>();
         Object.values(JungleScene.SCENERY).forEach(spec =>
-            spec.keys.forEach(key => { files[key] = key.replace('jungle_', '').replace(/_/g, '-'); }));
-        Object.entries(files).forEach(([key, file]) =>
-            this.load.image(key, `assets/jungle/${file}.png`));
+            spec.keys.forEach(key => {
+                if (seen.has(key)) return;
+                seen.add(key);
+                const [dir, ...rest] = key.split('_');
+                this.load.image(key, `assets/${dir}/${rest.join('-')}.png`);
+            }));
         Object.entries(JungleScene.FAUNA).forEach(([key, f]) =>
             this.load.spritesheet(key, `assets/jungle/${key.replace('jungle_', '')}-sheet.png`,
                 { frameWidth: f.frameW, frameHeight: f.frameH }));

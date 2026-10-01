@@ -41,22 +41,24 @@ def tint(tile, mr, mg, mb):
 
 # --- compose the ground sheet --------------------------------------------------
 grass = load('Tilesets/Standart_Tilesets/Grass_Tileset_Standart_1.png')
-dirt  = load('Tilesets/Standart_Tilesets/Dirt_Tileset_Standart_1.png')
 stone = load('Tilesets/Standart_Tilesets/StoneGround_Tileset_Standart_1.png')
-water = load('Tilesets/Standart_Tilesets/Water_Tileset_Standart_1-Sheet.png')
+
+# Dirt + water are borrowed from the DESERT tileset so the biomes feel of a piece
+# (the desert's cracked earth + teal oasis water read better here than the pack's
+# own pinkish clay / flat water). desert_tileset.png is 14 cols @16px.
+DESERT = Image.open(os.path.join(HERE, '..', 'src', 'assets', 'tiles', 'desert_tileset.png')).convert('RGBA')
+def dcell(c, r): return DESERT.crop((c * TS, r * TS, c * TS + TS, r * TS + TS))
 
 # Grass: deepen the lime meadow to a rainforest green, then make two subtle
 # brightness variants of that fill for patchy texture (no edge detail = no seams).
 grass_fill = tint(cell(grass, 0, 3), 0.60, 0.74, 0.50)   # r3c0: only opaque grass
 grass_v1 = tint(grass_fill, 0.88, 0.90, 0.86)            # a touch darker
 grass_v2 = tint(grass_fill, 1.10, 1.07, 1.05)            # a touch lighter
-# Dirt: the pack's clay is a greyish rose that reads pink on green — richen it
-# to a damp earthy brown so clearings look like forest floor.
-dirt_fill = tint(cell(dirt, 1, 1), 0.74, 0.66, 0.52)
-dirt_v    = tint(cell(dirt, 2, 3), 0.70, 0.62, 0.48)
+dirt_fill = dcell(1, 6)                 # desert cracked-dirt (DIRT_A block)
+dirt_v    = dcell(2, 7)
 stone_fill = cell(stone, 1, 1)          # solid stone centre (unused by the map now)
-water_fill = tint(cell(water, 1, 2), 0.82, 0.90, 0.92)   # deeper water
-water_v    = tint(cell(water, 2, 2), 0.82, 0.90, 0.92)
+water_fill = dcell(4, 2)                # desert oasis deep water
+water_v    = dcell(5, 1)
 
 COMPOSED = [grass_fill, grass_v1, grass_v2, dirt_fill, dirt_v, stone_fill, water_fill, water_v]
 sheet = Image.new('RGBA', (len(COMPOSED) * TS, TS), (0, 0, 0, 0))

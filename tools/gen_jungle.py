@@ -139,8 +139,9 @@ for (tx, ty) in order:
     if trees >= TREE_CAP: break
     if not floor_is_grass(tx, ty): continue       # keep clearings/ponds open
     if random.random() < edge_p(tx, ty):
-        # green trees (variants 0,1) dominate; warm ones (2,3) are rare accents
-        v = random.choice([0, 0, 0, 0, 1, 1, 1, 2, 3])
+        # woods trees (variants 0,1,2) dominate for a look shared with the North
+        # Woods; the two green jungle trees (3,4) are accents.
+        v = random.choice([0, 0, 0, 1, 1, 1, 2, 2, 3, 4])
         if add_prop('tree', tx, ty, v, 3.0, True):
             trees += 1
 
