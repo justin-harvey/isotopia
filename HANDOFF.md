@@ -1,7 +1,36 @@
 # Isotopia — Session Handoff
 
 A running summary of what this is and where it stands, so work can resume after a
-context reset. Last updated 2026-09-30.
+context reset. Last updated 2026-10-01.
+
+## New this session (2026-10-01) — Desert "Lesson Three": the pyramid rises
+**Started the desert's lesson-three set-piece** — a hidden pyramid that the Atlantis sanctum
+crystal raises from the sand. Full design + phased plan: **`DESERT-LESSON3-PLAN.md`** (topic:
+light / EM radiation / `c=λν`, `E=hν` / flame-test emission; three puzzles map onto the existing
+EvolveOverlay dial + ResonanceOverlay stepper + item store). Shipped this pass (Phases 0–1):
+- **Sanctum crystal is now an item.** `GIZA_CRYSTAL` (`'giza-crystal'`) added to the `progress.ts`
+  item store, granted inside `markEnlightened()` (+ load-time back-fill for already-enlightened
+  players), local-only like the Magic Key. No new dex card (Enlightenment already awards one).
+- **Tile-composed pyramid sprite.** `tools/gen_pyramid.py` builds a stepped ziggurat from the
+  GrayCatGames desert tiles + procedural step shading (no store art), emitting
+  `src/assets/desert/pyramid.png` (risen) + `pyramid-buried.png` (pre-rise marker) +
+  `tools/pyramid_preview.png`. Stepped & "good enough for now"; a smoother pyramid can overwrite
+  the same filenames later.
+- **The rise cutscene** (in `DesertScene.ts`). Buried-apex marker at tile **(40,22)**, trigger at
+  **(40,24)**; step on it with the crystal (`?dev`/`?debug`/`?e2e` bypasses) and the pyramid
+  **emerges from the ground** (geometry-mask clip at the ground line), **jitters**, **sheds dirt
+  particles that fade** + tumbling debris (reused boulder/shrub), brief camera jolt, title,
+  control restored. `prefers-reduced-motion` skips it. Persisted via a new `progress` pyramid
+  store (`isotopia.pyramid.v1`, `markPyramidRisen`/`isPyramidRisen`); risen stays risen.
+- **Interior = stubbed:** the `TOMB ▲` door opens a "sealed — coming soon" dialog. `PyramidScene`
+  + a real **collision footprint** (bake into `gen_desert.py`) are the next increment — today the
+  risen pyramid is decorative/no-collision.
+- **Verification:** build clean (Node 18); headless (chrome-headless-shell-1243 + Node 22 CDP)
+  confirms the desert loads with the buried pyramid, player at START, **0 page errors**; mask +
+  particle primitives render fine. **The animated rise itself is UNVERIFIED** — ~5s of continuous
+  swiftshader software-GL starves the event loop (headful Chrome also crashes in this sandbox), so
+  it needs a **real-browser smoke test**: `npm run watch` → `localhost:10001/?dev` → Warp → Desert
+  → walk onto (40,24). Tune timing/intensity after seeing it live.
 
 ## New this session (2026-09-30) — Desert (level 2) + Jungle (level 3) + Dev Warp
 
@@ -521,6 +550,53 @@ MIT. README credits reflect this.
   `data/resonance.ts`; wire `isEnlightened()` to an actual **next zone** once one exists;
   optional polish — a "×5" beam or a multiple-choice-calc variant if single-tap stepping to
   Z=13 feels long on a phone, and a locked-door hint at the B4 tunnel tile before the key.
+- **Desert "Lesson Three" — Light, EM Radiation & Atomic Emission (NEW design, 2026-10-01):**
+  the desert's lesson-three set-piece and the concrete payoff for `isEnlightened()`'s "next
+  zone" hook. (Desert is still explore-only; `DesertScene.createNpcs()` is an empty stub, so
+  this is where lesson three lands.) **Full phased build plan: `DESERT-LESSON3-PLAN.md`.**
+  **Topic (AP Chem):** `c = λν` (c = 3.0×10⁸ m/s); `E = hν` (h = 6.626×10⁻³⁴ J·s); the EM
+  spectrum (UV = short λ / high E ↔ IR = long λ / low E); flame-test emission colors (Na
+  yellow, Li red, K lilac/purple, Cu green, Sr red/orange, Ca orange, Ba green). Natural
+  **sequel to the Atlantis forge**: the sanctum taught electrons/shells; emission is what
+  those electrons do when excited and then relax — worth surfacing the electron-transition "why".
+
+  **Reveal sequence (Justin's vision):** finish the Atlantis sanctum → carry the **giant crystal**
+  out as an item → in the desert, combine it with **specific Elementals caught on the journey** →
+  grand cutscene: a **massive hidden pyramid rises from the sand**. The risen pyramid is the
+  lesson-three interior.
+
+  **Three puzzle mechanics (each maps onto an EXISTING overlay pattern — strong reuse):**
+  1. **Solar Prism / EMS alignment** — ancient mirrors + a λ/ν dial steer sunbeams along the
+     spectrum (dial λ down → ν & E up → UV to charge an obelisk; dial up → IR to melt ice /
+     reveal heat signatures). Reuse `EvolveOverlay`'s **dial-match** (the VSEPR bond-angle dial,
+     ±tolerance) + a live HUD.
+  2. **Flame-Test Beacon Pillars** — collect elemental **salts/dusts** in the ruins, toss into
+     altar fires, match the emission **color** to each gate lock (Cu→green, K→purple, Na→yellow…).
+     Reuse the **inventory item** store (Magic Key / crystal pattern, `isotopia.items.v1`) + a
+     color-match UI. *Note: Cu and Ba both read "green" — a real AP ambiguity to design around.*
+  3. **Energy-calc locks (`E = hν`, `c = λν`)** — given a target photon energy, adjust ν/λ on a
+     dial while the HUD computes `E` live; confirm when within tolerance. Reuse
+     `ResonanceOverlay`'s **stepper + live-derived-readout + confirm-when-exact** pattern.
+
+  **Open design decisions (resolve before building):**
+  - **What gates the pyramid-rise** — caught Elementals vs. collected "dusts"? Only **Na** is a
+    current Elemental; Li/K/Cu/Sr/Ca/Ba aren't. Either add flame-test Elementals to the roster
+    or treat dusts as items distinct from catchable creatures (the design leans "dusts").
+  - **Scene layout** — pyramid interior as a new scene (like `AtlantisScene`) or rooms inside
+    `DesertScene`? Where the rise cutscene lives (reuse the `CityReveal` cutscene pattern).
+  - **Scope/phasing** — three puzzle systems + a cutscene + maybe new elements; build in phases
+    (crystal item + rise cutscene first, then one puzzle at a time).
+
+  **Two starter backlog items (to tee it up):**
+  1. **Find a large pyramid sprite** matching the desert art — GrayCatGames PixelWorlds Desert
+     tileset, 16px pixel-art sand palette (`src/assets/tiles/desert_tileset.png`, props in
+     `src/assets/desert/`). Big enough to read as a monument rising; drop into `src/assets/desert/`.
+  2. **Turn the sanctum crystal into an inventory item.** Enlightenment currently only awards the
+     "Giza Core" dex card (`makeEnlightenmentCard`) + sets `isEnlightened()` — no carryable crystal.
+     Add e.g. `GIZA_CRYSTAL` via `progress.giveItem()` where `markEnlightened()` fires, **reusing
+     the Magic Key pattern** (`giveItem`/`hasItem`/id in `progress.ts`, local key
+     `isotopia.items.v1`, out of the cloud `students/{uid}` schema). This item + the specific
+     elements gate the pyramid-rise cutscene.
 - **Church interior showed the FASHION room (asset bug) — FIXED 2026-09-30.** `src/assets/rooms/
   church-interior.png` had been overwritten with the fashion textile art (wiring + collision were
   always correct). The real church art (cathedral + atom stained-glass + periodic-table floor)
@@ -563,6 +639,17 @@ MIT. README credits reflect this.
   (the HP battle is live now).
 
 ## Recent history (newest first)
+**2026-10-01 (Desert Lesson Three — pyramid rise, Phases 0–1):** Began the desert's lesson-three
+set-piece (full plan in `DESERT-LESSON3-PLAN.md`). (0) Turned the Atlantis sanctum crystal into an
+inventory item `GIZA_CRYSTAL` (granted in `markEnlightened()` + back-fill). (0) Built
+`tools/gen_pyramid.py` — a stepped pyramid composed from the desert tiles + procedural shading →
+`src/assets/desert/pyramid.png` / `pyramid-buried.png`. (1) Added the buried marker + crystal-gated
+**rise cutscene** to `DesertScene.ts` (emerge-from-ground via geometry mask, jitter, shedding/fading
+dirt particles + debris, camera jolt) and a `progress` pyramid store (`isotopia.pyramid.v1`); the
+`TOMB ▲` door is a "coming soon" stub (interior + collision are next). Build clean; desert+buried-
+pyramid load headless-verified (0 errors), but the **animated rise is unverified** (swiftshader
+starves on sustained render; headful Chrome crashes in-sandbox) → needs a real-browser smoke test.
+**Not committed at time of writing → committed with this push.**
 **2026-09-30 (final church + fashion interior art + easter-egg tweaks + deploy docs):** Justin
 supplied final church (cathedral) + fashion (textile-room) interior art into `src/assets/rooms/`
 (verified not swapped, 1408×768) — pushed + live. "what da dog doin" easter egg: raised combo 4→10

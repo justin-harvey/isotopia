@@ -43,6 +43,9 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
   **Atlantis sanctum** — the Periodic Table of Crystals. Step onto the **Giza Core** to
   play **Crystalline Resonance**: the ancient crystals are mislabeled, so re-attune each
   one to its true element to restore the Core to full resonance.
+- Carry the sanctum's **crystal** back to the **Desert**: buried in the sand sleeps a vast
+  **pyramid** that only the crystal can raise. (Its chambers — a lesson in light, color and
+  atomic emission — are coming soon.)
 
 ## Run it locally (for development)
 
@@ -91,6 +94,7 @@ touch room art; after re-running it, run `node tools/embed-maps.mjs && npm run b
 | `src/Scenes/` | Phaser scenes (town = `TestScene`, `WoodsScene`, `DesertScene`, `JungleScene`, building interiors) + engine components |
 | `src/ui/DevWarp.ts` | Dev/staff in-game zone warp (jump to any scene; hidden from students — needs `?dev` or a staff sign-in) |
 | `tools/gen_desert.py` | Procedurally builds the Desert map from `desert_tileset.png`; re-run then `node tools/embed-maps.mjs && npm run build` |
+| `tools/gen_pyramid.py` | Composes the Desert pyramid sprite (`src/assets/desert/pyramid*.png`) from the desert tiles — a stepped ziggurat with procedural step shading, plus a buried pre-rise state; re-run then `npm run build` |
 | `tools/slice_jungle.py` + `tools/gen_jungle.py` | Compose the Jungle ground sheet + slice props from the Lost Valleys pack, then build `jungle_map.json`; re-run then `node tools/embed-maps.mjs && npm run build` |
 | `src/data/elements.ts` | The element creatures (symbol, name, atomic number, silly display name) |
 | `src/data/questions.ts` | Local seed question bank (used offline / as fallback) |

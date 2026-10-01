@@ -180,6 +180,13 @@ const ITEMS_KEY = 'isotopia.items.v1';
 
 /** Well-known item ids. */
 export const MAGIC_KEY = 'magic-key';
+// The giant crystal the player carries out of the Atlantis sanctum once the shrine
+// reaches full resonance (Enlightenment). Granted automatically in markEnlightened()
+// below, and back-filled on load for players who were already enlightened before the
+// item existed. This is the key half of the desert "pyramid rise" gate — combined
+// with specific caught elements it raises the hidden pyramid. See DESERT-LESSON3-PLAN.md.
+// Check with hasItem(GIZA_CRYSTAL).
+export const GIZA_CRYSTAL = 'giza-crystal';
 
 function loadItems(): Record<string, boolean> {
     try {
@@ -227,6 +234,9 @@ function loadResonance(): ResonanceState {
 }
 
 let resonanceState: ResonanceState = loadResonance();
+// Back-fill the sanctum crystal for anyone who reached Enlightenment before the crystal
+// item existed (markEnlightened grants it going forward; this covers past completions).
+if (resonanceState.enlightened) giveItem(GIZA_CRYSTAL);
 
 function saveResonance(): void {
     try { localStorage.setItem(RESONANCE_KEY, JSON.stringify(resonanceState)); }
@@ -241,8 +251,40 @@ export function isNodeAttuned(id: string): boolean { return !!resonanceState.att
 export function attunedCount(): number {
     return Object.keys(resonanceState.attuned).filter(k => resonanceState.attuned[k]).length;
 }
-/** Mark the shrine fully resonant — set when the final node is attuned. */
+/** Mark the shrine fully resonant — set when the final node is attuned. Also grants the
+ *  sanctum crystal (GIZA_CRYSTAL) the player carries out: the desert pyramid-rise gate. */
 export function markEnlightened(): void {
     if (!resonanceState.enlightened) { resonanceState.enlightened = true; saveResonance(); }
+    giveItem(GIZA_CRYSTAL);   // idempotent; ensures the crystal is always in sync with Enlightenment
 }
 export function isEnlightened(): boolean { return resonanceState.enlightened; }
+
+// ---- Desert pyramid "rise" -------------------------------------------------
+// Whether the hidden desert pyramid has been raised. The payoff of carrying the
+// sanctum crystal (GIZA_CRYSTAL) to the desert — once risen it stays risen. Its
+// own local-only key, same schema-safety pattern as the items/resonance stores
+// (kept out of the cloud students/{uid} object). See DESERT-LESSON3-PLAN.md.
+const PYRAMID_KEY = 'isotopia.pyramid.v1';
+
+interface PyramidState { risen: boolean; }
+
+function loadPyramid(): PyramidState {
+    try {
+        const raw = localStorage.getItem(PYRAMID_KEY);
+        if (raw) { const v = JSON.parse(raw) as Partial<PyramidState>; return { risen: !!v.risen }; }
+    } catch { /* ignore corrupt/unavailable storage */ }
+    return { risen: false };
+}
+
+let pyramidState: PyramidState = loadPyramid();
+
+function savePyramid(): void {
+    try { localStorage.setItem(PYRAMID_KEY, JSON.stringify(pyramidState)); }
+    catch { /* storage unavailable — stays in-memory this session */ }
+}
+
+/** Record that the desert pyramid has risen (idempotent). */
+export function markPyramidRisen(): void {
+    if (!pyramidState.risen) { pyramidState.risen = true; savePyramid(); }
+}
+export function isPyramidRisen(): boolean { return pyramidState.risen; }
