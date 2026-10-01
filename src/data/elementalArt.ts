@@ -6,10 +6,10 @@ const ART_IDS = new Set<string>([
     'iron', 'neon', 'uranium', 'magnesium', 'nitrogen',
     // 2026-09 art drop
     'helium', 'beryllium', 'boron', 'fluorine', 'aluminum', 'sulfur', 'scandium',
-    // ⚠️ HIGH-PRIORITY ART NEEDED — the flame-test Elementals (potassium, copper,
-    // barium, lithium, strontium, calcium) are deliberately NOT listed yet: they have
-    // no PNG, so they render as tinted placeholders. Drop art in src/assets/elementals/
-    // (<id>.png, background removed) and add each id above. See ART-NEEDED.md.
+    // Flame-test Elementals — currently PLACEHOLDER art (little flame creatures in each
+    // element's flame colour, tools/gen_placeholder_elementals.py). Real art still wanted
+    // (see ART-NEEDED.md); replacing <id>.png swaps it in with no code change.
+    'potassium', 'copper', 'barium', 'lithium', 'strontium', 'calcium',
 ]);
 
 /** Texture cache key for an Elemental's art, or undefined if it has no art. */
