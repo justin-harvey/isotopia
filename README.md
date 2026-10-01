@@ -30,13 +30,14 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
   use the **Rad Finder** (Tools row) to home in on Elementals you haven't caught.
 - Explore the woods to find a hidden **treasure chest** — walk up to it to claim
   the **Magic Key**.
-- South out of the city, cross into the **Desert** (level 3) — a sun-bleached
-  basin of oasis pools, cacti, boulders and rock buttes. It's the **Lesson Three**
-  finale: hunt down the hidden flame-test metals, then (with the Atlantis crystal)
-  light the beacons to raise a buried pyramid.
-- North through the Desert lies the **Jungle** (level 2) — a dense rainforest of
+- Out of the city, cross into the **Jungle** (level 2) — a dense rainforest of
   canopy trees, dirt clearings and rock-ringed ponds where **teal slimes** drift by
-  the water, there to explore.
+  the water, there to explore. (Lesson Two — electron configuration — is designed
+  but not built yet; see `JUNGLE-LESSON2-PLAN.md`.)
+- Through the Jungle lies the **Desert** (level 3) — a sun-bleached basin of oasis
+  pools, cacti, boulders and rock buttes. It's the **Lesson Three** finale: hunt down
+  the hidden flame-test metals, then (with the Atlantis crystal) light the beacons to
+  raise a buried pyramid. (World order: Town → Woods → City → Jungle → Desert.)
 - Find the hidden city and its **Evolution Lab**, where you fuse your caught
   Elementals into real molecules by solving their chemistry — matching VSEPR bond
   angles, expanding an octet (SF₄/SF₆), and weighing electronegativity to lock in
@@ -88,9 +89,10 @@ stable, a browser (or an "Add to Home Screen" install) may cache an old image
 under the same name — hard-refresh / clear site data after a redeploy to see it.
 
 > **Texture consistency (initiative in progress):** shared elements (water, dirt,
-> grass, stone) should look the same across every level. First step: the Town lake
-> adopts the **Jungle's** water texture; then the desert oasis and other shared
-> textures follow. See `HANDOFF.md` → *Open items* for the task + file pointers.
+> grass, stone) should look the same across every level. ✅ First step done — the
+> Town lake now uses the **Jungle's** water texture (`tools/slice_water.py` →
+> `src/assets/tiles/water.png`, tiled in `TestScene.drawLake`); the desert oasis and
+> other shared textures follow. See `HANDOFF.md` → *Open items* for the task + pointers.
 
 Interior **collision** (walls + exit portals) is authored separately by painting
 mask canvases — see `tools/gen_interior_collision.py` (paint sources live outside
