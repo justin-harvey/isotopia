@@ -43,8 +43,10 @@ const BUILDINGS: { key: string; oy: number; h: number; doorX: number; widthTiles
 ];
 
 // The decorative lake (matches LAKE in tools/gen_town.py): a rectangle of
-// blocking water cells, drawn blue here since the tiles have no real water art.
+// blocking water cells. Painted here with the canonical jungle/oasis water
+// texture (tools/slice_water.py) so water reads the same in every zone.
 const LAKE = { x: 24, y: 15, w: 14, h: 7 };  // in tiles
+const WATER_TEX = 'water_tex';
 
 
 export default class TestScene extends GameScene {
@@ -96,6 +98,8 @@ export default class TestScene extends GameScene {
         this.loadElementalArt(MONSTER_SPAWNS.map(s => s.elementId))
         // Storefront art (backgrounds already removed) overlaid on the map.
         BUILDINGS.forEach(b => this.load.image(b.key, `assets/buildings/${b.key.replace('bld_', '')}.png`))
+        // Canonical shared water tile (the jungle's) for the lake — see drawLake.
+        this.load.image(WATER_TEX, 'assets/tiles/water.png')
     }
 
     create(): void {
@@ -133,18 +137,22 @@ export default class TestScene extends GameScene {
             .setDepth(1)
     }
 
-    // Paints the lake: rippled blue fill over the blocking water cells, plus a
+    // Paints the lake: the canonical jungle/oasis water texture tiled over the
+    // blocking water cells (so water looks the same here as in the jungle and
+    // desert), clipped to a rounded-rect pond shape with a dark-teal rim, plus a
     // "LAKE" label. Sits above the ground tiles but below the floating labels;
     // the dog can never walk onto it (those cells collide), so depth is safe.
     private drawLake(): void {
         const px = LAKE.x * 16, py = LAKE.y * 16, pw = LAKE.w * 16, ph = LAKE.h * 16
-        const g = this.add.graphics().setDepth(50)
-        g.fillStyle(0x2a6fb0, 1).fillRoundedRect(px, py, pw, ph, 10)
-        g.lineStyle(2, 0x1c4f80, 1).strokeRoundedRect(px, py, pw, ph, 10)
-        g.fillStyle(0x5aa0d8, 0.5)
-        for (let i = 0; i < 3; i++) {
-            g.fillRoundedRect(px + 12, py + 14 + i * 22, pw - 24, 6, 3)
-        }
+        const water = this.add.tileSprite(px, py, pw, ph, WATER_TEX)
+            .setOrigin(0, 0).setDepth(50)
+        // Rounded-rect geometry mask → the stylised pond shape (grass shows in the
+        // corners, as before). make.graphics is kept off the display list.
+        const maskShape = this.make.graphics({ x: 0, y: 0 }, false)
+            .fillStyle(0xffffff).fillRoundedRect(px, py, pw, ph, 10)
+        water.setMask(maskShape.createGeometryMask())
+        this.add.graphics().setDepth(50)
+            .lineStyle(2, 0x2c4b47, 1).strokeRoundedRect(px, py, pw, ph, 10)
         this.add.text(px + pw / 2, py + ph / 2, 'LAKE', {
             fontFamily: 'monospace',
             fontSize: '12px',

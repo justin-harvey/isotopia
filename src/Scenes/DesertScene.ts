@@ -149,19 +149,15 @@ export default class DesertScene extends GameScene {
             ?.setDepth(DesertScene.OVERHEAD_DEPTH);
         this.placeScenery();
 
-        // South exit back to the city: a glowing "CITY ▼" pad at the bottom edge.
+        // South exit back to the Jungle: a glowing "JUNGLE ▼" pad at the bottom edge.
+        // The desert is the level-3 finale, reached FROM the jungle (City → Jungle →
+        // Desert), so this links back to the jungle; you arrive here from the jungle's
+        // north "DESERT" pad. (There is no onward exit — the desert is the end.)
         new Door({
             scene: this, xPosition: DesertScene.EXIT.x, yPosition: DesertScene.EXIT.y,
-            nextScene: SceneName.City, entryOffset: { dx: 0, dy: -1 },
+            nextScene: SceneName.Jungle, entryOffset: { dx: 0, dy: -1 },
         });
-        drawDoorCue(this, DesertScene.EXIT.x, DesertScene.EXIT.y - 1, 'CITY', '▼');
-
-        // North trail onward to the Jungle (level 2): a "JUNGLE ▲" pad at the top edge.
-        new Door({
-            scene: this, xPosition: 40, yPosition: 0,
-            nextScene: SceneName.Jungle, entryOffset: { dx: 0, dy: 1 },
-        });
-        drawDoorCue(this, 40, 1, 'JUNGLE', '▲');
+        drawDoorCue(this, DesertScene.EXIT.x, DesertScene.EXIT.y - 1, 'JUNGLE', '▼');
 
         // --- Lesson-three pyramid -------------------------------------------------
         this.ensureDirtTexture();

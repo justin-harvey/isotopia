@@ -8,15 +8,18 @@ import { drawDoorCue } from './components/DoorCue';
 import { SceneName } from './enums/SceneNames';
 import { MAPS } from '../data/maps';
 
-// The Jungle (level 2) — a dense rainforest reached NORTH from the Desert.
+// The Jungle (level 2) — a dense rainforest. In the level progression you reach
+// it FROM the City and leave onward to the Desert (City → Jungle → Desert).
 // Built from the Lost Valleys jungle pack by tools/gen_jungle.py: a deep-green
 // grass expanse walled in by trees, carved with earthy dirt clearings, dotted
 // with rock-ringed water ponds, and blanketed in ferns, rocks and moss (all the
 // scenery object layer, same pattern as the woods/desert). No wild Elementals
-// yet — it's here to explore (populate later). A south exit pad leads back to
-// the Desert.
+// yet — it's here to explore (populate later; lesson two = electron configuration,
+// see JUNGLE-LESSON2-PLAN.md). You arrive at the SOUTH entrance (START, by the
+// "CITY" pad) and walk NORTH to the "DESERT" pad that leads onward to the finale.
 export default class JungleScene extends GameScene {
-    private static readonly EXIT = { x: 40, y: 49 };
+    private static readonly EXIT = { x: 40, y: 49 };    // south pad → back to the City
+    private static readonly ONWARD = { x: 40, y: 0 };   // north pad → onward to the Desert
     private static readonly START = { x: 40, y: 47 };
 
     constructor() {
@@ -165,13 +168,21 @@ export default class JungleScene extends GameScene {
         this.placeScenery();
         this.spawnFauna();
 
-        // South exit back to the Desert: a glowing "DESERT ▼" pad at the bottom edge.
-        // Approach from the north and step onto the pad to leave.
+        // South exit back to the City: a glowing "CITY ▼" pad at the bottom edge
+        // (this is where you arrive from the City). Step onto the pad to return.
         new Door({
             scene: this, xPosition: JungleScene.EXIT.x, yPosition: JungleScene.EXIT.y,
-            nextScene: SceneName.Desert, entryOffset: { dx: 0, dy: -1 },
+            nextScene: SceneName.City, entryOffset: { dx: 0, dy: -1 },
         });
-        drawDoorCue(this, JungleScene.EXIT.x, JungleScene.EXIT.y - 1, 'DESERT', '▼');
+        drawDoorCue(this, JungleScene.EXIT.x, JungleScene.EXIT.y - 1, 'CITY', '▼');
+
+        // North trail onward to the Desert (level 3 finale): a "DESERT ▲" pad at the
+        // top edge. Walk the length of the jungle to reach it.
+        new Door({
+            scene: this, xPosition: JungleScene.ONWARD.x, yPosition: JungleScene.ONWARD.y,
+            nextScene: SceneName.Desert, entryOffset: { dx: 0, dy: 1 },
+        });
+        drawDoorCue(this, JungleScene.ONWARD.x, JungleScene.ONWARD.y + 1, 'DESERT', '▲');
     }
 
     // No wild Elementals in the jungle yet — explore-only for now.

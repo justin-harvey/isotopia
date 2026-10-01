@@ -3,6 +3,49 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-01.
 
+## New this session (2026-10-01f) — level progression rewired to City → Jungle → Desert + Lesson-2 plan
+**Walk order is now Town → Woods → City → Jungle → Desert** (was City → Desert → Jungle). Justin's
+call so the pedagogy flows L1 sanctum → **L2 jungle (electron config)** → L3 desert (emission). This
+supersedes the "Chain is now … City → Desert → Jungle" lines in the older 2026-09-30 biome notes
+below. Link-only change (pads teleport; the jungle map stays geographically north of the desert):
+- **City** `(18,71)` pad → **Jungle** (was Desert), relabelled `JUNGLE ▼` (`CityScene`).
+- **Jungle**: south pad `(40,49)` → **City** (relabelled `CITY ▼`; = the arrival/entrance); **new**
+  north pad `(40,0)` → **Desert** (`DESERT ▲`) so you traverse the jungle to the finale (`JungleScene`).
+- **Desert**: south pad `(40,49)` → **Jungle** (was City; the back-link, relabelled `JUNGLE ▼`); the
+  old north `(40,0)` → Jungle pad was **removed** (the desert is the end — no onward exit) (`DesertScene`).
+- **Desert gate unchanged:** still only `GIZA_CRYSTAL` (the sanctum). The jungle is NOT a desert
+  prerequisite (Justin: "already gated by completing the sanctum"), so the Jungle→Desert pad stays
+  open regardless of any jungle lesson. DevWarp already lists Jungle (lvl2) before Desert (lvl3).
+- **Verified** headless (chromium-1243 + Node 22 CDP, `?e2e&dev`): build clean; each modified scene
+  boots ready with **0 errors** and its door CUES match the new graph — city = `WOODS ▼` + `JUNGLE ▼`,
+  jungle = `CITY ▼` + `DESERT ▲`, desert = `JUNGLE ▼` only (`/tmp/pw/boot-scenes.mjs`). Each cue is
+  paired with its Door's `nextScene`, so matching cues = correct links. The live scene-to-scene
+  *switch* itself isn't observable headlessly (swiftshader saturates the renderer during the heavy
+  80×50/52×72 map loads and wedges CDP — same limitation as the pyramid-rise); worth a 30s
+  real-browser smoke test (`npm run watch` → City south `JUNGLE` pad → Jungle north `DESERT` pad).
+- **Lesson-2 design mapped:** `JUNGLE-LESSON2-PLAN.md` — the "Canopy Energy Network" (electron
+  configuration: s/p/d/f capacities, Aufbau order, block puzzles) as a **clone of the sanctum forge**
+  (`ResonanceOverlay`/`resonance.ts` → `CanopyOverlay`/`aufbau.ts`), totems = caught Elementals,
+  verticality lives in the overlay (top-down game, no platforming). Not built yet; Phase 0 = the data
+  backbone (`configFor(z)`).
+
+## New this session (2026-10-01e) — texture consistency: Town lake uses the Jungle water
+First task of the **texture-consistency initiative** (Open items) shipped: the **Town lake now uses
+the canonical jungle/oasis water texture** instead of its old flat-blue drawn fill. New
+`tools/slice_water.py` lifts the two water cells (6 & 7) out of the composed `jungle_tileset.png`
+into a power-of-two `src/assets/tiles/water.png` (32×32 = a 2×2 of the water variants, so a
+TileSprite tiles it cleanly with GL REPEAT, no bleed). `TestScene.drawLake()` now lays a
+`tileSprite('water_tex')` over the lake rect, clipped by a rounded-rect geometry mask (same
+stylised pond shape, grass still shows in the corners) with a dark-teal rim; the faux-ripple
+highlights are gone, the LAKE label stays. **Verified** headless (chromium-1243 + Node 22 CDP,
+`?e2e&dev`): build clean, `water_tex` loads, the TileSprite sits exactly on the lake cells
+(384,240,224×112), renders as teal textured water, **0 console errors** (`/tmp/pw/lake-shot.mjs` →
+`/tmp/pw/town-lake.png`). The texture is identical pixels to the jungle ponds. *(Cosmetic note: a
+big rectangular lake makes the 32px tile's repeat a bit visible as a diagonal; the jungle's small
+organic ponds hide it. Fine for now; a bigger/organic water tile or a shoreline would soften it.)*
+**Next in the initiative:** extend the same `water.png` to the desert oasis, then audit dirt/grass/
+stone/paths so every zone shares one palette.
+
 ## New this session (2026-10-01d) — level renumber (Jungle = 2, Desert = 3) + elementals hidden
 - **Levels swapped:** the **Jungle is now level 2** and the **Desert is level 3** (the Desert holds
   the crystal-gated Lesson-Three flame-test finale, so it's the higher tier). This is a
@@ -513,17 +556,17 @@ Town interiors, building/bridge artwork, the dog) authored by Justin. Code is
 MIT. README credits reflect this.
 
 ## Open items / next
-- **🎨 Texture consistency across all levels (Justin — PRIORITY, start the initiative):** shared
+- **🎨 Texture consistency across all levels (Justin — PRIORITY, initiative started):** shared
   elements should look the SAME in every zone; today each level has its own water/dirt/grass/stone.
-  **First task: make the Town (level 1) lake use the same water texture as the Jungle.** Pointers —
-  the town lake is painted in `tools/gen_town.py` (Luna-Town tiles) → `test_map` (embedded in
-  `src/data/maps.ts`); the jungle water is the canonical look, the last 2 cells of the 8×1
-  `src/assets/tiles/jungle_tileset.png` (composed + tint-recoloured by `tools/slice_jungle.py`);
-  the desert oasis water comes from `desert_tileset.png`. Approach: adopt the jungle water tile as
-  canonical, bring it into the town tileset/tilemap and repaint the lake in `gen_town.py`, then
-  `node tools/embed-maps.mjs && npm run build`. **Then** extend the same palette to the desert
-  oasis and audit the other shared textures (dirt/grass/stone/paths) so all levels share one visual
-  language. (No art purchase needed — reuse the jungle tiles.)
+  **✅ First task DONE (2026-10-01e): the Town lake now uses the canonical jungle water** — the
+  canonical water tile is extracted to `src/assets/tiles/water.png` by `tools/slice_water.py` and
+  tiled in `TestScene.drawLake()` (see this session's note above). *(Implementation note: the lake
+  is a DRAWN decorative body of water over blocking cells — `gen_town.py` only stamps a dummy
+  collision gid — so it was repainted in `TestScene`, not in the tilemap; no `embed-maps` needed.)*
+  **Remaining:** (1) point the **desert oasis** at the same `water.png` (or confirm it already
+  matches — the jungle water IS the desert oasis water, `desert_tileset.png` cells (4,2)/(5,1)); (2)
+  audit the other shared textures (dirt/grass/stone/paths) so all levels share one visual language.
+  (No art purchase needed — reuse the jungle tiles.)
 - **Verify on a real iPad (now live — top untested risk):** the 2026-09-29 UX pass
   (see `SESSION-HANDOFF-2026-09-29.md`) — student sign-up/login (inline errors +
   auto-verify), the Rad Finder arrow + Track, the reduced-motion battle cover, dex

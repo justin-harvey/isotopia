@@ -133,12 +133,14 @@ export default class CityScene extends GameScene {
         });
         drawDoorCue(this, CityScene.EXIT.x, CityScene.EXIT.y - 1, 'WOODS', '▼');
 
-        // Trail out to the desert (level 3), on the south edge west of the woods pad.
+        // Trail out to the jungle (level 2), on the south edge west of the woods pad.
+        // Progression is City → Jungle → Desert; the desert finale is reached THROUGH
+        // the jungle (its north pad), so the city links to the jungle, not the desert.
         new Door({
             scene: this, xPosition: 18, yPosition: 71,
-            nextScene: SceneName.Desert, entryOffset: { dx: 0, dy: -1 },
+            nextScene: SceneName.Jungle, entryOffset: { dx: 0, dy: -1 },
         });
-        drawDoorCue(this, 18, 70, 'DESERT', '▼');
+        drawDoorCue(this, 18, 70, 'JUNGLE', '▼');
     }
 
     // Overlay one building: anchored bottom-centre on its base row and scaled so
