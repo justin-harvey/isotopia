@@ -115,6 +115,15 @@ export default class DesertScene extends GameScene {
             nextScene: SceneName.City, entryOffset: { dx: 0, dy: -1 },
         });
         drawDoorCue(this, DesertScene.EXIT.x, DesertScene.EXIT.y - 1, 'CITY', '▼');
+
+        // North trail onward to the Jungle (level 3): a "JUNGLE ▲" pad at the top
+        // edge (approach from the south and step onto it). Col 40 row 0-1 is open
+        // sand between the north cliffs.
+        new Door({
+            scene: this, xPosition: 40, yPosition: 0,
+            nextScene: SceneName.Jungle, entryOffset: { dx: 0, dy: 1 },
+        });
+        drawDoorCue(this, 40, 1, 'JUNGLE', '▲');
     }
 
     // No wild Elementals in the desert yet — explore-only for now.

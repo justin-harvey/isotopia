@@ -3,11 +3,12 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-09-30.
 
-## New this session (2026-09-30) — Desert (level 2) + Dev Warp
+## New this session (2026-09-30) — Desert (level 2) + Jungle (level 3) + Dev Warp
 
-**Shipped to `main` / live.** Two things landed: a developer zone-warp overlay and
-the first of two new outdoor biomes (desert). The jungle (level 3) is the **next
-session**, plus refinement of both levels.
+**Shipped to `main` / live.** Three things landed: a developer zone-warp overlay and
+**both** new outdoor biomes — the desert (level 2) and the jungle (level 3). Both are
+explore-only for now (no wild Elementals yet); the next pass is populating them with
+Elementals and tuning density.
 
 ### Dev Warp overlay — `src/ui/DevWarp.ts`
 In-game zone teleporter so you can jump to any scene instead of walking the world
@@ -44,19 +45,45 @@ chromium (`~/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome`) with
 `--remote-debugging-port`, drive over CDP via Node-22 global `WebSocket`/`fetch`
 (boot `?e2e&dev`, click a `.devwarp-zone`, `Page.captureScreenshot`).
 
-### NEXT session — Jungle (level 3) + refinement
-- **Art is in** `sprites/jungle/Lost_Valleys_Main_Free/` (ilmenite "Lost Valleys").
-  License: the download is the `_Free` tier (Read_My.txt says non-commercial/
-  no-redistribute) **but Justin purchased a license grant over these files** — treat
-  as licensed; drop a LICENSE note with his receipt ref in `sprites/jungle/`.
-- Bigger assembly than desert: **multiple** sub-tilesets (Standart grass/dirt/stone
-  7×7, Water sheet, Dual transition tilesets) + object PNGs (Tree_1, Plants_1,
-  Rock_1, decor). Composite/assemble ground tiles + slice props, then
-  `tools/gen_jungle.py` → `jungle_map.json` (add `jungle_map` to `embed-maps.mjs` —
-  currently commented out), `JungleScene.ts`, register + DevWarp, link Desert↔Jungle.
-  `SceneName.Jungle` already exists in the enum.
-- **Refine both levels:** prop density, oasis size, where the city entrance sits,
-  and (eventually) wild Elementals per biome.
+### Jungle — level 3 (`SceneName.Jungle`)
+A dense (80×50) rainforest **north of the desert**: a deep-green grass expanse walled
+in by canopy trees, carved with earthy dirt clearings and rock-ringed water ponds,
+with ferns / rocks / moss as sprites and **teal slimes** drifting by the ponds.
+Explore-only for now (no wild Elementals yet). Verified in-engine headlessly earlier
+in the build (0 runtime errors, 399 scenery objects, screenshots).
+
+- **Art:** ilmenite "Lost Valleys" pack in `sprites/jungle/Lost_Valleys_Main_Free/`.
+  The bundled Read_My is the `_Free` tier (non-commercial/no-redistribute) **but Justin
+  purchased distribution rights over these files (receipt emailed 2026-09-30)** — treat
+  as fully licensed; see `sprites/jungle/LICENSE.txt`.
+- **Slicer:** `tools/slice_jungle.py` **composes one ground sheet**
+  `src/assets/tiles/jungle_tileset.png` (8×1 @16: grass / 2 grass-variants / dirt /
+  dirt-var / stone / 2 water) from the pack's separate Standart tilesets, and
+  `tint()`-recolours them (the pack's bright-lime grass → deep jungle green; its pink
+  clay → earthy brown; water deepened). Props cut to tight bounding boxes into
+  `src/assets/jungle/`: `tree-1..4` (green-first), `fern-1..6`, `rock-1..8`,
+  `moss-1..3`, plus the `slime-sheet.png` (4×4 @36×28, idle frames 0–3).
+- **Map generator:** `tools/gen_jungle.py` → `src/assets/tilemap/jungle_map.json`.
+  Deep-grass base + speckled variants, **organic blob** dirt clearings / water ponds
+  (not rectangles), a tree-wall border that thins inward (`edge_p` density, cap 125,
+  greens dominant), fern/rock/moss scatter, ponds ringed with rock+fern. Collision =
+  water tiles + tree/rock bases via `blank16` (2nd tileset, firstgid 9, collide gid 10).
+- **Scene:** `src/Scenes/JungleScene.ts` (clones `DesertScene`; `variant` 0-based).
+  Scenery via the object layer like desert; **ambient slimes placed in code** in
+  `spawnFauna()` — animated spritesheet + idle anim + gentle side-to-side drift,
+  skipped under `prefers-reduced-motion`. Registered in `game.ts` + Dev Warp "Outdoors".
+- **World links:** Desert→Jungle (desert **north** "JUNGLE ▲" pad at `x40,y0`);
+  Jungle→Desert (south "DESERT ▼" pad). Chain is now Town → Woods → City → Desert → Jungle.
+- **Dropped:** a stone-ruins plaza + goblin/crab fauna were prototyped then cut (kept
+  just the slimes). The pack's unused ruin/creature source art stays in `sprites/jungle/`.
+- **Note:** the final live-slime screenshot wasn't re-captured (local headless-Chrome
+  flake after the build); confirm the slimes animate on the Netlify preview.
+
+### NEXT — populate + refine both biomes
+Wild Elementals for desert + jungle (spots like `WoodsScene.WILD`), plus density /
+pond-size tuning and deciding where each biome's entrance sits. Jungle preview images:
+`tools/jungle_preview*.png`. The grass-variant patches read slightly blocky — soften
+the tint spread if desired.
 
 ## Where things stand (2026-09-27) — read this first
 **Isotopia is a web app, full stop.** Native (iOS/Android) is **abandoned** — Justin

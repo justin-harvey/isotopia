@@ -34,7 +34,7 @@ const GROUPS: ZoneGroup[] = [
     { title: 'Outdoors', zones: [
         { key: SceneName.Woods,     label: 'North Woods' },
         { key: SceneName.Desert,    label: 'Desert (lvl 2)' },
-        // JUNGLE zone gets added here once its scene is built.
+        { key: SceneName.Jungle,    label: 'Jungle (lvl 3)' },
     ] },
     { title: 'City', zones: [
         { key: SceneName.City,      label: 'City' },

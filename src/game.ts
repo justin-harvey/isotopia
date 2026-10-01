@@ -9,6 +9,7 @@ import AutoScene from "./Scenes/AutoScene";
 import LibraryScene from "./Scenes/LibraryScene";
 import WoodsScene from "./Scenes/WoodsScene";
 import DesertScene from "./Scenes/DesertScene";
+import JungleScene from "./Scenes/JungleScene";
 import CityScene from "./Scenes/CityScene";
 import {
     CityPowerTowerScene, CityFinanceScene, CityLargeTowerScene, CityChurchScene,
@@ -152,7 +153,7 @@ const config = {
     // an iPad screen (default linear filtering would blur it).
     pixelArt: true,
     scene: [
-        TestScene, HomeScene, HardwareScene, HannafordScene, AutoScene, LibraryScene, WoodsScene, DesertScene, CityScene,
+        TestScene, HomeScene, HardwareScene, HannafordScene, AutoScene, LibraryScene, WoodsScene, DesertScene, JungleScene, CityScene,
         CityPowerTowerScene, CityFinanceScene, CityLargeTowerScene, CityChurchScene,
         CityFashionScene, CityRadioTowerScene, CityPowerStationScene, CityRadioTower2Scene,
         CityMuseumScene, CityMuseumB1Scene, CityMuseumB2Scene, CityMuseumB3Scene, CityMuseumB4Scene,
