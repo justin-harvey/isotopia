@@ -3,6 +3,17 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-01.
 
+## New this session (2026-10-01c) — 6 flame-test Elementals added (art needed)
+Added the six classic flame-test metals as real, catchable Elementals so the beacon puzzle uses
+the authentic palette: **Potassium, Copper, Barium, Lithium, Strontium, Calcium** (`data/elements.ts`,
+18 new quiz questions incl. a `flame`-colour angle, placed as wild spawns in `DesertScene.createNpcs`
+on walkability-filtered sand). The beacon puzzle expanded from 3 to **5 beacons** (yellow/green/lilac/
+red/orange) with the Cu/Ba/B "all green" and Li/Sr "both red" collisions as teachable gotchas; S(blue)
+and Mg(white) are now distractors. 🔴 **These 6 need real art — HIGH PRIORITY, tracked in `ART-NEEDED.md`;**
+they currently render as tinted placeholders (not in `elementalArt.ts` ART_IDS). Verified headless
+(`?e2e&dev`): all 6 spawn, 5 beacons solve → rise, **0 console errors**. Deploy note: they spawn by
+default (`releaseAllNow:true`); a scheduled class must release them.
+
 ## New this session (2026-10-01b) — Flame-test puzzle raises the pyramid (model pivot)
 **The flame-test puzzle is OUTSIDE in the desert and solving it raises the pyramid.** Justin
 pivoted the design mid-build: the earlier plan put the flame test *inside* a risen pyramid

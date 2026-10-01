@@ -37,11 +37,11 @@ export default class DesertScene extends GameScene {
     private static readonly MARKER = { x: 40, y: 24 };   // the flame-test altar (open the puzzle here)
     private static readonly DOOR = { x: 40, y: 22 };     // sealed entrance (once risen)
 
-    // The three flame-test braziers flanking the buried apex (tile coords). They sit
-    // dark until the puzzle is solved, then catch (one per beacon colour) as the
-    // pyramid rises. Order matches BEACONS (yellow, green, blue).
+    // The flame-test braziers flanking the buried apex (tile coords), in an arc. They
+    // sit dark until the puzzle is solved, then catch (one per beacon colour) as the
+    // pyramid rises. Order + count match BEACONS (yellow, green, lilac, red, orange).
     private static readonly BEACON_TILES = [
-        { x: 37, y: 25 }, { x: 40, y: 26 }, { x: 43, y: 25 },
+        { x: 34, y: 26 }, { x: 37, y: 27 }, { x: 40, y: 28 }, { x: 43, y: 27 }, { x: 46, y: 26 },
     ];
 
     private rising = false;
@@ -106,6 +106,13 @@ export default class DesertScene extends GameScene {
         };
         Object.entries(files).forEach(([key, file]) =>
             this.load.image(key, `assets/desert/${file}.png`));
+
+        // The flame-test Elementals (createNpcs). They have no art yet, so they render
+        // as tinted placeholders off the shared NPC sheet; load it + any art that does
+        // exist (loadElementalArt is a no-op for the ids still lacking a PNG).
+        this.load.spritesheet(this.imageNames.Veterinary,
+            'assets/Characters/NPCs_1.png', { frameWidth: 32, frameHeight: 64 });
+        this.loadElementalArt(DesertScene.FLAME_ELEMENTALS);
     }
 
     // Drop the scenery sprites named in the tilemap's `scenery` object layer. Base
@@ -181,8 +188,26 @@ export default class DesertScene extends GameScene {
         this.events.once('shutdown', () => sub.unsubscribe());
     }
 
-    // No wild Elementals in the desert yet — explore-only for now.
-    createNpcs(): void { /* populate with desert Elementals later */ }
+    // The six flame-test Elementals (desert Lesson Three): the metals whose flames the
+    // beacon puzzle needs. Placed around the open desert so the student catches them on
+    // the way to the pyramid, then burns them at the beacons. Candidate tiles are spread
+    // across open sand; any that landed on collision (cliff/water/prop — a `walls`-layer
+    // tile) is skipped, so a creature never spawns somewhere unreachable.
+    private static readonly FLAME_ELEMENTALS = ['potassium', 'copper', 'barium', 'lithium', 'strontium', 'calcium'];
+    private static readonly SPAWN_CANDIDATES = [
+        { x: 12, y: 14 }, { x: 24, y: 14 }, { x: 52, y: 22 }, { x: 62, y: 20 },
+        { x: 14, y: 26 }, { x: 28, y: 38 }, { x: 46, y: 12 }, { x: 66, y: 40 },
+        { x: 20, y: 10 }, { x: 54, y: 42 }, { x: 34, y: 8 }, { x: 70, y: 24 },
+    ];
+
+    createNpcs(): void {
+        const free = DesertScene.SPAWN_CANDIDATES.filter(t =>
+            !this.map.getTileAt(t.x, t.y, false, LayerType.Walls));
+        DesertScene.FLAME_ELEMENTALS.forEach((id, i) => {
+            const tile = free[i];
+            if (tile) this.spawnElemental(id, tile.x, tile.y);
+        });
+    }
 
     // ---- pyramid helpers ---------------------------------------------------------
 

@@ -21,11 +21,13 @@ excited and relax* — the puzzle says that out loud.
 
 ## Decisions, baked in (veto any of these)
 1. **Flame-test fuels = Elementals you've CAUGHT, used from the Isotopedex** (Justin's call,
-   2026-10-01). NOT collectible dusts and NOT new creatures. Constraint: every beacon element
-   must be a real catchable Elemental, so the beacons use roster elements with genuine flame
-   colours — **Sodium → yellow, Boron → green, Sulfur → blue** (**Magnesium → brilliant white**
-   is an honest distractor). Of the classic flame-test set only Na is in the roster, which is
-   why Cu/K/Ba/Li/Sr/Ca are *not* used. See `src/data/flameTest.ts`.
+   2026-10-01). NOT collectible dusts. Every beacon element must be a real catchable Elemental.
+   **Update (2026-10-01): the six classic flame-test metals were added as Elementals** — K, Cu,
+   Ba, Li, Sr, Ca (`data/elements.ts`, placed as wild spawns in `DesertScene.createNpcs`) — so
+   the beacons now use the authentic palette: **Na→yellow, Cu/Ba/B→green, K→lilac, Li/Sr→red,
+   Ca→orange**, with **S→blue** and **Mg→white** as distractors. The green (Cu/Ba/B) and red
+   (Li/Sr) collisions are the teachable gotchas. ⚠️ **The 6 new Elementals need real art** (high
+   priority — `ART-NEEDED.md`); today they're tinted placeholders. See `src/data/flameTest.ts`.
 2. **Gate = the sanctum crystal.** "Crystal unlocks puzzle": `hasItem(GIZA_CRYSTAL)` is
    required to open the beacon puzzle (`?dev`/`?debug`/`?e2e` bypasses for testing). Solving
    the puzzle calls the existing `DesertScene.playPyramidRise()`.
@@ -112,8 +114,10 @@ All in `DesertScene.ts` + the `progress.ts` pyramid store. Implemented this pass
 
 ## Phase 2 — Puzzle A: Flame-Test Beacon Pillars — ✅ SHIPPED (2026-10-01)
 **Goal (met):** match flame colours to raise the pyramid — the puzzle IS the rise gate.
-- **Data:** `src/data/flameTest.ts` — `FLAME_COLORS`, `FLAME_FUELS` (caught-Elemental fuels:
-  Na=yellow, B=green, S=blue, Mg=white distractor), `BEACONS` (the three required colours).
+- **Data:** `src/data/flameTest.ts` — `FLAME_COLORS`, `FLAME_FUELS` (10 caught-Elemental fuels:
+  Na=yellow, Cu/Ba/B=green, K=lilac, Li/Sr=red, Ca=orange, plus S=blue & Mg=white distractors),
+  `BEACONS` (five required colours: yellow/green/lilac/red/orange). *(2026-10-01: expanded from
+  Na/B/S to the full flame-test palette once K/Cu/Ba/Li/Sr/Ca were added as Elementals.)*
 - **Puzzle UI:** `src/ui/BeaconOverlay.ts` (pure DOM, cloned from `ResonanceOverlay`): tap a
   beacon → tap one of **your caught Elementals** → it burns its flame colour; a match lights
   the beacon, a mismatch fizzles + teaches. Fuel tray = `FLAME_FUELS` filtered by

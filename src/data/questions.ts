@@ -96,6 +96,38 @@ export const QUESTIONS: Question[] = [
     { elementId: 'scandium', angle: 'symbol',  prompt: "What is scandium's chemical symbol?", choices: ['S', 'Sc', 'Sd', 'Sn'], correctIndex: 1, quarterTheme: 'starter' },
     { elementId: 'scandium', angle: 'protons', prompt: "Scandium's atomic number is 21. How many protons does it have?", choices: ['11', '20', '21', '45'], correctIndex: 2, quarterTheme: 'starter' },
     { elementId: 'scandium', angle: 'ion',     prompt: 'Scandium commonly forms an ion with what charge?', choices: ['+1', '+2', '+3', '−3'], correctIndex: 2, quarterTheme: 'starter' },
+
+    // --- Flame-test Elementals (desert Lesson Three). Each has a 'flame' angle that
+    //     teaches its signature flame-test colour (the colours the beacon puzzle uses). ---
+    // --- Kaliflare — Potassium (K) ---
+    { elementId: 'potassium', angle: 'symbol', prompt: "Potassium's symbol comes from 'kalium'. What is it?", choices: ['P', 'Po', 'K', 'Pt'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'potassium', angle: 'ion',    prompt: 'Potassium (group 1) loses one electron to form which ion?', choices: ['K⁻', 'K⁺', 'K²⁺', 'K (no charge)'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'potassium', angle: 'flame',  prompt: 'What colour does potassium burn in a flame test?', choices: ['Golden yellow', 'Lilac', 'Green', 'Blue'], correctIndex: 1, quarterTheme: 'starter' },
+
+    // --- Cupragleam — Copper (Cu) ---
+    { elementId: 'copper', angle: 'symbol',  prompt: "Copper's symbol comes from 'cuprum'. What is it?", choices: ['Co', 'Cu', 'Cp', 'C'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'copper', angle: 'protons', prompt: "Copper's atomic number is 29. How many protons does it have?", choices: ['19', '27', '29', '64'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'copper', angle: 'flame',   prompt: 'What colour does copper burn in a flame test?', choices: ['Green', 'Yellow', 'Lilac', 'Crimson'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Bariglow — Barium (Ba) ---
+    { elementId: 'barium', angle: 'symbol', prompt: "What is barium's chemical symbol?", choices: ['Ba', 'B', 'Br', 'Bi'], correctIndex: 0, quarterTheme: 'starter' },
+    { elementId: 'barium', angle: 'ion',    prompt: 'Barium (group 2) loses two electrons to form which ion?', choices: ['Ba⁻', 'Ba⁺', 'Ba²⁺', 'Ba²⁻'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'barium', angle: 'flame',  prompt: 'Barium burns what colour in a flame test (close to copper)?', choices: ['Green', 'Blue', 'Yellow', 'White'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Lithflare — Lithium (Li) ---
+    { elementId: 'lithium', angle: 'protons', prompt: "Lithium's atomic number is 3. How many protons does it have?", choices: ['1', '2', '3', '7'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'lithium', angle: 'ion',     prompt: 'Lithium (group 1) loses one electron to form which ion?', choices: ['Li⁻', 'Li⁺', 'Li²⁺', 'Li (no charge)'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'lithium', angle: 'flame',   prompt: 'Lithium burns what colour in a flame test?', choices: ['Crimson red', 'Green', 'Blue', 'Yellow'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Stronflare — Strontium (Sr) ---
+    { elementId: 'strontium', angle: 'symbol', prompt: "What is strontium's chemical symbol?", choices: ['St', 'Sr', 'Sn', 'Sc'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'strontium', angle: 'ion',    prompt: 'Strontium (group 2) loses two electrons to form which ion?', choices: ['Sr⁺', 'Sr²⁺', 'Sr⁻', 'Sr²⁻'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'strontium', angle: 'flame',  prompt: 'Strontium burns what colour (the red of flares and fireworks)?', choices: ['Scarlet red', 'Green', 'Lilac', 'Blue'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Calciglow — Calcium (Ca) ---
+    { elementId: 'calcium', angle: 'protons', prompt: "Calcium's atomic number is 20. How many protons does it have?", choices: ['2', '18', '20', '40'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'calcium', angle: 'ion',     prompt: 'Calcium (group 2) loses two electrons to form which ion?', choices: ['Ca⁻', 'Ca⁺', 'Ca²⁺', 'Ca²⁻'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'calcium', angle: 'flame',   prompt: 'Calcium burns what colour in a flame test?', choices: ['Orange-red', 'Green', 'Blue', 'Lilac'], correctIndex: 0, quarterTheme: 'starter' },
 ];
 
 /** All seed questions for one element. */

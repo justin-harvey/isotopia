@@ -44,11 +44,13 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
   play **Crystalline Resonance**: the ancient crystals are mislabeled, so re-attune each
   one to its true element to restore the Core to full resonance.
 - Carry the sanctum's **crystal** back to the **Desert**, where a vast **pyramid** sleeps
-  beneath the sand. The crystal wakes three cold **flame-test beacons** at its buried apex;
-  light each by burning an **Elemental you've caught** whose flame colour matches (Sodium
-  burns yellow, Boron green, Sulfur blue — Magnesium's brilliant white is a decoy). Match all
-  three and the pyramid **rises from the sand** — a lesson in atomic emission: excited
-  electrons fall back to lower shells and cast off light of one fixed colour.
+  beneath the sand. Roaming the dunes are the classic flame-test metals — **Potassium, Copper,
+  Barium, Lithium, Strontium, Calcium** — to catch. The crystal wakes five cold **flame-test
+  beacons** at the buried apex; light each by burning a **caught Elemental** whose flame colour
+  matches (Sodium = yellow, Copper/Barium/Boron = green, Potassium = lilac, Lithium/Strontium =
+  red, Calcium = orange; Sulfur's blue and Magnesium's white are decoys). Match all five and the
+  pyramid **rises from the sand** — a lesson in atomic emission: excited electrons fall back to
+  lower shells and cast off light of one fixed colour.
 
 ## Run it locally (for development)
 

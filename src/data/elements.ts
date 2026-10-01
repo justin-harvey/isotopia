@@ -31,6 +31,16 @@ export const ELEMENTS: ElementInfo[] = [
     { id: 'aluminum',  symbol: 'Al', name: 'Aluminum',  monster: 'Aluminio',  number: 13, tint: 0xb0bec5 },
     { id: 'sulfur',    symbol: 'S',  name: 'Sulfur',    monster: 'Brimora',   number: 16, tint: 0xffca28 },
     { id: 'scandium',  symbol: 'Sc', name: 'Scandium',  monster: 'Scandion',  number: 21, tint: 0x4a7c7c },
+    // Flame-test Elementals (desert Lesson Three — see data/flameTest.ts). Added
+    // 2026-10-01 so the beacon puzzle can use genuine flame colours. ⚠️ ALL SIX
+    // NEED REAL ART (high priority — see ART-NEEDED.md); until then they render as
+    // tinted placeholders (tint = their flame colour) and are NOT in elementalArt ART_IDS.
+    { id: 'potassium', symbol: 'K',  name: 'Potassium', monster: 'Kaliflare',  number: 19, tint: 0xb060e0 },
+    { id: 'copper',    symbol: 'Cu', name: 'Copper',    monster: 'Cupragleam', number: 29, tint: 0x3fae57 },
+    { id: 'barium',    symbol: 'Ba', name: 'Barium',    monster: 'Bariglow',   number: 56, tint: 0x7fd651 },
+    { id: 'lithium',   symbol: 'Li', name: 'Lithium',   monster: 'Lithflare',  number: 3,  tint: 0xe23b4e },
+    { id: 'strontium', symbol: 'Sr', name: 'Strontium', monster: 'Stronflare', number: 38, tint: 0xff4d2e },
+    { id: 'calcium',   symbol: 'Ca', name: 'Calcium',   monster: 'Calciglow',  number: 20, tint: 0xff7a1a },
 ];
 
 export const ELEMENTS_BY_ID: Record<string, ElementInfo> =
