@@ -87,6 +87,11 @@ Editing copies elsewhere (`sprites/`, `www/`, `android/`, `ios/`) does **nothing
 stable, a browser (or an "Add to Home Screen" install) may cache an old image
 under the same name — hard-refresh / clear site data after a redeploy to see it.
 
+> **Texture consistency (initiative in progress):** shared elements (water, dirt,
+> grass, stone) should look the same across every level. First step: the Town lake
+> adopts the **Jungle's** water texture; then the desert oasis and other shared
+> textures follow. See `HANDOFF.md` → *Open items* for the task + file pointers.
+
 Interior **collision** (walls + exit portals) is authored separately by painting
 mask canvases — see `tools/gen_interior_collision.py` (paint sources live outside
 the repo in `/home/nah/interior-collision` + `/home/nah/museum-collision`). That

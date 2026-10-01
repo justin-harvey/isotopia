@@ -513,6 +513,17 @@ Town interiors, building/bridge artwork, the dog) authored by Justin. Code is
 MIT. README credits reflect this.
 
 ## Open items / next
+- **🎨 Texture consistency across all levels (Justin — PRIORITY, start the initiative):** shared
+  elements should look the SAME in every zone; today each level has its own water/dirt/grass/stone.
+  **First task: make the Town (level 1) lake use the same water texture as the Jungle.** Pointers —
+  the town lake is painted in `tools/gen_town.py` (Luna-Town tiles) → `test_map` (embedded in
+  `src/data/maps.ts`); the jungle water is the canonical look, the last 2 cells of the 8×1
+  `src/assets/tiles/jungle_tileset.png` (composed + tint-recoloured by `tools/slice_jungle.py`);
+  the desert oasis water comes from `desert_tileset.png`. Approach: adopt the jungle water tile as
+  canonical, bring it into the town tileset/tilemap and repaint the lake in `gen_town.py`, then
+  `node tools/embed-maps.mjs && npm run build`. **Then** extend the same palette to the desert
+  oasis and audit the other shared textures (dirt/grass/stone/paths) so all levels share one visual
+  language. (No art purchase needed — reuse the jungle tiles.)
 - **Verify on a real iPad (now live — top untested risk):** the 2026-09-29 UX pass
   (see `SESSION-HANDOFF-2026-09-29.md`) — student sign-up/login (inline errors +
   auto-verify), the Rad Finder arrow + Track, the reduced-motion battle cover, dex
