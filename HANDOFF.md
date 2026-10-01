@@ -3,6 +3,61 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-09-30.
 
+## New this session (2026-09-30) — Desert (level 2) + Dev Warp
+
+**Shipped to `main` / live.** Two things landed: a developer zone-warp overlay and
+the first of two new outdoor biomes (desert). The jungle (level 3) is the **next
+session**, plus refinement of both levels.
+
+### Dev Warp overlay — `src/ui/DevWarp.ts`
+In-game zone teleporter so you can jump to any scene instead of walking the world
+and clearing gate cutscenes. Mounted from `game.ts` (`mountDevWarp(game)`), styled
+in `index.css` (`.devwarp*`, magenta). **Gated — never visible to students:** shows
+only with `?dev` / `?debug` / `?e2e` in the URL **or** a staff sign-in (reuses
+`onTeacherAuth` from `adminAuth.ts`). Warps via `GameScene.switch()`. Add a new zone
+to its `GROUPS` (one line). Use it live at `is0topia.netlify.app/?dev` → tap **⧉ Warp**.
+
+### Desert — level 2 (`SceneName.Desert`)
+A large (80×50) sand basin south of the city: oasis pools, cracked-dirt pits, rock
+buttes, with palms / cacti / boulders / shrubs as sprites. Explore-only for now (no
+wild Elementals yet). Verified in-engine headlessly (0 runtime errors, 335 collision
+tiles, screenshots).
+
+- **Art:** `src/assets/tiles/desert_tileset.png` (GrayCatGames PixelWorlds, 14×13 @16,
+  free for commercial use). Props auto-sliced to `src/assets/desert/*.png`.
+- **Map generator:** `tools/gen_desert.py` → `src/assets/tilemap/desert_map.json`.
+  Technique: flat sand base (tile 24 + speckle variants) + **stamp pre-arranged
+  blocks** (oasis / dirt-pit / cliff) skipping transparent cells, so features keep
+  the artist's shapes. Collision = visible water/cliff tiles **+ `blank16`** as a 2nd
+  tileset (firstgid 183, collide gid 184) placed under blocking props.
+- **Scene:** `src/Scenes/DesertScene.ts` (clones `WoodsScene`; note `variant` is
+  **0-based** here, unlike woods' 1-based). Registered in `game.ts` scene list + the
+  `SceneName` enum; added to the Dev Warp "Outdoors" group.
+- **World links:** Desert→City (south "CITY ▼" pad); City→Desert (new "DESERT ▼" pad
+  at city `x18,y71`). Chain is now Town → Woods → City → Desert (→ Jungle next).
+
+### Biome pipeline (reuse for jungle)
+`gen_*.py` → `node tools/embed-maps.mjs` (add the map name to its list) → new
+`*Scene.ts` + `SceneName` + `game.ts` registration + DevWarp entry + link Doors →
+`npm run build`. **Verify loop without playwright:** serve `dist/`, launch the cached
+chromium (`~/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome`) with
+`--remote-debugging-port`, drive over CDP via Node-22 global `WebSocket`/`fetch`
+(boot `?e2e&dev`, click a `.devwarp-zone`, `Page.captureScreenshot`).
+
+### NEXT session — Jungle (level 3) + refinement
+- **Art is in** `sprites/jungle/Lost_Valleys_Main_Free/` (ilmenite "Lost Valleys").
+  License: the download is the `_Free` tier (Read_My.txt says non-commercial/
+  no-redistribute) **but Justin purchased a license grant over these files** — treat
+  as licensed; drop a LICENSE note with his receipt ref in `sprites/jungle/`.
+- Bigger assembly than desert: **multiple** sub-tilesets (Standart grass/dirt/stone
+  7×7, Water sheet, Dual transition tilesets) + object PNGs (Tree_1, Plants_1,
+  Rock_1, decor). Composite/assemble ground tiles + slice props, then
+  `tools/gen_jungle.py` → `jungle_map.json` (add `jungle_map` to `embed-maps.mjs` —
+  currently commented out), `JungleScene.ts`, register + DevWarp, link Desert↔Jungle.
+  `SceneName.Jungle` already exists in the enum.
+- **Refine both levels:** prop density, oasis size, where the city entrance sits,
+  and (eventually) wild Elementals per biome.
+
 ## Where things stand (2026-09-27) — read this first
 **Isotopia is a web app, full stop.** Native (iOS/Android) is **abandoned** — Justin
 has no usable Apple ID and the 2017 Mac (macOS 13, Xcode 15.2 max) is too old to

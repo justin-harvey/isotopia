@@ -30,6 +30,8 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
   use the **Rad Finder** (Tools row) to home in on Elementals you haven't caught.
 - Explore the woods to find a hidden **treasure chest** — walk up to it to claim
   the **Magic Key**.
+- South out of the city, cross into the **Desert** (level 2) — a sun-bleached
+  basin of oasis pools, cacti, boulders and rock buttes, there to explore.
 - Find the hidden city and its **Evolution Lab**, where you fuse your caught
   Elementals into real molecules by solving their chemistry — matching VSEPR bond
   angles, expanding an octet (SF₄/SF₆), and weighing electronegativity to lock in
@@ -83,7 +85,9 @@ touch room art; after re-running it, run `node tools/embed-maps.mjs && npm run b
 | Path | What |
 |---|---|
 | `src/game.ts` | Bootstrap: startup, sign-in, scene list |
-| `src/Scenes/` | Phaser scenes (town = `TestScene`, `WoodsScene`, building interiors) + engine components |
+| `src/Scenes/` | Phaser scenes (town = `TestScene`, `WoodsScene`, `DesertScene`, building interiors) + engine components |
+| `src/ui/DevWarp.ts` | Dev/staff in-game zone warp (jump to any scene; hidden from students — needs `?dev` or a staff sign-in) |
+| `tools/gen_desert.py` | Procedurally builds the Desert map from `desert_tileset.png`; re-run then `node tools/embed-maps.mjs && npm run build` |
 | `src/data/elements.ts` | The element creatures (symbol, name, atomic number, silly display name) |
 | `src/data/questions.ts` | Local seed question bank (used offline / as fallback) |
 | `src/data/questionSource.ts` | Chooses local seed vs. live Firebase question bank |
@@ -147,6 +151,8 @@ press-and-hold the **Isotopedex title** for ~1s to open it.
 - **Tilesets & character sprites:** [LimeZu](https://limezu.itch.io/) "Modern
   Exteriors / Interiors" — used with LimeZu's express permission for this free
   educational game.
+- **Desert (level 2) tileset:** [GrayCatGames](https://graycatgames.itch.io/desert-tileset)
+  PixelWorlds Desert (free for personal & commercial use).
 - **All other art** (Luna Town interiors, the building & bridge artwork, the dog)
   was created by the project author.
 - Code is released under the MIT License — see [`LICENSE`](LICENSE).

@@ -1497,4 +1497,38 @@ html, body {
 .evo-choice:disabled { opacity: 0.9; cursor: default; }
 .evo-choice--ok { background: #b6f0c2; border-color: #1f7a3d; }
 .evo-choice--no { background: #ffc2c8; border-color: #b3202f; }
+
+/* Dev Warp — staff/developer zone teleporter (see src/ui/DevWarp.ts). Hidden by
+   default; .shown reveals the toggle (gated to ?dev or a staff sign-in), .open
+   expands the zone panel. Magenta so it's unmistakably a dev tool. */
+.devwarp { position: fixed; z-index: 1250; display: none;
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--hud-h) + 12px + env(safe-area-inset-bottom, 0px)); }
+.devwarp.shown { display: block; }
+.devwarp-toggle {
+    font-family: var(--gba-font); font-size: 9px; letter-spacing: .5px;
+    min-height: 32px; padding: 6px 12px; cursor: pointer;
+    color: #ffe6fb; background: rgba(32, 12, 30, 0.92);
+    border: 2px solid #ff5cf0; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+}
+.devwarp-toggle:hover { background: rgba(60, 20, 55, 0.95); }
+.devwarp-panel {
+    display: none; position: absolute; right: 0; bottom: calc(100% + 8px);
+    width: 230px; max-height: 60vh; overflow-y: auto; padding: 8px 10px;
+    font-family: var(--gba-font); font-size: 9px; color: #ffe6fb;
+    background: rgba(24, 10, 22, 0.96); border: 2px solid #ff5cf0;
+    border-radius: 8px; box-shadow: 0 4px 14px rgba(0, 0, 0, .5);
+}
+.devwarp.open .devwarp-panel { display: block; }
+.devwarp-head { color: #ff5cf0; margin-bottom: 6px; letter-spacing: .5px; }
+.devwarp-group { margin-bottom: 8px; }
+.devwarp-grouptitle { color: #c98fc2; margin: 4px 0 3px; }
+.devwarp-zones { display: flex; flex-wrap: wrap; gap: 4px; }
+.devwarp-zone {
+    font-family: var(--gba-font); font-size: 9px; cursor: pointer;
+    min-height: 28px; padding: 4px 7px; color: #ffe6fb;
+    background: rgba(70, 24, 64, 0.9); border: 1px solid #a84f9e; border-radius: 5px;
+}
+.devwarp-zone:hover { background: rgba(110, 40, 100, 0.95); border-color: #ff5cf0; }
 .evo-pe { color: #ffd166; }

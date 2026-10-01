@@ -8,6 +8,7 @@ import HannafordScene from "./Scenes/HannafordScene";
 import AutoScene from "./Scenes/AutoScene";
 import LibraryScene from "./Scenes/LibraryScene";
 import WoodsScene from "./Scenes/WoodsScene";
+import DesertScene from "./Scenes/DesertScene";
 import CityScene from "./Scenes/CityScene";
 import {
     CityPowerTowerScene, CityFinanceScene, CityLargeTowerScene, CityChurchScene,
@@ -22,6 +23,7 @@ import { loadAndCacheSettings } from "./data/classConfig";
 import { initIsotopedex } from "./ui/Isotopedex";
 import { initIntro } from "./ui/Intro";
 import { mountRadFinder } from "./ui/RadFinder";
+import { mountDevWarp } from "./ui/DevWarp";
 import { refreshHud } from "./ui/hud";
 
 // Mount the persistent Isotopedex corner button (independent of Phaser scenes),
@@ -73,6 +75,8 @@ const STARTUP_TIMEOUT_MS = 8000;
         // Debug hook (opt-in via ?e2e / ?debug) so automated tests can drive the
         // game; not exposed in normal play.
         if (/[?&](e2e|debug)\b/.test(location.search)) (window as any).__isotopia = { game, GlobalInfo };
+        // Staff/dev zone warp overlay (hidden from students; see DevWarp.ts).
+        mountDevWarp(game);
         installFormKeyboardGuard(game);
         if (game.isRunning) fitGameToScreen(game);
         else game.events.once(Phaser.Core.Events.READY, () => fitGameToScreen(game));
@@ -148,7 +152,7 @@ const config = {
     // an iPad screen (default linear filtering would blur it).
     pixelArt: true,
     scene: [
-        TestScene, HomeScene, HardwareScene, HannafordScene, AutoScene, LibraryScene, WoodsScene, CityScene,
+        TestScene, HomeScene, HardwareScene, HannafordScene, AutoScene, LibraryScene, WoodsScene, DesertScene, CityScene,
         CityPowerTowerScene, CityFinanceScene, CityLargeTowerScene, CityChurchScene,
         CityFashionScene, CityRadioTowerScene, CityPowerStationScene, CityRadioTower2Scene,
         CityMuseumScene, CityMuseumB1Scene, CityMuseumB2Scene, CityMuseumB3Scene, CityMuseumB4Scene,

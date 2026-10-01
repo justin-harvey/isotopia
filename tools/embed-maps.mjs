@@ -3,7 +3,7 @@
 // Re-run after regenerating any map: node tools/embed-maps.mjs
 import { readFileSync, writeFileSync } from 'fs';
 
-const maps = ['test_map', 'woods_map', 'interior_room', 'city_map', 'city_interior',
+const maps = ['test_map', 'woods_map', 'desert_map', 'interior_room', 'city_map', 'city_interior',
     'museum_ground', 'museum_b1', 'museum_b2', 'museum_b3', 'museum_b4',
     'room_finance', 'room_large_tower', 'room_church', 'room_fashion',
     'room_power_tower', 'room_radio_tower', 'room_power_station', 'room_radio_tower2',

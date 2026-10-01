@@ -6,6 +6,8 @@ export enum SceneName {
     Auto = 'auto',
     Library = 'library',
     Woods = 'woods',
+    Desert = 'desert',
+    Jungle = 'jungle',
     City = 'city',
 
     // City building interiors (reached from CityScene). The museum has a chain of

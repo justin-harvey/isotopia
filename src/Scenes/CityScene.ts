@@ -132,6 +132,13 @@ export default class CityScene extends GameScene {
             nextScene: SceneName.Woods, entryOffset: { dx: 0, dy: -1 },
         });
         drawDoorCue(this, CityScene.EXIT.x, CityScene.EXIT.y - 1, 'WOODS', '▼');
+
+        // Trail out to the desert (level 2), on the south edge west of the woods pad.
+        new Door({
+            scene: this, xPosition: 18, yPosition: 71,
+            nextScene: SceneName.Desert, entryOffset: { dx: 0, dy: -1 },
+        });
+        drawDoorCue(this, 18, 70, 'DESERT', '▼');
     }
 
     // Overlay one building: anchored bottom-centre on its base row and scaled so
