@@ -76,7 +76,7 @@ filename**, commit, and push to `main`:
 |---|---|
 | Building interiors (church, fashion, museum floors, …) | `src/assets/rooms/<name>-interior.png` (city rooms are `1408×768`) |
 | Building exteriors / city props | `src/assets/city/` |
-| Elemental creatures | `src/assets/elementals/` |
+| Elemental creatures | `src/assets/elementals/` (the 6 flame-test metals — potassium/copper/barium/lithium/strontium/calcium — are **placeholder** art for now; see `ART-NEEDED.md`) |
 | Town buildings, woods, tiles, characters | `src/assets/{buildings,woods,tiles,Characters}/` |
 
 Editing copies elsewhere (`sprites/`, `www/`, `android/`, `ios/`) does **nothing** —
@@ -100,6 +100,7 @@ touch room art; after re-running it, run `node tools/embed-maps.mjs && npm run b
 | `src/ui/DevWarp.ts` | Dev/staff in-game zone warp (jump to any scene; hidden from students — needs `?dev` or a staff sign-in) |
 | `tools/gen_desert.py` | Procedurally builds the Desert map from `desert_tileset.png`; re-run then `node tools/embed-maps.mjs && npm run build` |
 | `tools/gen_pyramid.py` | Composes the Desert pyramid sprite (`src/assets/desert/pyramid*.png`) from the desert tiles — a stepped ziggurat with procedural step shading, plus a buried pre-rise state; re-run then `npm run build` |
+| `tools/gen_placeholder_elementals.py` | Regenerates the **placeholder** flame-creature art for the 6 flame-test Elementals (`src/assets/elementals/{potassium,copper,barium,lithium,strontium,calcium}.png`); overwrite those PNGs with real art to replace them |
 | `tools/slice_jungle.py` + `tools/gen_jungle.py` | Compose the Jungle ground sheet + slice props from the Lost Valleys pack, then build `jungle_map.json`; re-run then `node tools/embed-maps.mjs && npm run build` |
 | `src/data/elements.ts` | The element creatures (symbol, name, atomic number, silly display name) |
 | `src/data/questions.ts` | Local seed question bank (used offline / as fallback) |
