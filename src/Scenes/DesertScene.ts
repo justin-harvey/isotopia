@@ -13,7 +13,10 @@ import { openBeaconOverlay } from '../ui/BeaconOverlay';
 import { BEACONS } from '../data/flameTest';
 import { hasItem, GIZA_CRYSTAL, isPyramidRisen, markPyramidRisen } from '../data/progress';
 
-// The Desert (level 2) — a wide sun-bleached basin reached south from the city.
+// The Desert (level 3) — a wide sun-bleached basin reached south from the city.
+// This is the Lesson Three finale (flame test + the hidden pyramid); it's the
+// crystal-gated climax, so it reads as the higher-numbered level even though it
+// sits adjacent to the city on the map.
 // Built from GrayCatGames' PixelWorlds Desert tileset by tools/gen_desert.py:
 // a sand expanse dotted with oasis pools, cracked-dirt pits and rock buttes, with
 // palms, cacti, boulders and shrubs scattered as sprites (the scenery object
@@ -153,7 +156,7 @@ export default class DesertScene extends GameScene {
         });
         drawDoorCue(this, DesertScene.EXIT.x, DesertScene.EXIT.y - 1, 'CITY', '▼');
 
-        // North trail onward to the Jungle (level 3): a "JUNGLE ▲" pad at the top edge.
+        // North trail onward to the Jungle (level 2): a "JUNGLE ▲" pad at the top edge.
         new Door({
             scene: this, xPosition: 40, yPosition: 0,
             nextScene: SceneName.Jungle, entryOffset: { dx: 0, dy: 1 },
@@ -189,15 +192,18 @@ export default class DesertScene extends GameScene {
     }
 
     // The six flame-test Elementals (desert Lesson Three): the metals whose flames the
-    // beacon puzzle needs. Placed around the open desert so the student catches them on
-    // the way to the pyramid, then burns them at the beacons. Candidate tiles are spread
-    // across open sand; any that landed on collision (cliff/water/prop — a `walls`-layer
-    // tile) is skipped, so a creature never spawns somewhere unreachable.
+    // beacon puzzle needs. They're HIDDEN around the desert — spawnElemental cloaks each
+    // one (rendered very faint, so it's near-invisible by eye; the Rad Finder from the
+    // dex is how you home in on them) and the tiles below are tucked away in corners and
+    // beside the map's features (oasis edges, cliff feet, dirt pits) rather than out on
+    // open sand, so finding all six is a proper hunt. Any candidate that landed on
+    // collision (cliff/water/prop — a `walls`-layer tile) is skipped so a creature never
+    // spawns somewhere unreachable; the first six walkable tiles get used.
     private static readonly FLAME_ELEMENTALS = ['potassium', 'copper', 'barium', 'lithium', 'strontium', 'calcium'];
     private static readonly SPAWN_CANDIDATES = [
-        { x: 12, y: 14 }, { x: 24, y: 14 }, { x: 52, y: 22 }, { x: 62, y: 20 },
-        { x: 14, y: 26 }, { x: 28, y: 38 }, { x: 46, y: 12 }, { x: 66, y: 40 },
-        { x: 20, y: 10 }, { x: 54, y: 42 }, { x: 34, y: 8 }, { x: 70, y: 24 },
+        { x: 17, y: 9 },  { x: 4, y: 14 },  { x: 56, y: 18 }, { x: 25, y: 34 },
+        { x: 13, y: 43 }, { x: 69, y: 15 }, { x: 62, y: 32 }, { x: 72, y: 38 },
+        { x: 28, y: 12 }, { x: 51, y: 36 }, { x: 3, y: 33 },  { x: 61, y: 38 },
     ];
 
     createNpcs(): void {

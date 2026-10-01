@@ -3,6 +3,19 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-01.
 
+## New this session (2026-10-01d) — level renumber (Jungle = 2, Desert = 3) + elementals hidden
+- **Levels swapped:** the **Jungle is now level 2** and the **Desert is level 3** (the Desert holds
+  the crystal-gated Lesson-Three flame-test finale, so it's the higher tier). This is a
+  **label/numbering change only** — DevWarp labels (jungle listed first now), scene comments,
+  README, credits. The physical walk-adjacency is unchanged (City→Desert→Jungle on the map); the
+  "level" now reflects content tier, not walk order. *(Open option if wanted: rewire so you walk
+  City→Jungle→Desert — bigger change, needs a second jungle door; not done.)*
+- **Flame Elementals hidden:** the 6 metals now spawn tucked beside the desert's features (oasis
+  edges, cliff feet, dirt pits, corners) instead of open sand, and `spawnElemental` already cloaks
+  them (near-invisible by eye; the Rad Finder homes in) — so catching all six is a real hunt.
+  `DesertScene.SPAWN_CANDIDATES` (12 tucked tiles, walkability-filtered to the first 6). Verified
+  headless: all 6 still spawn, 5-beacon puzzle solves → rise, 0 errors.
+
 ## New this session (2026-10-01c) — 6 flame-test Elementals added (art needed)
 Added the six classic flame-test metals as real, catchable Elementals so the beacon puzzle uses
 the authentic palette: **Potassium, Copper, Barium, Lithium, Strontium, Calcium** (`data/elements.ts`,
@@ -83,7 +96,7 @@ only with `?dev` / `?debug` / `?e2e` in the URL **or** a staff sign-in (reuses
 `onTeacherAuth` from `adminAuth.ts`). Warps via `GameScene.switch()`. Add a new zone
 to its `GROUPS` (one line). Use it live at `is0topia.netlify.app/?dev` → tap **⧉ Warp**.
 
-### Desert — level 2 (`SceneName.Desert`)
+### Desert — level 2 (renumbered → **level 3** on 2026-10-01; `SceneName.Desert`)
 A large (80×50) sand basin south of the city: oasis pools, cracked-dirt pits, rock
 buttes, with palms / cacti / boulders / shrubs as sprites. Explore-only for now (no
 wild Elementals yet). Verified in-engine headlessly (0 runtime errors, 335 collision
@@ -112,7 +125,7 @@ chromium (`~/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome`) with
 `--remote-debugging-port`, drive over CDP via Node-22 global `WebSocket`/`fetch`
 (boot `?e2e&dev`, click a `.devwarp-zone`, `Page.captureScreenshot`).
 
-### Jungle — level 3 (`SceneName.Jungle`)
+### Jungle — level 3 (renumbered → **level 2** on 2026-10-01; `SceneName.Jungle`)
 A dense (80×50) rainforest **north of the desert**: a deep-green grass expanse walled
 in by canopy trees, carved with earthy dirt clearings and rock-ringed water ponds,
 with ferns / rocks / moss as sprites and **teal slimes** drifting by the ponds.

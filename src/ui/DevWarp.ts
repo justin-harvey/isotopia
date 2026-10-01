@@ -33,8 +33,8 @@ const GROUPS: ZoneGroup[] = [
     ] },
     { title: 'Outdoors', zones: [
         { key: SceneName.Woods,     label: 'North Woods' },
-        { key: SceneName.Desert,    label: 'Desert (lvl 2)' },
-        { key: SceneName.Jungle,    label: 'Jungle (lvl 3)' },
+        { key: SceneName.Jungle,    label: 'Jungle (lvl 2)' },
+        { key: SceneName.Desert,    label: 'Desert (lvl 3)' },
     ] },
     { title: 'City', zones: [
         { key: SceneName.City,      label: 'City' },

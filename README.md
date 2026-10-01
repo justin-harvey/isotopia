@@ -30,11 +30,13 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
   use the **Rad Finder** (Tools row) to home in on Elementals you haven't caught.
 - Explore the woods to find a hidden **treasure chest** — walk up to it to claim
   the **Magic Key**.
-- South out of the city, cross into the **Desert** (level 2) — a sun-bleached
-  basin of oasis pools, cacti, boulders and rock buttes, there to explore.
-- From the north of the Desert, press on into the **Jungle** (level 3) — a dense
-  rainforest of canopy trees, dirt clearings and rock-ringed ponds where **teal
-  slimes** drift by the water, there to explore.
+- South out of the city, cross into the **Desert** (level 3) — a sun-bleached
+  basin of oasis pools, cacti, boulders and rock buttes. It's the **Lesson Three**
+  finale: hunt down the hidden flame-test metals, then (with the Atlantis crystal)
+  light the beacons to raise a buried pyramid.
+- North through the Desert lies the **Jungle** (level 2) — a dense rainforest of
+  canopy trees, dirt clearings and rock-ringed ponds where **teal slimes** drift by
+  the water, there to explore.
 - Find the hidden city and its **Evolution Lab**, where you fuse your caught
   Elementals into real molecules by solving their chemistry — matching VSEPR bond
   angles, expanding an octet (SF₄/SF₆), and weighing electronegativity to lock in
@@ -166,9 +168,9 @@ press-and-hold the **Isotopedex title** for ~1s to open it.
 - **Tilesets & character sprites:** [LimeZu](https://limezu.itch.io/) "Modern
   Exteriors / Interiors" — used with LimeZu's express permission for this free
   educational game.
-- **Desert (level 2) tileset:** [GrayCatGames](https://graycatgames.itch.io/desert-tileset)
+- **Desert (level 3) tileset:** [GrayCatGames](https://graycatgames.itch.io/desert-tileset)
   PixelWorlds Desert (free for personal & commercial use).
-- **Jungle (level 3) tileset & creatures:** [ilmenite](https://ilmenite.itch.io/lost-valleys-jungle)
+- **Jungle (level 2) tileset & creatures:** [ilmenite](https://ilmenite.itch.io/lost-valleys-jungle)
   "Lost Valleys" — used under a purchased distribution license (see `sprites/jungle/LICENSE.txt`).
 - **All other art** (Luna Town interiors, the building & bridge artwork, the dog)
   was created by the project author.

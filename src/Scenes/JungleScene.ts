@@ -8,7 +8,7 @@ import { drawDoorCue } from './components/DoorCue';
 import { SceneName } from './enums/SceneNames';
 import { MAPS } from '../data/maps';
 
-// The Jungle (level 3) — a dense rainforest reached NORTH from the Desert.
+// The Jungle (level 2) — a dense rainforest reached NORTH from the Desert.
 // Built from the Lost Valleys jungle pack by tools/gen_jungle.py: a deep-green
 // grass expanse walled in by trees, carved with earthy dirt clearings, dotted
 // with rock-ringed water ponds, and blanketed in ferns, rocks and moss (all the

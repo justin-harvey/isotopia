@@ -133,7 +133,7 @@ export default class CityScene extends GameScene {
         });
         drawDoorCue(this, CityScene.EXIT.x, CityScene.EXIT.y - 1, 'WOODS', '▼');
 
-        // Trail out to the desert (level 2), on the south edge west of the woods pad.
+        // Trail out to the desert (level 3), on the south edge west of the woods pad.
         new Door({
             scene: this, xPosition: 18, yPosition: 71,
             nextScene: SceneName.Desert, entryOffset: { dx: 0, dy: -1 },
