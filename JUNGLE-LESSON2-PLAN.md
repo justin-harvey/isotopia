@@ -1,8 +1,13 @@
 # Jungle — Lesson Two: Electron Configuration (the "Canopy Energy Network")
 
-Design + feasibility map for the **Jungle (level 2)** lesson set-piece. **Status: BUILT — Phases 0–3
-shipped in code (2026-10-01g), Phase 4 (polish/art) remaining.** See the HANDOFF "2026-10-01g" entry
-for the build summary + E2E verification. Files: `src/data/aufbau.ts`, `src/ui/CanopyOverlay.ts`,
+Design + feasibility map for the **Jungle (level 2)** lesson set-piece. **Status: BUILT + SHIPPED —
+Phases 0–4 complete, merged to `main` (PR #1, 2026-10-02).** See the HANDOFF "2026-10-01g/h/i" entries
+for the build summaries + E2E verification.
+> **Totem count update (2026-10-02):** the totem set shipped at 9, grew to 13 (adding the 3p block
+> Si/P/Cl/Ar), then was **trimmed to a curated 8** at Justin's request (the test was too long) while
+> **keeping the 4s-before-3d swap as the finale** (Scandium + Iron). Dropped as totems: N/O/P/S/Cl
+> (still catchable Elementals). See HANDOFF "NEXT SESSION task #2". The "9"/"13" counts below are
+> left as historical records of each phase; the current set is **8** (`TOTEMS` in `data/aufbau.ts`). Files: `src/data/aufbau.ts`, `src/ui/CanopyOverlay.ts`,
 `.canopy-*` in `src/index.css`, totems in `src/Scenes/JungleScene.ts`, Canopy Key card in
 `src/ui/Isotopedex.ts`, canopy store in `src/data/progress.ts`. This doc maps Justin's handwritten
 "Canopy Energy Network" note onto what the engine can actually do, flags the honest constraints, and

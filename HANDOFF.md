@@ -3,14 +3,82 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-02.
 
+## ▶ NEXT SESSION — planned work (Justin, 2026-10-02)
+Two concrete asks for the next session. Both are scoped below with root cause, exact files, and a
+recommended path; neither is started yet.
+
+### 1. Remove the yellow/orange "triangle" texture from ALL water
+**Symptom (Justin):** every body of water shows repeating orange/tan triangular blobs; worst in the
+**Town lake** at the first town, where it tiles on an obvious grid.
+**Root cause (traced this session — one source, three surfaces):** the orange specks are baked into
+the **desert oasis** water art — `src/assets/tiles/desert_tileset.png` cells **(4,2)** and **(5,1)**.
+Each 16px cell is ~11% orange/tan pixels (sandy-shore speckle; RGB ≈ (183,134,67), (203,149,69),
+(212,155,71)) over a teal body (≈ (96,159,159) / lighter (98,192,196)). That one art propagates to
+every water surface in the game:
+- **Town lake** → `TestScene.drawLake()` tiles `src/assets/tiles/water.png`, which
+  `tools/slice_water.py` lifts from `jungle_tileset.png` cells **6 & 7** (= the same oasis cells),
+  laid 2×2 into a 32×32 POT tile → the blobs repeat on a grid (why the lake is the worst case).
+- **Jungle ponds** → `JungleScene` paints tilemap water from `jungle_tileset.png` cells 6 & 7, which
+  `tools/slice_jungle.py` sets to `water_fill = dcell(4,2)` / `water_v = dcell(5,1)` (borrowed oasis).
+- **Desert oasis** → `DesertScene` uses `desert_tileset.png` oasis cells directly.
+So **fixing the source fixes all three.**
+**Recommended fix (single source → rebuild chain):**
+1. De-speckle the two oasis water cells — mask the orange/tan range and fill with the surrounding
+   teal (flat teal, or nearest-neighbour fill). Cleanest as a small step in/alongside
+   `tools/slice_water.py` (or a new `tools/clean_water.py`) so it's idempotent and re-runnable.
+   *Alternative:* swap to the pack's dedicated clean jungle water at
+   `sprites/jungle/Lost_Valleys_Main_Free/Tilesets/Standart_Tilesets/Water_Tileset_Standart_1-Sheet.png`
+   (or `Dual_Tilesets/Water_Dual_1.png`) as a fresh source — nicer/animatable, but a bigger re-slice
+   and a palette shift across levels.
+2. Propagate to the tilemap surfaces (jungle ponds + desert oasis read the *tileset* cells, not
+   `water.png`): re-slice the cleaned cells into `jungle_tileset.png` (`slice_jungle.py`) and the
+   desert tileset, then **re-embed maps** (`tools/embed-maps.mjs`) if the tilesets changed — OR repaint
+   those bodies as drawn TileSprites off the clean `water.png`, the way the Town lake already does.
+3. Re-run `slice_jungle.py` → `slice_water.py` → `npm run build`, copy assets to `dist/`, and
+   visual/E2E-check the Town lake + a jungle pond + the desert oasis all read as flat clean water
+   (0 orange pixels — the pixel-count probe from this session can confirm).
+**Open decision:** patch-the-pixels (minimal, keeps the exact teal palette + texture-consistency) vs
+swap to the Lost_Valleys clean-water tileset. **Recommend patch-the-pixels for v1.**
+This extends the existing "🎨 Texture consistency" open item below (which already noted the oasis
+cells (4,2)/(5,1) as the shared water source).
+
+### 2. ✅ DONE (2026-10-02) — trimmed the jungle totem test from 13 to 8 (kept the d-block climax)
+**Goal (Justin):** the Canopy Energy Network test was too long/repetitive at **13 totems**. Shorten it.
+**Decision (Justin, 2026-10-02):** cut to **8 totems**, and **keep the 4s-before-3d swap as the
+finale** (Scandium + Iron). This supersedes the earlier sketch in this slot, which had proposed a
+harder cut to **2 totems + exposition/dialogue**; that is NOT what shipped. No guide-NPC / extra
+exposition copy was added (the eight distinct totems carry the lesson), so that idea stays available
+as a future polish if wanted.
+**Why it was low-risk:** everything keys off the **`TOTEMS` array in `src/data/aufbau.ts`** and
+`TOTEMS.length`, so completion, the power meter, "Totem X of N", and "N / M totems configured" all
+re-derive automatically. A grep confirmed no hard-coded count (only comments said 13/9).
+**What shipped:**
+1. `src/data/aufbau.ts` — reduced `TOTEMS` to a curated **8-totem arc**, each a distinct lesson beat,
+   ending on the d-block swap: Carbon (2p²) → Neon (full 2p⁶, noble) → Sodium (3s) → Aluminum (3p¹) →
+   Silicon (3p²) → Argon (full 3p⁶, noble) → **Scandium** → **Iron** (the 4s-before-3d finale).
+   Dropped as totems: Nitrogen, Oxygen, Phosphorus, Sulfur, Chlorine.
+2. `src/Scenes/JungleScene.ts` — `TOTEM_TILES` re-spaced from 13 coords to **8**, spread the full
+   corridor length (y45 → y4) so the shorter set still climbs south→north to the Desert pad rather
+   than bunching at the entrance; every y is drawn from the originally verified-walkable set.
+3. **Dropped elements stay catchable:** Si/P/Cl/Ar remain jungle wild-spawns
+   (`JungleScene.createNpcs` / `WILD_ELEMENTALS`) and valid dex Elementals; P and Cl simply no longer
+   have totems. Their generated totem PNGs on disk are harmless when unplaced. The wild-Elemental
+   comment in `JungleScene` was updated to say so honestly.
+**Verified:** `npm run build` clean (Node 22). NOT yet E2E-driven or real-browser-checked this change —
+a follow-up should confirm the jungle boots with exactly 8 totems placed and configuring all eight →
+banner / "8/8 totems configured" / Canopy Key / grove celebration with 0 console errors. (`?e2e` trips
+the dormant-until-caught bypass, so also confirm the "sleeps until caught" gate in a real browser; and
+Scandium/Iron must have been caught earlier or their totems stay dormant.)
+
 ## Shipped (2026-10-02) — jungle lesson + 4 Elementals merged to `main` → deploying
 The 2026-10-01g/h/i work below — the Jungle **"Canopy Energy Network"** lesson (Phases 0–4) plus the
 four new 3p-block Elementals **Si/P/Cl/Ar** — was reviewed on **PR #1** and **merged to `main`**
 (fast-forward, commit `982480a`); Netlify is auto-deploying it to is0topia.netlify.app (`FIREBASE_*`
 env already set). The merged `jungle-canopy-lesson` branch was deleted. This supersedes the
 "NOT committed/pushed" notes in the three entries below. Only non-art follow-ups remain: real
-animal-spirit totem art (placeholders are in place), a possible label-density tweak now that there
-are 13 totems, and a real-browser check of the dormant-until-caught gate (`?e2e` can't exercise it).
+animal-spirit totem art (placeholders are in place), a possible label-density tweak (the corridor was
+since trimmed to 8 totems — see NEXT SESSION task #2), and a real-browser check of the
+dormant-until-caught gate (`?e2e` can't exercise it).
 
 ## New this session (2026-10-01i) — 4 new Elementals (Si/P/Cl/Ar) complete the 3p block + jungle grows to 13 totems
 Added the four roster gaps in Z1–20 as real, catchable Elementals with **real Gemini art** (Justin
@@ -689,6 +757,10 @@ MIT. README credits reflect this.
   matches — the jungle water IS the desert oasis water, `desert_tileset.png` cells (4,2)/(5,1)); (2)
   audit the other shared textures (dirt/grass/stone/paths) so all levels share one visual language.
   (No art purchase needed — reuse the jungle tiles.)
+  **⚠️ NEW (2026-10-02, Justin):** this shared water carries baked-in orange/tan "triangle" specks
+  (worst tiled on the Town lake). Root cause + full fix plan are in **▶ NEXT SESSION #1** at the top
+  of this file — clean the oasis source cells (4,2)/(5,1) once and it fixes lake + jungle ponds +
+  oasis together.
 - **Verify on a real iPad (now live — top untested risk):** the 2026-09-29 UX pass
   (see `SESSION-HANDOFF-2026-09-29.md`) — student sign-up/login (inline errors +
   auto-verify), the Rad Finder arrow + Track, the reduced-motion battle cover, dex

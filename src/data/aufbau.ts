@@ -97,15 +97,16 @@ export interface Totem {
     blurb: string;    // one-line flavour shown atop the overlay
 }
 
-// Ordered from the jungle's south entrance northward: s/p-block first (clean 2s/2p/
-// 3s/3p), ending with the two d-block totems that teach the 4s-before-3d swap.
+// A curated eight-totem arc, ordered from the jungle's south entrance northward.
+// Each totem is a DISTINCT lesson beat (no repeats), so the network powers up in a
+// shorter climb while still landing the payoff: the two d-block totems that teach the
+// 4s-before-3d swap. The arc: fill the 2nd shell (2p² → full 2p⁶ noble), start the 3rd
+// (3s → 3p¹ → 3p² → full 3p⁶ noble), then the d-block "gotcha" finale. (Nitrogen,
+// Oxygen, Phosphorus, Sulfur and Chlorine remain catchable Elementals — just not
+// totems — so the lesson stays short; completion keys off TOTEMS.length everywhere.)
 export const TOTEMS: Totem[] = [
     { id: 'carbon',   spirit: 'Jaguar',    gem: '#9e9e9e',
       blurb: 'The Jaguar spirit — Carbon, the backbone of life. Begin the ascent.' },
-    { id: 'nitrogen', spirit: 'Macaw',     gem: '#64b5f6',
-      blurb: 'The Macaw spirit — Nitrogen, breath of the canopy air.' },
-    { id: 'oxygen',   spirit: 'Frog',      gem: '#ef5350',
-      blurb: 'The Frog spirit — Oxygen, dweller of the rainforest ponds.' },
     { id: 'neon',     spirit: 'Firefly',   gem: '#ff7043',
       blurb: 'The Firefly spirit — Neon, a full outer shell: a noble, settled glow.' },
     { id: 'sodium',   spirit: 'Serpent',   gem: '#ba68c8',
@@ -114,15 +115,9 @@ export const TOTEMS: Totem[] = [
       blurb: 'The Armadillo spirit — Aluminum, opening the 3p branch.' },
     { id: 'silicon',  spirit: 'Beetle',    gem: '#78909c',
       blurb: 'The Beetle spirit — Silicon, a carapace of crystal and circuitry.' },
-    { id: 'phosphorus', spirit: 'Lanternfly', gem: '#ffb74d',
-      blurb: 'The Lanternfly spirit — Phosphorus, a glowing ember in the dark.' },
-    { id: 'sulfur',   spirit: 'Toad',      gem: '#ffca28',
-      blurb: 'The Toad spirit — Sulfur, filling out the third shell.' },
-    { id: 'chlorine', spirit: 'Mantis',    gem: '#cddc39',
-      blurb: 'The Mantis spirit — Chlorine, sharp, green and reactive.' },
     { id: 'argon',    spirit: 'Sloth',     gem: '#b39ddb',
       blurb: 'The Sloth spirit — Argon, a full shell: content, inert, unbothered.' },
-    // d-block gotcha (teaches the 4s-before-3d swap):
+    // d-block gotcha finale (teaches the 4s-before-3d swap):
     { id: 'scandium', spirit: 'Condor',    gem: '#4a7c7c',
       blurb: 'The Condor spirit — Scandium, the first d-block climber. Watch the order.' },
     { id: 'iron',     spirit: 'Panther',   gem: '#8d6e63',
