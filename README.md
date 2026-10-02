@@ -30,10 +30,15 @@ Isotopia is free and ad-free for students. If it's useful to you, you can
   use the **Rad Finder** (Tools row) to home in on Elementals you haven't caught.
 - Explore the woods to find a hidden **treasure chest** — walk up to it to claim
   the **Magic Key**.
-- Out of the city, cross into the **Jungle** (level 2) — a dense rainforest of
-  canopy trees, dirt clearings and rock-ringed ponds where **teal slimes** drift by
-  the water, there to explore. (Lesson Two — electron configuration — is designed
-  but not built yet; see `JUNGLE-LESSON2-PLAN.md`.)
+- Out of the city, cross into the **Jungle** (level 2) — a dense rainforest of canopy
+  trees, dirt clearings and rock-ringed ponds. It's **Lesson Two — electron
+  configuration**: catch the creatures roaming the clearings (including the new
+  **Silicon, Phosphorus, Chlorine and Argon**), then wake the animal-spirit **totems**
+  lining the path. Each opens the **Canopy Energy Network** — channel electron-seeds up a
+  vertical orbital lattice, filling every sublevel **in Aufbau order** (1s → 2s → 2p … and
+  the 4s-before-3d twist) to configure its element. Power every totem to light the grove and
+  earn the secret **Canopy Key**. The jungle→desert path stays open regardless — the lesson
+  is a bonus, not a gate. (Design notes: `JUNGLE-LESSON2-PLAN.md`.)
 - Through the Jungle lies the **Desert** (level 3) — a sun-bleached basin of oasis
   pools, cacti, boulders and rock buttes. It's the **Lesson Three** finale: hunt down
   the hidden flame-test metals, then (with the Atlantis crystal) light the beacons to
@@ -80,6 +85,7 @@ filename**, commit, and push to `main`:
 | Building interiors (church, fashion, museum floors, …) | `src/assets/rooms/<name>-interior.png` (city rooms are `1408×768`) |
 | Building exteriors / city props | `src/assets/city/` |
 | Elemental creatures | `src/assets/elementals/` (the 6 flame-test metals — potassium/copper/barium/lithium/strontium/calcium — are **placeholder** art for now; see `ART-NEEDED.md`) |
+| Jungle totems | `src/assets/jungle/totem-*.png` — procedural **placeholder** carved-stone totems (one per lesson-two element); real animal-spirit art welcome (`ART-NEEDED.md`) |
 | Town buildings, woods, tiles, characters | `src/assets/{buildings,woods,tiles,Characters}/` |
 
 Editing copies elsewhere (`sprites/`, `www/`, `android/`, `ios/`) does **nothing** —
@@ -111,6 +117,7 @@ touch room art; after re-running it, run `node tools/embed-maps.mjs && npm run b
 | `tools/gen_pyramid.py` | Composes the Desert pyramid sprite (`src/assets/desert/pyramid*.png`) from the desert tiles — a stepped ziggurat with procedural step shading, plus a buried pre-rise state; re-run then `npm run build` |
 | `tools/gen_placeholder_elementals.py` | Regenerates the **placeholder** flame-creature art for the 6 flame-test Elementals (`src/assets/elementals/{potassium,copper,barium,lithium,strontium,calcium}.png`); overwrite those PNGs with real art to replace them |
 | `tools/slice_jungle.py` + `tools/gen_jungle.py` | Compose the Jungle ground sheet + slice props from the Lost Valleys pack, then build `jungle_map.json`; re-run then `node tools/embed-maps.mjs && npm run build` |
+| `tools/gen_totems.py` | Composes the Jungle's carved-stone **totem** sprites (`src/assets/jungle/totem-*.png`) — placeholder art with each element's symbol carved in; re-run then `npm run build` |
 | `src/data/elements.ts` | The element creatures (symbol, name, atomic number, silly display name) |
 | `src/data/questions.ts` | Local seed question bank (used offline / as fallback) |
 | `src/data/questionSource.ts` | Chooses local seed vs. live Firebase question bank |
@@ -120,6 +127,7 @@ touch room art; after re-running it, run `node tools/embed-maps.mjs && npm run b
 | `src/ui/EvolveOverlay.ts` + `src/data/evolution.ts` | The Evolution Lab — fuse Elementals into compounds (VSEPR Fusion / Hyper-Chamber / ΔEN Tug-of-War chambers) |
 | `src/ui/Isotopedex.ts` | The creature-collection screen (Elementals + secret "Magic Key" / "Giza Core" cards) |
 | `src/ui/ResonanceOverlay.ts` + `src/data/resonance.ts` | The Atlantis sanctum's Crystalline Resonance puzzle (re-attune the mislabeled crystals) |
+| `src/ui/CanopyOverlay.ts` + `src/data/aufbau.ts` | The Jungle's Canopy Energy Network (electron-configuration lesson — fill a vertical orbital lattice in Aufbau order; configuring every totem awards the Canopy Key) |
 | `src/ui/BeaconOverlay.ts` + `src/data/flameTest.ts` | The Desert's flame-test beacon puzzle (burn caught Elementals to match each beacon's flame colour; solving it raises the pyramid) |
 | `src/teacher.ts` + `teacher.html` | The teacher admin portal (separate page) |
 | `firebase/` | Security rules, seed data, and setup docs |

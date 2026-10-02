@@ -1,7 +1,16 @@
 # Isotopia — Session Handoff
 
 A running summary of what this is and where it stands, so work can resume after a
-context reset. Last updated 2026-10-01.
+context reset. Last updated 2026-10-02.
+
+## Shipped (2026-10-02) — jungle lesson + 4 Elementals merged to `main` → deploying
+The 2026-10-01g/h/i work below — the Jungle **"Canopy Energy Network"** lesson (Phases 0–4) plus the
+four new 3p-block Elementals **Si/P/Cl/Ar** — was reviewed on **PR #1** and **merged to `main`**
+(fast-forward, commit `982480a`); Netlify is auto-deploying it to is0topia.netlify.app (`FIREBASE_*`
+env already set). The merged `jungle-canopy-lesson` branch was deleted. This supersedes the
+"NOT committed/pushed" notes in the three entries below. Only non-art follow-ups remain: real
+animal-spirit totem art (placeholders are in place), a possible label-density tweak now that there
+are 13 totems, and a real-browser check of the dormant-until-caught gate (`?e2e` can't exercise it).
 
 ## New this session (2026-10-01i) — 4 new Elementals (Si/P/Cl/Ar) complete the 3p block + jungle grows to 13 totems
 Added the four roster gaps in Z1–20 as real, catchable Elementals with **real Gemini art** (Justin
@@ -33,7 +42,7 @@ Cl→Ar, so the jungle lesson's totem corridor is now a full period-2-and-3 elec
   shot `/tmp/pw/jungle-3p-totems.png` shows the new totems in order. (Dex-card render wasn't captured
   — a synthetic DEX-button click didn't open the overlay headlessly; cosmetic only, the art is the
   same PNG the dex `<img>` shows.)
-- **NOT committed/pushed.** Minor polish noted: with 13 totems ~3–4 tiles apart the big floor spirit-
+- **Shipped — merged to `main` 2026-10-02 (PR #1, `982480a`).** Minor polish noted: with 13 totems ~3–4 tiles apart the big floor spirit-
   labels read a bit dense at play zoom (the carved symbol + overlay already name each) — could shrink
   or drop the labels later. `isotopia-next-batch.csv` Si/P/Cl/Ar marked DONE.
 
@@ -68,7 +77,7 @@ no longer bare step-on pads — they're carved stone shrines, with ambient life 
   lit**, `canopyCelebrated:true`, awakening **title rendered**, **0 console errors**; a reload relights
   all **9 gems on load** (`/tmp/pw/relight-check.mjs`, 0 errors). Overworld screenshot
   `/tmp/pw/jungle-totems.png` (carved totems + lit gems + fireflies along the corridor).
-- **NOT committed/pushed.** The jungle lesson is now feature-complete (Phases 0–4). Nice-to-haves
+- **Shipped — merged to `main` 2026-10-02 (PR #1).** The jungle lesson is now feature-complete (Phases 0–4). Nice-to-haves
   left: real animal-spirit totem art (placeholder in place), optional s/p/d/f ruin landmark props
   (dropped from scope — the totems carry the lesson), and the still-unobservable-headlessly no-catch
   gate (the `?e2e` flag trips the dev bypass) — worth a real-browser confirm.
@@ -109,7 +118,7 @@ the northward corridor — a near-clone of the sanctum forge, exactly as the pla
   "Network power 100%", store `complete:true` + all 9 attuned, `canopy-key` granted; after a **reload**
   the store + key persist and all 9 totem glows relight; **0 console errors**. Screenshot
   `/tmp/pw/canopy-summary.png` (overlay renders behind the undismissed boot intro — cosmetic only).
-- **NOT committed/pushed** at time of writing. **Remaining = Phase 4 (polish/art):** totem spirit art
+- **Shipped — merged to `main` 2026-10-02 (PR #1); Phase 4 followed (see the 2026-10-01h entry).** At the time of writing the remaining item was **Phase 4 (polish/art):** totem spirit art
   (currently just the `drawDoorCue` pad + a glow; see `ART-NEEDED.md`), electron-seed/firefly particles,
   s/p/d/f ruin landmark props, a short "gate rises" cue, and deciding what (if anything) the Canopy Key
   bonus unlocks (open decision #4 in the plan — today it's the dex card + flag). The no-catch gate path
