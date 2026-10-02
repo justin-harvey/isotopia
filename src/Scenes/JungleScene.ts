@@ -45,17 +45,16 @@ export default class JungleScene extends GameScene {
     private static readonly ONWARD = { x: 40, y: 0 };   // north pad → onward to the Desert
     private static readonly START = { x: 40, y: 47 };
 
-    // The totems march up the central corridor from the entrance (Carbon, y44) to the
-    // Desert pad (Iron, y5), paired with TOTEMS by index so you climb the "energy
-    // ladder" as you walk north. All nine tiles were verified walkable (clear of trees/
-    // rocks/ponds) against the generated map; any that somehow isn't is skipped at
-    // runtime (walls-layer check), exactly like the desert's spawn candidates.
-    // 13 totems up the corridor (one per TOTEMS entry, in Aufbau order): Carbon at the
-    // south entrance (y45) climbing to Iron by the Desert pad (y4). All verified walkable.
+    // The totems march up the central corridor from the entrance (Carbon, y45) to the
+    // Desert pad (Iron, y4), paired with TOTEMS by index so you climb the "energy
+    // ladder" as you walk north. Eight tiles, spread the full length so the shorter
+    // (curated-8) totem set still spans the corridor rather than bunching at the south
+    // end; every y here is drawn from the originally verified-walkable set (clear of
+    // trees/rocks/ponds). Any that somehow isn't is skipped at runtime (walls-layer
+    // check), exactly like the desert's spawn candidates.
     private static readonly TOTEM_TILES = [
-        { x: 40, y: 45 }, { x: 40, y: 41 }, { x: 40, y: 38 }, { x: 40, y: 35 },
-        { x: 40, y: 31 }, { x: 40, y: 28 }, { x: 40, y: 25 }, { x: 40, y: 22 },
-        { x: 40, y: 18 }, { x: 40, y: 15 }, { x: 40, y: 11 }, { x: 40, y: 8 }, { x: 40, y: 4 },
+        { x: 40, y: 45 }, { x: 40, y: 41 }, { x: 40, y: 35 }, { x: 40, y: 28 },
+        { x: 40, y: 22 }, { x: 40, y: 15 }, { x: 40, y: 8 }, { x: 40, y: 4 },
     ];
     private static readonly TOTEM_W = 1.3;       // totem sprite display width, in tiles
     private static readonly GEM_FRAC = 0.2632;   // gem socket y / sprite height (tools/gen_totems.py)
@@ -102,8 +101,10 @@ export default class JungleScene extends GameScene {
         TOTEMS.forEach(t => this.load.image(`jungle_totem_${t.id}`, `assets/jungle/totem-${t.id}.png`));
     }
 
-    // Wild Elementals that roam the jungle: the 3p-block creatures whose totems the
-    // lesson configures (catch them here, then wake their totems). Load the shared NPC
+    // Wild Elementals that roam the jungle: the 3p-block creatures. Silicon and Argon
+    // have totems on the corridor (catch them here, then wake their totems right here);
+    // Phosphorus and Chlorine are catchable for the Isotopedex but, since the totem arc
+    // was curated down to eight, no longer have totems of their own. Load the shared NPC
     // sheet (fallback) + their real art, mirroring DesertScene.
     private static readonly WILD_ELEMENTALS = ['silicon', 'phosphorus', 'chlorine', 'argon'];
     // Tucked in the jungle's clearings, off the central totem corridor, so finding them
