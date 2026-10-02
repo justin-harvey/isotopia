@@ -288,3 +288,55 @@ export function markPyramidRisen(): void {
     if (!pyramidState.risen) { pyramidState.risen = true; savePyramid(); }
 }
 export function isPyramidRisen(): boolean { return pyramidState.risen; }
+
+// ---- Jungle "Canopy Energy Network" (electron configuration) --------------
+// Which jungle totems the student has correctly configured, and whether the whole
+// network is powered ("Canopy attuned"). Its OWN local-only key, same schema-safety
+// pattern as the items/resonance/pyramid stores above (kept out of the cloud-synced
+// students/{uid} object so a new field can never reject the RTDB write). Completing
+// every totem grants the CANOPY_KEY item (a bonus secret, not a gate — the desert is
+// already gated by GIZA_CRYSTAL). See JUNGLE-LESSON2-PLAN.md. Local for now; cloud
+// sync is a clean follow-up like the others.
+const CANOPY_STORE_KEY = 'isotopia.canopy.v1';
+
+/** The Canopy Key, awarded once every jungle totem is correctly configured. A bonus
+ *  reward (secret dex card), NOT a progression gate. Check with hasItem(CANOPY_KEY). */
+export const CANOPY_KEY = 'canopy-key';
+
+interface CanopyState { attuned: Record<string, boolean>; complete: boolean; }
+
+function loadCanopy(): CanopyState {
+    try {
+        const raw = localStorage.getItem(CANOPY_STORE_KEY);
+        if (raw) {
+            const v = JSON.parse(raw) as Partial<CanopyState>;
+            return { attuned: v.attuned ?? {}, complete: !!v.complete };
+        }
+    } catch { /* ignore corrupt/unavailable storage */ }
+    return { attuned: {}, complete: false };
+}
+
+let canopyState: CanopyState = loadCanopy();
+// Back-fill the Canopy Key for anyone who finished the network before the item existed.
+if (canopyState.complete) giveItem(CANOPY_KEY);
+
+function saveCanopy(): void {
+    try { localStorage.setItem(CANOPY_STORE_KEY, JSON.stringify(canopyState)); }
+    catch { /* storage unavailable — stays in-memory this session */ }
+}
+
+/** Record that a jungle totem was correctly configured (idempotent). */
+export function attuneTotem(id: string): void {
+    if (!canopyState.attuned[id]) { canopyState.attuned[id] = true; saveCanopy(); }
+}
+export function isTotemAttuned(id: string): boolean { return !!canopyState.attuned[id]; }
+export function attunedTotemCount(): number {
+    return Object.keys(canopyState.attuned).filter(k => canopyState.attuned[k]).length;
+}
+/** Mark the Canopy Energy Network fully powered — set when the last totem is
+ *  configured. Also grants the Canopy Key (the bonus secret the player carries). */
+export function markCanopyAttuned(): void {
+    if (!canopyState.complete) { canopyState.complete = true; saveCanopy(); }
+    giveItem(CANOPY_KEY);   // idempotent; keeps the key in sync with completion
+}
+export function isCanopyAttuned(): boolean { return canopyState.complete; }

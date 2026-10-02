@@ -9,6 +9,9 @@ const CITY = 'City (walk to the very top of the North Woods)';
 // Relocated starters now live down in the Museum basement (a city building).
 const MUSEUM_B1 = `${CITY} — in the Museum, first basement level`;
 const MUSEUM_B2 = `${CITY} — in the Museum, second basement level`;
+// The 3p-block Elementals roam the Jungle (reached north from the City), where their
+// totems are configured in the Canopy Energy Network lesson.
+const JUNGLE = 'Jungle (north from the City) — roaming the clearings';
 
 export const ELEMENTAL_LOCATION: Record<string, string> = {
     hydrogen:  MUSEUM_B1,
@@ -28,6 +31,11 @@ export const ELEMENTAL_LOCATION: Record<string, string> = {
     beryllium: `${CITY} — near where you arrive, to the west`,
     sulfur:    `${CITY} — near where you arrive, to the east`,
     boron:     `${CITY} — far east, near the bottom`,
+    // 3p-block Elementals — wild in the Jungle (Lesson Two).
+    silicon:    JUNGLE,
+    phosphorus: JUNGLE,
+    chlorine:   JUNGLE,
+    argon:      JUNGLE,
 };
 
 export function elementalLocation(id: string): string {

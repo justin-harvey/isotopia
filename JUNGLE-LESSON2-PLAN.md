@@ -1,10 +1,12 @@
 # Jungle — Lesson Two: Electron Configuration (the "Canopy Energy Network")
 
-Design + feasibility map for the **Jungle (level 2)** lesson set-piece. **Status: DESIGN ONLY —
-nothing built yet.** The jungle today is explore-only (`JungleScene.createNpcs()` is an empty stub).
-This doc maps Justin's handwritten "Canopy Energy Network" note onto what the engine can actually do,
-flags the honest constraints, and lays out a phased build that is **mostly assembly of existing
-systems**, not net-new engines.
+Design + feasibility map for the **Jungle (level 2)** lesson set-piece. **Status: BUILT — Phases 0–3
+shipped in code (2026-10-01g), Phase 4 (polish/art) remaining.** See the HANDOFF "2026-10-01g" entry
+for the build summary + E2E verification. Files: `src/data/aufbau.ts`, `src/ui/CanopyOverlay.ts`,
+`.canopy-*` in `src/index.css`, totems in `src/Scenes/JungleScene.ts`, Canopy Key card in
+`src/ui/Isotopedex.ts`, canopy store in `src/data/progress.ts`. This doc maps Justin's handwritten
+"Canopy Energy Network" note onto what the engine can actually do, flags the honest constraints, and
+lays out the phased build that was **mostly assembly of existing systems**, not net-new engines.
 
 ## Topic (AP Chem)
 Electron configuration and the rules that govern orbital filling:
@@ -117,24 +119,31 @@ All of the above totem ids are **already catchable Elementals** (`data/elements.
 needs no new creatures. Neon as "full 2p" is a clean noble-gas teaching beat.
 
 ## Phased build (each phase ships + is headless-verifiable, like the desert)
-- **Phase 0 — data + flag (no gameplay).** `data/aufbau.ts` (`configFor`/`configString`, `TOTEMS`),
-  `progress.ts` canopy store (`markCanopyAttuned`/`isCanopyAttuned`, own key), unit-test `configFor`
-  against known configs (C, O, Ne, Si, Ar, Sc, Fe). Nothing visible yet.
-- **Phase 1 — the Canopy overlay (the engine).** Clone `ResonanceOverlay` → `CanopyOverlay.ts`:
-  render the vertical lattice (1s at the bottom up), ＋/− electron-seed steppers per rung, enforce
-  Aufbau order (next rung locked until current is full), live config readout, confirm-when-complete,
-  fizzle+reason on overflow/out-of-order. Dev entry (`__isotopia` jump) to test standalone.
-- **Phase 2 — one totem in the jungle.** Place a Carbon "Jaguar" totem on a pad in `JungleScene`
-  (`drawDoorCue`, `movementStopped` gate, dormant-until-caught w/ dev bypass) that opens the overlay;
-  on solve, light the totem + persist. This is the full vertical slice for one element.
-- **Phase 3 — the totem set + reward.** Add the rest of `TOTEMS`. On attuning the required set,
-  award the **Canopy Key** secret dex card + `markCanopyAttuned()`. NOTE (decision #2): the Jungle→
-  Desert pad stays **always open**, so the "temple gate" is a **bonus** unlock (a hidden grove /
-  cosmetic / just the card), never a block on the path to the desert. (Decide the bonus + whether all
-  totems or a threshold are needed for the Canopy Key.)
-- **Phase 4 — polish + art.** Electron-seed/firefly particles, s/p/d/f ruin landmark props, totem
-  spirit art (`ART-NEEDED.md`), a short "gate rises" cue (clone `CityReveal`/pyramid-rise spirit),
-  reduced-motion paths.
+- **✅ Phase 0 — data + flag (DONE 2026-10-01g).** `data/aufbau.ts` (`configFor`/`configString`,
+  `isAufbauSwap`, `TOTEMS`), `progress.ts` canopy store (`attuneTotem`/`isTotemAttuned`/
+  `markCanopyAttuned`/`isCanopyAttuned` + `CANOPY_KEY` item, own key). `configFor` checked against
+  C/O/Ne/Na/Al/S/Ar/Sc/Fe (all pass incl. 4s-before-3d). *(Shipped Z 1–36 coverage via FILL_ORDER;
+  the 9 totems use Z≤26.)*
+- **✅ Phase 1 — the Canopy overlay (DONE 2026-10-01g).** `ui/CanopyOverlay.ts` cloned from
+  `ResonanceOverlay`: vertical lattice (1s at the bottom up), press-and-hold ＋/− electron-seed
+  steppers per rung, Aufbau order enforced (next rung locked until current is full), live config
+  readout, confirm-when-complete, fizzle+reason on overfilling a partial sublevel, "⚡ Aufbau surprise"
+  note on the 4s-before-3d rung. `.canopy-*` jungle theme in `index.css`.
+- **✅ Phase 2 — one totem in the jungle (DONE 2026-10-01g).** Carbon "Jaguar" totem + the slice:
+  `drawDoorCue('✦')`, `movementStopped` gate, dormant-until-caught w/ `?dev`/`?debug`/`?e2e` bypass,
+  opens the overlay, lights the totem (gem-coloured aura) on solve + persists.
+- **✅ Phase 3 — the totem set + reward (DONE 2026-10-01g).** All 9 `TOTEMS` placed on verified-
+  walkable corridor tiles. Completing the set awards the **Canopy Key** secret dex card
+  (`makeCanopyKeyCard`) + `markCanopyAttuned()`. Per decision #2 the Jungle→Desert pad stays **always
+  open** — the Canopy Key is a **bonus** (today = the dex card + flag). *(Open decision #4 — what else
+  the Canopy Key unlocks, e.g. a hidden grove — is still TBD, deferred to Phase 4.)*
+- **✅ Phase 4 — polish + art (DONE 2026-10-01h).** Carved stone **totem sprites** per element
+  (`tools/gen_totems.py` → `src/assets/jungle/totem-<id>.png`; placeholder, see `ART-NEEDED.md`),
+  ambient **electron-seed fireflies** (`spawnTotemFireflies`), gem lights on the carved **face**
+  (`lightTotem` + `GEM_FRAC`), and a one-time **"Canopy awakens" completion cue** (`celebrateCanopy`:
+  lit grove + green flash + gem bursts + title) resolving decision #4 below. Reduced-motion paths on
+  every new effect. *(The "s/p/d/f ruin landmark props" idea was dropped — the carved totems, each
+  showing its element symbol, already carry the lesson; a separate ruin set would just add clutter.)*
 
 ## Decisions settled (Justin, 2026-10-01)
 1. **✅ Walk order = City → Jungle → Desert** (rewire from the current City → Desert → Jungle). So
@@ -161,8 +170,11 @@ needs no new creatures. Neon as "full 2p" is a clean noble-gas teaching beat.
    (adds a fetch loop). Recommend **infinite** for v1 — the lesson is the ORDER, not resource hunting.
 3. **How "vertical" to make the overlay.** Minimum: a labelled rung stack. Nicer: rungs drawn as
    ascending canopy tiers with the jungle palette. Scope to taste.
-4. **What the Canopy Key bonus unlocks** (since it's not the desert gate) — a hidden grove, a cosmetic,
-   or just the dex card. TBD.
+4. **✅ What the Canopy Key bonus unlocks (SETTLED 2026-10-01h):** a **cosmetic "grove of light"** —
+   completing every totem lights the whole grove permanently and plays a one-time awakening cue (green
+   flash + gem bursts + title), plus the **Canopy Key secret dex card**. No new *zone* is unlocked
+   (none exists yet; adding one is out of scope and the desert is already reachable). If a future realm
+   is ever built, `isCanopyAttuned()` is the ready hook to gate it — mirroring `isEnlightened()`.
 
 ## Progression across all three levels (for reference)
 - **L1 — Crystalline Core Shrine (sanctum, DONE):** protons/neutrons/mass/charge — electrons as a count.

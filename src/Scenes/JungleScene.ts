@@ -2,11 +2,27 @@ import 'phaser';
 import { CollisionStrategy } from 'grid-engine';
 
 import GameScene from './GameScene';
+import GlobalInfo from '../GlobalInfo';
 import { LayerType } from './enums/LayerType';
 import { Door } from './components/Door';
 import { drawDoorCue } from './components/DoorCue';
 import { SceneName } from './enums/SceneNames';
 import { MAPS } from '../data/maps';
+import { showNpcDialog } from '../ui/NpcDialog';
+import { openCanopyOverlay } from '../ui/CanopyOverlay';
+import { getElement } from '../data/elements';
+import { TOTEMS, Totem, totemZ, configString } from '../data/aufbau';
+import { isCaught, isTotemAttuned, isCanopyAttuned } from '../data/progress';
+
+// A placed totem: its data, the trigger tile, the carved stone sprite, the lit gem
+// (added on solve) and the gem's world position on the totem's face.
+type TotemRec = {
+    totem: Totem;
+    tile: { x: number; y: number };
+    sprite?: Phaser.GameObjects.Image;
+    gem?: Phaser.GameObjects.Arc;
+    gemPos: { x: number; y: number };
+};
 
 // The Jungle (level 2) — a dense rainforest. In the level progression you reach
 // it FROM the City and leave onward to the Desert (City → Jungle → Desert).
@@ -14,13 +30,35 @@ import { MAPS } from '../data/maps';
 // grass expanse walled in by trees, carved with earthy dirt clearings, dotted
 // with rock-ringed water ponds, and blanketed in ferns, rocks and moss (all the
 // scenery object layer, same pattern as the woods/desert). No wild Elementals
-// yet — it's here to explore (populate later; lesson two = electron configuration,
-// see JUNGLE-LESSON2-PLAN.md). You arrive at the SOUTH entrance (START, by the
-// "CITY" pad) and walk NORTH to the "DESERT" pad that leads onward to the finale.
+// You arrive at the SOUTH entrance (START, by the "CITY" pad) and walk NORTH to the
+// "DESERT" pad that leads onward to the finale.
+//
+// LESSON TWO — the "Canopy Energy Network" (electron configuration; see
+// JUNGLE-LESSON2-PLAN.md + data/aufbau.ts). Dormant animal-spirit TOTEMS line the
+// northward path, one per element you can catch. Walk onto a totem whose element
+// you've CAUGHT (dev/?debug/?e2e bypasses) and ui/CanopyOverlay opens: channel
+// electron-seeds up a vertical orbital lattice, in Aufbau order, to configure it
+// (Carbon = 1s²2s²2p²…). Configure them all and the network powers up, awarding the
+// Canopy Key (a bonus secret — NOT a gate; the Jungle→Desert pad stays open always).
 export default class JungleScene extends GameScene {
     private static readonly EXIT = { x: 40, y: 49 };    // south pad → back to the City
     private static readonly ONWARD = { x: 40, y: 0 };   // north pad → onward to the Desert
     private static readonly START = { x: 40, y: 47 };
+
+    // The totems march up the central corridor from the entrance (Carbon, y44) to the
+    // Desert pad (Iron, y5), paired with TOTEMS by index so you climb the "energy
+    // ladder" as you walk north. All nine tiles were verified walkable (clear of trees/
+    // rocks/ponds) against the generated map; any that somehow isn't is skipped at
+    // runtime (walls-layer check), exactly like the desert's spawn candidates.
+    // 13 totems up the corridor (one per TOTEMS entry, in Aufbau order): Carbon at the
+    // south entrance (y45) climbing to Iron by the Desert pad (y4). All verified walkable.
+    private static readonly TOTEM_TILES = [
+        { x: 40, y: 45 }, { x: 40, y: 41 }, { x: 40, y: 38 }, { x: 40, y: 35 },
+        { x: 40, y: 31 }, { x: 40, y: 28 }, { x: 40, y: 25 }, { x: 40, y: 22 },
+        { x: 40, y: 18 }, { x: 40, y: 15 }, { x: 40, y: 11 }, { x: 40, y: 8 }, { x: 40, y: 4 },
+    ];
+    private static readonly TOTEM_W = 1.3;       // totem sprite display width, in tiles
+    private static readonly GEM_FRAC = 0.2632;   // gem socket y / sprite height (tools/gen_totems.py)
 
     constructor() {
         super(SceneName.Jungle, JungleScene.START.x, JungleScene.START.y,
@@ -55,6 +93,29 @@ export default class JungleScene extends GameScene {
         super.loadAvatarSpritesheet();
         super.loadMapImages();
         this.loadObjectImages();
+        this.loadTotemImages();
+        this.loadElementalImages();
+    }
+
+    // The carved stone totem sprites (tools/gen_totems.py), one per lesson-two totem.
+    private loadTotemImages(): void {
+        TOTEMS.forEach(t => this.load.image(`jungle_totem_${t.id}`, `assets/jungle/totem-${t.id}.png`));
+    }
+
+    // Wild Elementals that roam the jungle: the 3p-block creatures whose totems the
+    // lesson configures (catch them here, then wake their totems). Load the shared NPC
+    // sheet (fallback) + their real art, mirroring DesertScene.
+    private static readonly WILD_ELEMENTALS = ['silicon', 'phosphorus', 'chlorine', 'argon'];
+    // Tucked in the jungle's clearings, off the central totem corridor, so finding them
+    // (cloaked — Rad Finder) is a hunt. Walkability-filtered at spawn, first 4 used.
+    private static readonly SPAWN_CANDIDATES = [
+        { x: 14, y: 11 }, { x: 58, y: 10 }, { x: 20, y: 35 }, { x: 64, y: 37 },
+        { x: 52, y: 15 }, { x: 18, y: 42 }, { x: 62, y: 30 }, { x: 12, y: 25 },
+    ];
+    private loadElementalImages(): void {
+        this.load.spritesheet(this.imageNames.Veterinary,
+            'assets/Characters/NPCs_1.png', { frameWidth: 32, frameHeight: 64 });
+        this.loadElementalArt(JungleScene.WILD_ELEMENTALS);
     }
 
     // Depths mirror the woods/desert: tree canopies render ABOVE the player so you
@@ -183,10 +244,173 @@ export default class JungleScene extends GameScene {
             nextScene: SceneName.Desert, entryOffset: { dx: 0, dy: 1 },
         });
         drawDoorCue(this, JungleScene.ONWARD.x, JungleScene.ONWARD.y + 1, 'DESERT', '▲');
+
+        // --- Lesson two: the Canopy Energy Network totems -----------------------
+        this.placeTotems();
+        // A returning player who already powered the network: totems are lit on load,
+        // so don't replay the awakening cue.
+        if (isCanopyAttuned()) this.canopyCelebrated = true;
+        const sub = this.gridEngine.movementStopped().subscribe((o) => {
+            if (o.charId !== this.playerName) return;
+            if (GlobalInfo._gameProgress.inDialogue) return;
+            const p = this.gridEngine.getPosition(this.playerName);
+            const rec = this.placedTotems.find(r => r.tile.x === p.x && r.tile.y === p.y);
+            if (rec) this.onApproachTotem(rec);
+        });
+        this.events.once('shutdown', () => sub.unsubscribe());
     }
 
-    // No wild Elementals in the jungle yet — explore-only for now.
-    createNpcs(): void { /* populate with jungle Elementals later */ }
+    // The 3p-block Elementals roam the jungle, cloaked (Rad-Finder-found), tucked in the
+    // clearings off the totem corridor. Catch them here, then wake their totems. Any
+    // candidate that landed on collision is skipped; the first four walkable tiles get used.
+    createNpcs(): void {
+        const free = JungleScene.SPAWN_CANDIDATES.filter(t =>
+            !this.map.getTileAt(t.x, t.y, false, LayerType.Walls));
+        JungleScene.WILD_ELEMENTALS.forEach((id, i) => {
+            const tile = free[i];
+            if (tile) this.spawnElemental(id, tile.x, tile.y);
+        });
+    }
+
+    // ---- Canopy totems -----------------------------------------------------------
+    private placedTotems: TotemRec[] = [];
+    private hintedTotem = new Set<string>();
+    private canopyCelebrated = false;
+
+    private isDev(): boolean { return /[?&](dev|debug|e2e)\b/.test(location.search); }
+
+    /** A soft glowing dot we tint amber for the drifting electron-seed fireflies. */
+    private ensureSeedTexture(): void {
+        if (this.textures.exists('canopy_seed')) return;
+        const g = this.make.graphics({ x: 0, y: 0 }, false);
+        g.fillStyle(0xffffff, 0.25); g.fillCircle(8, 8, 7);
+        g.fillStyle(0xffffff, 0.6);  g.fillCircle(8, 8, 4);
+        g.fillStyle(0xffffff, 1.0);  g.fillCircle(8, 8, 2);
+        g.generateTexture('canopy_seed', 16, 16);
+        g.destroy();
+    }
+
+    /** Place each totem: a floor step-on cue (spirit name + ✦) with the carved stone
+     *  totem standing just NORTH of it (so the player stands in front, never hidden),
+     *  plus drifting fireflies. Tiles that aren't walkable are skipped; already-
+     *  configured totems are relit. */
+    private placeTotems(): void {
+        this.placedTotems = [];
+        this.ensureSeedTexture();
+        const tw = this.map.tileWidth;
+        const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+        TOTEMS.forEach((totem, i) => {
+            const tile = JungleScene.TOTEM_TILES[i];
+            if (!tile) return;
+            if (this.map.getTileAt(tile.x, tile.y, false, LayerType.Walls)) return;  // blocked — skip
+            drawDoorCue(this, tile.x, tile.y, totem.spirit.toUpperCase(), '✦');
+
+            const bx = tile.x * tw + tw / 2;
+            const by = tile.y * tw;                 // base at the tile's TOP edge → totem rises behind
+            const key = `jungle_totem_${totem.id}`;
+            let sprite: Phaser.GameObjects.Image | undefined;
+            let gemPos = { x: bx, y: by - tw };     // fallback if the art is missing
+            if (this.textures.exists(key)) {
+                sprite = this.add.image(bx, by, key).setOrigin(0.5, 1)
+                    .setDepth(JungleScene.CHAR_DEPTH - 1);   // just behind the player
+                sprite.setScale((JungleScene.TOTEM_W * tw) / sprite.width);
+                gemPos = { x: bx, y: by - sprite.displayHeight * (1 - JungleScene.GEM_FRAC) };
+            }
+            const rec: TotemRec = { totem, tile, sprite, gemPos };
+            this.placedTotems.push(rec);
+            if (!reduce) this.spawnTotemFireflies(rec);
+            if (isTotemAttuned(totem.id)) this.lightTotem(rec);
+        });
+    }
+
+    /** Two amber electron-seeds drifting up from the totem base and fading (fireflies).
+     *  Skipped under prefers-reduced-motion (caller guards). */
+    private spawnTotemFireflies(rec: TotemRec): void {
+        const tw = this.map.tileWidth;
+        const cx = rec.tile.x * tw + tw / 2;
+        const baseY = rec.tile.y * tw;              // totem base
+        for (let k = 0; k < 2; k++) {
+            const dot = this.add.image(cx + Phaser.Math.Between(-6, 6), baseY, 'canopy_seed')
+                .setDepth(JungleScene.CHAR_DEPTH + 1).setTint(0xffd166).setScale(0.5).setAlpha(0.85);
+            this.tweens.add({
+                targets: dot, y: baseY - tw * 1.8, alpha: { from: 0.85, to: 0 },
+                duration: Phaser.Math.Between(2200, 3200), ease: 'Sine.easeOut',
+                delay: k * 900, repeat: -1,
+                onRepeat: () => { dot.y = baseY; dot.x = cx + Phaser.Math.Between(-6, 6); dot.setAlpha(0.85); },
+            });
+        }
+    }
+
+    /** Light a configured totem's gem on its carved face (pulsing aura in its colour). */
+    private lightTotem(rec: TotemRec): void {
+        if (rec.gem) return;
+        const tw = this.map.tileWidth;
+        const color = parseInt(rec.totem.gem.slice(1), 16);
+        const gem = this.add.circle(rec.gemPos.x, rec.gemPos.y, tw * 0.28, color, 0.95)
+            .setDepth(JungleScene.CHAR_DEPTH - 0.5);   // on the totem face, above the stone
+        rec.gem = gem;
+        if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+            this.tweens.add({
+                targets: gem, alpha: { from: 0.55, to: 1 }, scale: { from: 0.8, to: 1.15 },
+                duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+            });
+        }
+    }
+
+    // Walk onto a totem. Already configured → a quick dialog echoing its config.
+    // Otherwise the element must be CAUGHT to wake it (dev/?debug/?e2e bypass); if so,
+    // open the Canopy overlay, relight any newly-configured totems on close, and — if
+    // that completed the whole network — play the one-time awakening cue.
+    private onApproachTotem(rec: TotemRec): void {
+        const { totem } = rec;
+        const el = getElement(totem.id);
+        if (isTotemAttuned(totem.id)) {
+            showNpcDialog(`${totem.spirit} Totem`, [
+                `${el?.name ?? 'This spirit'} already channels its electrons in order:`,
+                configString(totemZ(totem)),
+            ]);
+            return;
+        }
+        if (!isCaught(totem.id) && !this.isDev()) {
+            if (!this.hintedTotem.has(totem.id)) {
+                this.hintedTotem.add(totem.id);
+                showNpcDialog(`${totem.spirit} Totem`, [
+                    `This totem sleeps. Its ${el?.name ?? 'element'} spirit will not wake until you have caught ${el?.name ?? 'it'} on your journey.`,
+                ]);
+            }
+            return;
+        }
+        openCanopyOverlay(() => {
+            this.placedTotems.forEach(r => { if (isTotemAttuned(r.totem.id)) this.lightTotem(r); });
+            if (isCanopyAttuned() && !this.canopyCelebrated) this.celebrateCanopy();
+        });
+    }
+
+    // The Canopy Key payoff (JUNGLE-LESSON2-PLAN decision #4): a bonus "grove of light"
+    // celebration, NOT a gate — the Jungle→Desert pad was always open. Every totem lights
+    // and the grove flares once; prefers-reduced-motion skips the flash + bursts.
+    private celebrateCanopy(): void {
+        if (this.canopyCelebrated) return;
+        this.canopyCelebrated = true;
+        this.placedTotems.forEach(r => this.lightTotem(r));   // persistent lit grove
+        const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+        if (!reduce) {
+            this.cameras.main.flash(500, 120, 255, 150);       // a green light sweep
+            this.placedTotems.forEach((r, i) => this.time.delayedCall(i * 80, () => {
+                if (r.gem) this.tweens.add({ targets: r.gem, scale: 2.2, duration: 260, yoyo: true, ease: 'Quad.easeOut' });
+            }));
+        }
+        this.showCanopyTitle();
+    }
+
+    private showCanopyTitle(): void {
+        const cam = this.cameras.main;
+        const t = this.add.text(cam.width / 2, cam.height * 0.16,
+            'The Canopy Energy Network awakens!',
+            { fontFamily: 'monospace', fontSize: '15px', color: '#eaffe0', stroke: '#123018', strokeThickness: 4, align: 'center' })
+            .setOrigin(0.5).setScrollFactor(0).setDepth(9999).setAlpha(0);
+        this.tweens.add({ targets: t, alpha: 1, duration: 600, yoyo: true, hold: 1800, onComplete: () => t.destroy() });
+    }
 
     update(): void {
         super.update();

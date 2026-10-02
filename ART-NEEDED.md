@@ -41,3 +41,36 @@ barium / lithium / strontium / calcium or they won't appear (and the beacon puzz
 ## Where they appear
 All six are placed as wild Elementals in the **Desert** (`DesertScene.createNpcs`), spread across
 open sand so students catch them on the way to the pyramid, then burn them at the beacons.
+
+---
+
+## 🟢 NICE-TO-HAVE — Jungle Canopy totems (9) — placeholder art in place
+
+The jungle "Lesson Two" (electron configuration — `JUNGLE-LESSON2-PLAN.md`) places a carved stone
+**totem** per element along the corridor. **They have PLACEHOLDER art** — procedurally-generated
+carved granite monoliths with a gem socket ("spirit eye", lit in the totem's colour once configured)
+and the element symbol carved in (`tools/gen_totems.py`). Fully wired + shipped; nicer carved
+**animal-spirit** totems (Jaguar / Macaw / Frog / Firefly / Serpent / Armadillo / Toad / Condor /
+Panther) are welcome but not blocking.
+
+| Spirit | Element | Needed file |
+|---|---|---|
+| Jaguar | Carbon | `src/assets/jungle/totem-carbon.png` |
+| Macaw | Nitrogen | `src/assets/jungle/totem-nitrogen.png` |
+| Frog | Oxygen | `src/assets/jungle/totem-oxygen.png` |
+| Firefly | Neon | `src/assets/jungle/totem-neon.png` |
+| Serpent | Sodium | `src/assets/jungle/totem-sodium.png` |
+| Armadillo | Aluminum | `src/assets/jungle/totem-aluminum.png` |
+| Toad | Sulfur | `src/assets/jungle/totem-sulfur.png` |
+| Condor | Scandium | `src/assets/jungle/totem-scandium.png` |
+| Panther | Iron | `src/assets/jungle/totem-iron.png` |
+| Beetle | Silicon | `src/assets/jungle/totem-silicon.png` |
+| Lanternfly | Phosphorus | `src/assets/jungle/totem-phosphorus.png` |
+| Mantis | Chlorine | `src/assets/jungle/totem-chlorine.png` |
+| Sloth | Argon | `src/assets/jungle/totem-argon.png` |
+
+**Specs:** vertical pixel-art PNG, transparent background, roughly 2:3-ish (the placeholders are
+~36×64 native), origin bottom-centre (it stands on the ground). Keep a **round gem "eye" near the
+top** — the game lights it in the totem's colour (`JungleScene.GEM_FRAC` is the socket's y-fraction;
+if you move the eye, update that constant). **To replace (no code change):** overwrite the
+`totem-<id>.png` file + `npm run build`. Regenerate placeholders with `python3 tools/gen_totems.py`.

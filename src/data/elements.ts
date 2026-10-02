@@ -41,6 +41,13 @@ export const ELEMENTS: ElementInfo[] = [
     { id: 'lithium',   symbol: 'Li', name: 'Lithium',   monster: 'Lithflare',  number: 3,  tint: 0xe23b4e },
     { id: 'strontium', symbol: 'Sr', name: 'Strontium', monster: 'Stronflare', number: 38, tint: 0xff4d2e },
     { id: 'calcium',   symbol: 'Ca', name: 'Calcium',   monster: 'Calciglow',  number: 20, tint: 0xff7a1a },
+    // 3p-block fill-ins (jungle Lesson Two — electron configuration). Real art made in
+    // Gemini (src/assets/elementals/<id>.png), registered in data/elementalArt ART_IDS.
+    // Completes the 3p progression Al→Si→P→S→Cl→Ar; Chlorine revived from retirement.
+    { id: 'silicon',    symbol: 'Si', name: 'Silicon',    monster: 'Silichip',   number: 14, tint: 0x78909c },
+    { id: 'phosphorus', symbol: 'P',  name: 'Phosphorus', monster: 'Phosflare',  number: 15, tint: 0xffb74d },
+    { id: 'chlorine',   symbol: 'Cl', name: 'Chlorine',   monster: 'Chlorofizz', number: 17, tint: 0xcddc39 },
+    { id: 'argon',      symbol: 'Ar', name: 'Argon',      monster: 'Argosnooze', number: 18, tint: 0xb39ddb },
 ];
 
 export const ELEMENTS_BY_ID: Record<string, ElementInfo> =

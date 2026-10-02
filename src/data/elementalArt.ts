@@ -10,6 +10,8 @@ const ART_IDS = new Set<string>([
     // element's flame colour, tools/gen_placeholder_elementals.py). Real art still wanted
     // (see ART-NEEDED.md); replacing <id>.png swaps it in with no code change.
     'potassium', 'copper', 'barium', 'lithium', 'strontium', 'calcium',
+    // 3p-block fill-ins (jungle Lesson Two) — real Gemini art, orange bg stripped.
+    'silicon', 'phosphorus', 'chlorine', 'argon',
 ]);
 
 /** Texture cache key for an Elemental's art, or undefined if it has no art. */

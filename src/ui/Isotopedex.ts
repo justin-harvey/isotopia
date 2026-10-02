@@ -8,7 +8,7 @@
 
 import GlobalInfo from '../GlobalInfo';
 import { ELEMENTS, ElementInfo } from '../data/elements';
-import { statusOf, counts, hasItem, MAGIC_KEY, isEnlightened } from '../data/progress';
+import { statusOf, counts, hasItem, MAGIC_KEY, isEnlightened, isCanopyAttuned } from '../data/progress';
 import { elementalArtKey } from '../data/elementalArt';
 import { elementReleased } from '../data/classConfig';
 import {
@@ -62,9 +62,10 @@ export function openIsotopedex(): void {
     const released = ELEMENTS.filter(el => elementReleased(el.id));
     const c = counts();
     const total = released.length;
-    // Bonus secrets (the Magic Key, the attuned Giza Core) are not periodic-table
-    // Elementals, so they get their own ✦ tally instead of inflating "/N caught".
-    const secrets = (hasItem(MAGIC_KEY) ? 1 : 0) + (isEnlightened() ? 1 : 0);
+    // Bonus secrets (the Magic Key, the attuned Giza Core, the Canopy Key) are not
+    // periodic-table Elementals, so they get their own ✦ tally instead of inflating
+    // "/N caught".
+    const secrets = (hasItem(MAGIC_KEY) ? 1 : 0) + (isEnlightened() ? 1 : 0) + (isCanopyAttuned() ? 1 : 0);
     const secretNote = secrets ? `✦ <b>${secrets}</b> secret${secrets > 1 ? 's' : ''}` : '';
     const countsInner = total === 0
         ? (secrets ? `${secretNote} found` : 'No Elementals released yet')
@@ -328,6 +329,7 @@ function populateGrid(): void {
     // the Magic Key from the forest chest, and the Giza Core once the sanctum is attuned.
     if (hasKey) grid.appendChild(makeMagicKeyCard());
     if (enlightened) grid.appendChild(makeEnlightenmentCard());
+    if (isCanopyAttuned()) grid.appendChild(makeCanopyKeyCard());
 }
 
 // One creature card. Unseen → dark silhouette + "???"; seen/caught reveal the
@@ -428,5 +430,24 @@ function makeEnlightenmentCard(): HTMLDivElement {
         <div class="dex-el">Enlightenment</div>
         <div class="dex-stats">You forged every crystal from its protons, neutrons and electrons,<br>then balanced the ion circuit to net-zero charge.</div>
         <div class="dex-badge caught">✓ Resonant</div>`;
+    return card;
+}
+
+// The Canopy Key: awarded once every jungle totem is correctly configured
+// (isCanopyAttuned()). Same caught-style special card, drawn with a green leaf disc.
+// A bonus secret, outside the element tally — the jungle lesson's reward.
+function makeCanopyKeyCard(): HTMLDivElement {
+    const card = document.createElement('div');
+    card.className = 'dex-card dex-caught dex-special';
+    card.innerHTML = `
+        <div class="dex-num">✦</div>
+        <div class="dex-portrait">
+            <div class="dex-art dex-art-disc" style="--tint:#8dff9a" role="img"
+                aria-label="The Canopy Key, the powered jungle network">❡</div>
+        </div>
+        <div class="dex-name">Canopy Key</div>
+        <div class="dex-el">Electron Configuration</div>
+        <div class="dex-stats">You channeled every totem's electrons up the lattice in Aufbau order,<br>filling each sublevel (s, p, d) before the next — and powered the canopy.</div>
+        <div class="dex-badge caught">✓ Powered</div>`;
     return card;
 }

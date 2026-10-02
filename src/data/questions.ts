@@ -42,7 +42,7 @@ export const QUESTIONS: Question[] = [
     { elementId: 'sodium', angle: 'neutrons', prompt: 'Sodium-23 has 11 protons. How many neutrons does it have?', choices: ['11', '12', '22', '23'], correctIndex: 1, quarterTheme: 'starter' },
     { elementId: 'sodium', angle: 'ion',      prompt: 'Sodium tends to lose one electron. What ion does it form?', choices: ['Na⁻', 'Na⁺', 'Na²⁺', 'Na (no charge)'], correctIndex: 1, quarterTheme: 'starter' },
 
-    // --- Chlorzap — Chlorine (Cl) ---
+    // --- Chlorofizz — Chlorine (Cl) --- (revived 2026-10-01 for the jungle 3p lesson)
     { elementId: 'chlorine', angle: 'protons', prompt: 'How many protons does chlorine have?', choices: ['7', '17', '18', '35'], correctIndex: 1, quarterTheme: 'starter' },
     { elementId: 'chlorine', angle: 'ion',     prompt: 'Chlorine gains one electron to form which ion?', choices: ['Cl⁺', 'Cl⁻', 'Cl²⁻', 'Cl (no charge)'], correctIndex: 1, quarterTheme: 'starter' },
     { elementId: 'chlorine', angle: 'mass',    prompt: "Chlorine's atomic mass is about 35.45. Why isn't it a whole number?", choices: ['A rounding error', "It's a weighted average of its isotopes", 'Electrons add mass', 'It has partial protons'], correctIndex: 1, quarterTheme: 'starter' },
@@ -128,6 +128,21 @@ export const QUESTIONS: Question[] = [
     { elementId: 'calcium', angle: 'protons', prompt: "Calcium's atomic number is 20. How many protons does it have?", choices: ['2', '18', '20', '40'], correctIndex: 2, quarterTheme: 'starter' },
     { elementId: 'calcium', angle: 'ion',     prompt: 'Calcium (group 2) loses two electrons to form which ion?', choices: ['Ca⁻', 'Ca⁺', 'Ca²⁺', 'Ca²⁻'], correctIndex: 2, quarterTheme: 'starter' },
     { elementId: 'calcium', angle: 'flame',   prompt: 'Calcium burns what colour in a flame test?', choices: ['Orange-red', 'Green', 'Blue', 'Lilac'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Silichip — Silicon (Si) --- (jungle Lesson Two: 3p² )
+    { elementId: 'silicon', angle: 'protons', prompt: "Silicon's atomic number is 14. How many protons does it have?", choices: ['4', '14', '18', '28'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'silicon', angle: 'symbol',  prompt: "What is silicon's chemical symbol?", choices: ['S', 'Si', 'Sc', 'Sn'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'silicon', angle: 'config',  prompt: 'Silicon (Z=14) ends its electron configuration with which sublevel?', choices: ['3s² 3p²', '3s² 3p⁴', '3p⁶', '4s² 3d²'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Phosflare — Phosphorus (P) --- (jungle Lesson Two: 3p³ )
+    { elementId: 'phosphorus', angle: 'protons', prompt: 'How many protons does phosphorus have?', choices: ['5', '15', '30', '31'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'phosphorus', angle: 'valence', prompt: 'How many valence electrons does phosphorus have (3s² 3p³)?', choices: ['3', '5', '8', '15'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'phosphorus', angle: 'config',  prompt: 'How many electrons are in phosphorus’s 3p sublevel?', choices: ['1', '2', '3', '6'], correctIndex: 2, quarterTheme: 'starter' },
+
+    // --- Argosnooze — Argon (Ar) --- (jungle Lesson Two: full 3p⁶, a noble gas )
+    { elementId: 'argon', angle: 'protons', prompt: "Argon's atomic number is 18. How many protons does it have?", choices: ['8', '10', '18', '36'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'argon', angle: 'symbol',  prompt: "What is argon's chemical symbol?", choices: ['Ar', 'Ag', 'Au', 'A'], correctIndex: 0, quarterTheme: 'starter' },
+    { elementId: 'argon', angle: 'config',  prompt: 'Why is argon a noble gas that rarely reacts?', choices: ['It has 1 valence electron', 'Its 3s and 3p sublevels are full', 'It is a metal', 'It has no electrons'], correctIndex: 1, quarterTheme: 'starter' },
 ];
 
 /** All seed questions for one element. */

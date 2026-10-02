@@ -3,6 +3,119 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-01.
 
+## New this session (2026-10-01i) — 4 new Elementals (Si/P/Cl/Ar) complete the 3p block + jungle grows to 13 totems
+Added the four roster gaps in Z1–20 as real, catchable Elementals with **real Gemini art** (Justin
+made them; I stripped the orange backgrounds via border flood-fill — `/tmp/pw/strip_orange.py` —
+preserving Argon's intentional detached cloud puffs). This completes the 3p progression Al→Si→P→S→
+Cl→Ar, so the jungle lesson's totem corridor is now a full period-2-and-3 electron-config tour.
+- **Elementals:** `data/elements.ts` +silicon(14, Silichip, blue-grey), +phosphorus(15, Phosflare,
+  amber), +chlorine(17, Chlorofizz, yellow-green — **revived from retirement**), +argon(18,
+  Argosnooze, lavender). Registered in `data/elementalArt.ts` `ART_IDS`; art at
+  `src/assets/elementals/<id>.png`. **Chlorine already had 3 quiz questions** (old name "Chlorzap")
+  so only the comment changed; silicon/phosphorus/argon got **3 questions each** (incl. a `config`
+  angle tying to the jungle lesson) in `data/questions.ts`. Rad-Finder hints in
+  `data/elementalLocations.ts` (all four = roaming the Jungle).
+- **Wild spawns:** `JungleScene.createNpcs()` (was an empty stub) now spawns the four cloaked in the
+  jungle clearings off the totem corridor (`WILD_ELEMENTALS` + `SPAWN_CANDIDATES`, walkability-
+  filtered like the desert); loads the NPC sheet + their art in `loadElementalImages()`. So you catch
+  them in the jungle, then wake their totems.
+- **Totems 9 → 13:** `data/aufbau.ts` `TOTEMS` gains Silicon(Beetle), Phosphorus(Lanternfly),
+  Chlorine(Mantis), Argon(Sloth — sleepy/inert, a nice fit) inserted in Aufbau order; Argon is a
+  second noble-gas "full shell" capstone mirroring Neon. `JungleScene.TOTEM_TILES` expanded to 13
+  verified-walkable corridor tiles (Carbon y45 → Iron y4). `tools/gen_totems.py` regenerated the
+  carved-stone totem sprites for all 13 (new ids appended so the original 9 keep their seeds/art).
+- **Verified:** `npm run build` clean (Node 18) + **E2E headless** (chromium-1243 + Node 22 CDP,
+  `/tmp/pw/canopy-verify4.mjs`): jungle boots with **13 totems placed + 13 carved sprites**, all 4
+  new **elemental art + totem art textures load**, all **4 wild Elementals spawn** (grid chars =
+  player + 4 + 2 doors; `/tmp/pw/chk-spawns.mjs` lists npc7–10); driving the whole network =
+  **exactly 60 Aufbau-ordered rung confirms** (vs 40 before) → banner, "13/13 totems configured",
+  100%, 13 gems lit, awakening cue fired, store+Canopy-Key persisted, **0 console errors**. Overworld
+  shot `/tmp/pw/jungle-3p-totems.png` shows the new totems in order. (Dex-card render wasn't captured
+  — a synthetic DEX-button click didn't open the overlay headlessly; cosmetic only, the art is the
+  same PNG the dex `<img>` shows.)
+- **NOT committed/pushed.** Minor polish noted: with 13 totems ~3–4 tiles apart the big floor spirit-
+  labels read a bit dense at play zoom (the carved symbol + overlay already name each) — could shrink
+  or drop the labels later. `isotopia-next-batch.csv` Si/P/Cl/Ar marked DONE.
+
+## New this session (2026-10-01h) — Jungle Lesson Two Phase 4: polish + art (totems, fireflies, awakening cue)
+Finished `JUNGLE-LESSON2-PLAN.md` **Phase 4** on top of the 2026-10-01g build (below). The totems are
+no longer bare step-on pads — they're carved stone shrines, with ambient life and a completion payoff.
+- **Totem sprites (`tools/gen_totems.py` → `src/assets/jungle/totem-<id>.png`, 9 files):** procedurally
+  composed carved-granite monoliths (NW-light bevel like `gen_pyramid.py`), each with a **gem socket
+  "spirit eye"** and the **element symbol carved in** (C, N, O, Ne, Na, Al, S, Sc, Fe), mossed on the
+  shaded side. PLACEHOLDER art (nicer animal-spirit totems welcome — now tracked in `ART-NEEDED.md`
+  🟢; overwrite the PNG + rebuild, no code change). Preview: `tools/totems_preview.png`.
+- **`JungleScene` wiring:** `loadTotemImages()` loads them; `placeTotems()` now stands each totem
+  **just north of its trigger tile** (base at the tile's top edge, depth `CHAR_DEPTH-1`) so the dog
+  is never hidden when you step on the pad, keeps the `drawDoorCue` floor affordance, and positions
+  the lit gem on the carved face via `GEM_FRAC` (= the socket's y-fraction, printed by the tool —
+  **keep in sync**). Missing art falls back gracefully (cue still works).
+- **Ambient electron-seed fireflies:** `spawnTotemFireflies()` drifts two amber `canopy_seed` glows
+  (in-scene generated texture, no asset) up from each totem, looping; **skipped under
+  prefers-reduced-motion**.
+- **Gem glow on solve:** `lightTotem()` now lights a pulsing gem in the totem's colour **on its face**
+  (was a floor circle), relit on load for returning players.
+- **Completion cue = the Canopy Key payoff (resolves plan open-decision #4):** `celebrateCanopy()`
+  fires once when the overlay closes after the final totem — all totems light (persistent "grove of
+  light"), a **green camera flash + staggered gem bursts + a "The Canopy Energy Network awakens!"
+  title**. It is a **bonus, not a gate** (the Jungle→Desert pad was always open). No new zone is
+  unlocked (none exists; out of scope) — decision #4 settled as this cosmetic grove + the dex card.
+  Reduced-motion shows just the title + lit totems. A returning player who already finished sees the
+  lit grove with **no replay** (`canopyCelebrated` set on load).
+- **Verified:** `npm run build` clean (Node 18) + **E2E headless** (chromium-1243 + Node 22 CDP,
+  `/tmp/pw/canopy-drive3.mjs`): jungle boots with **9 totem sprites placed** (texture loaded) + cues
+  intact; driving the whole network = 40 rung confirms → banner/100%/store/key as before, **9 gems
+  lit**, `canopyCelebrated:true`, awakening **title rendered**, **0 console errors**; a reload relights
+  all **9 gems on load** (`/tmp/pw/relight-check.mjs`, 0 errors). Overworld screenshot
+  `/tmp/pw/jungle-totems.png` (carved totems + lit gems + fireflies along the corridor).
+- **NOT committed/pushed.** The jungle lesson is now feature-complete (Phases 0–4). Nice-to-haves
+  left: real animal-spirit totem art (placeholder in place), optional s/p/d/f ruin landmark props
+  (dropped from scope — the totems carry the lesson), and the still-unobservable-headlessly no-catch
+  gate (the `?e2e` flag trips the dev bypass) — worth a real-browser confirm.
+
+## New this session (2026-10-01g) — Jungle Lesson Two BUILT: the "Canopy Energy Network" (electron configuration)
+**The jungle lesson/test is live in code (Phases 0–3 of `JUNGLE-LESSON2-PLAN.md`).** The jungle was
+explore-only; it now teaches **electron configuration** via dormant animal-spirit **totems** that line
+the northward corridor — a near-clone of the sanctum forge, exactly as the plan mapped.
+- **Phase 0 — data (`src/data/aufbau.ts`):** `CAPACITY` (s2/p6/d10/f14), `FILL_ORDER` (encodes the
+  4s-before-3d swap), `configFor(z)` (ground-state config as ordered rungs), `configString(z)`
+  ("1s² 2s² 2p²"), `isAufbauSwap`, and `TOTEMS` (9 caught-elsewhere Elementals w/ spirit name+gem:
+  Carbon/Jaguar … Iron/Panther). Configs are DERIVED from `elements.ts` atomic numbers, never
+  authored. Unit-checked against C/O/Ne/Na/Al/S/Ar/Sc/Fe (all pass incl. the 4s-before-3d swap).
+- **Phase 0 — flag (`progress.ts`):** canopy store `isotopia.canopy.v1` (`attuneTotem`/`isTotemAttuned`/
+  `attunedTotemCount`/`markCanopyAttuned`/`isCanopyAttuned`), own local-only key like resonance/items;
+  completing all totems grants the **`CANOPY_KEY`** item (back-filled on load). Same schema-safety
+  pattern (kept out of the cloud `students/{uid}` object).
+- **Phase 1 — the overlay (`src/ui/CanopyOverlay.ts` + `.canopy-*` in `index.css`):** cloned from
+  `ResonanceOverlay`. A one-totem-at-a-time puzzle: channel electron-seeds up a **vertical orbital
+  lattice** (1s roots at the bottom → crowns at the top), one rung at a time, **in Aufbau order** (next
+  rung locked until the current is full), press-and-hold ＋/− steppers, a live config readout, and
+  confirm-when-exact. Overfilling a partial final sublevel fizzles + teaches ("Carbon's electrons run
+  out here; p could hold 6"). The 4s-before-3d rung surfaces an "⚡ Aufbau surprise" note. Jungle
+  palette (green panel, amber bioluminescent seeds). All totems done → "network powered" summary +
+  banner. The verticality lives in the OVERLAY (the overworld stays top-down — you walk between totems).
+- **Phases 2–3 — totems + reward (`JungleScene.ts`, `Isotopedex.ts`):** 9 totems on **verified-walkable**
+  tiles up the central corridor (col 40, y44→y5; Carbon at the entrance, Iron by the Desert pad),
+  `drawDoorCue(spirit, '✦')`. `movementStopped` → `onApproachTotem`: already-configured → a dialog
+  echoing its config; else **dormant until you've CAUGHT that element** (`?dev`/`?debug`/`?e2e` bypass);
+  woken → opens the overlay; a soft gem-coloured aura lights each configured totem (relit on load).
+  Completing the set awards a **"Canopy Key" secret dex card** (`makeCanopyKeyCard`, green, outside the
+  "/N caught" tally; adds to the ✦ secrets count). **The Jungle→Desert pad stays open regardless** —
+  the lesson is **rewarded, not required** (decision #2; desert is already gated by `GIZA_CRYSTAL`).
+- **Verified** `npm run build` clean (Node 18) + **E2E headless** (chromium-1243 + Node 22 CDP,
+  `?e2e&dev`, `/tmp/pw/canopy-drive.mjs`): jungle boots with **9 totems placed** + CITY/DESERT cues
+  intact; driving the whole network through the overlay DOM made **exactly 40 Aufbau-ordered rung
+  confirmations** (3+3+3+3+4+5+5+7+7, incl. Sc/Fe 4s-before-3d) → banner shown, "9/9 totems configured",
+  "Network power 100%", store `complete:true` + all 9 attuned, `canopy-key` granted; after a **reload**
+  the store + key persist and all 9 totem glows relight; **0 console errors**. Screenshot
+  `/tmp/pw/canopy-summary.png` (overlay renders behind the undismissed boot intro — cosmetic only).
+- **NOT committed/pushed** at time of writing. **Remaining = Phase 4 (polish/art):** totem spirit art
+  (currently just the `drawDoorCue` pad + a glow; see `ART-NEEDED.md`), electron-seed/firefly particles,
+  s/p/d/f ruin landmark props, a short "gate rises" cue, and deciding what (if anything) the Canopy Key
+  bonus unlocks (open decision #4 in the plan — today it's the dex card + flag). The no-catch gate path
+  is unobservable headlessly (the `?e2e` flag also trips the dev bypass, same as the desert altar) —
+  worth a real-browser check that a totem stays dormant until its element is caught.
+
 ## New this session (2026-10-01f) — level progression rewired to City → Jungle → Desert + Lesson-2 plan
 **Walk order is now Town → Woods → City → Jungle → Desert** (was City → Desert → Jungle). Justin's
 call so the pedagogy flows L1 sanctum → **L2 jungle (electron config)** → L3 desert (emission). This
