@@ -49,6 +49,17 @@ export const ELEMENTS: ElementInfo[] = [
     { id: 'phosphorus', symbol: 'P',  name: 'Phosphorus', monster: 'Phosflare',  number: 15, tint: 0xffb74d },
     { id: 'chlorine',   symbol: 'Cl', name: 'Chlorine',   monster: 'Chlorofizz', number: 17, tint: 0xcddc39 },
     { id: 'argon',      symbol: 'Ar', name: 'Argon',      monster: 'Argosnooze', number: 18, tint: 0xb39ddb },
+    // First-row transition metals (2026-10 art drop). Real pixel art in
+    // src/assets/elementals/<id>.png (AI art, bg stripped via tools/remove_bg.py);
+    // registered in data/elementalArt ART_IDS. They roam the industrial City streets
+    // (CityScene CITY_ELEMENTALS) — the two battery creatures (Co-bolt, Nickawatt) fit
+    // the metals theme. `tint` is only the fallback if art fails to load.
+    { id: 'titanium',   symbol: 'Ti', name: 'Titanium',   monster: 'Titanoft',    number: 22, tint: 0xd9dde0 },
+    { id: 'vanadium',   symbol: 'V',  name: 'Vanadium',   monster: 'Vanaforge',   number: 23, tint: 0x9aa7b0 },
+    { id: 'chromium',   symbol: 'Cr', name: 'Chromium',   monster: 'Chromadillo', number: 24, tint: 0xc3c8cc },
+    { id: 'manganese',  symbol: 'Mn', name: 'Manganese',  monster: 'Mangacore',   number: 25, tint: 0x9d8aa6 },
+    { id: 'cobalt',     symbol: 'Co', name: 'Cobalt',     monster: 'Co-bolt',     number: 27, tint: 0x3f6fd1 },
+    { id: 'nickel',     symbol: 'Ni', name: 'Nickel',     monster: 'Nickawatt',   number: 28, tint: 0x8fae8f },
 ];
 
 export const ELEMENTS_BY_ID: Record<string, ElementInfo> =

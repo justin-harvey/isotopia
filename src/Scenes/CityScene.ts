@@ -50,6 +50,10 @@ const INTERIORS: Record<string, SceneName> = {
 const CITY_ELEMENTALS: [string, number, number][] = [
     ['aluminum', 6, 28], ['fluorine', 36, 40], ['scandium', 6, 44],
     ['boron', 46, 58], ['beryllium', 16, 60], ['sulfur', 36, 60],
+    // First-row transition metals (2026-10). Tiles validated 3x3-clear against the
+    // walls layer of city_map.json, spaced from the others, buildings and the exit.
+    ['titanium', 4, 12], ['vanadium', 34, 16], ['chromium', 18, 20],
+    ['manganese', 18, 30], ['cobalt', 18, 40], ['nickel', 18, 50],
 ];
 
 export default class CityScene extends GameScene {

@@ -12,6 +12,8 @@ const ART_IDS = new Set<string>([
     'potassium', 'copper', 'barium', 'lithium', 'strontium', 'calcium',
     // 3p-block fill-ins (jungle Lesson Two) — real Gemini art, orange bg stripped.
     'silicon', 'phosphorus', 'chlorine', 'argon',
+    // First-row transition metals (2026-10) — real art, bg stripped via tools/remove_bg.py.
+    'titanium', 'vanadium', 'chromium', 'manganese', 'cobalt', 'nickel',
 ]);
 
 /** Texture cache key for an Elemental's art, or undefined if it has no art. */

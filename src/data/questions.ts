@@ -143,6 +143,36 @@ export const QUESTIONS: Question[] = [
     { elementId: 'argon', angle: 'protons', prompt: "Argon's atomic number is 18. How many protons does it have?", choices: ['8', '10', '18', '36'], correctIndex: 2, quarterTheme: 'starter' },
     { elementId: 'argon', angle: 'symbol',  prompt: "What is argon's chemical symbol?", choices: ['Ar', 'Ag', 'Au', 'A'], correctIndex: 0, quarterTheme: 'starter' },
     { elementId: 'argon', angle: 'config',  prompt: 'Why is argon a noble gas that rarely reacts?', choices: ['It has 1 valence electron', 'Its 3s and 3p sublevels are full', 'It is a metal', 'It has no electrons'], correctIndex: 1, quarterTheme: 'starter' },
+
+    // --- Titanoft — Titanium (Ti) --- (City: first-row transition metals)
+    { elementId: 'titanium', angle: 'protons', prompt: "Titanium's atomic number is 22. How many protons does it have?", choices: ['12', '20', '22', '48'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'titanium', angle: 'symbol',  prompt: "What is titanium's chemical symbol?", choices: ['Ti', 'T', 'Tn', 'Th'], correctIndex: 0, quarterTheme: 'starter' },
+    { elementId: 'titanium', angle: 'block',   prompt: 'Titanium sits in the middle block of the periodic table. It is a…', choices: ['Transition metal (d-block)', 'Noble gas', 'Halogen', 'Alkali metal'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Vanaforge — Vanadium (V) ---
+    { elementId: 'vanadium', angle: 'symbol',  prompt: "What is vanadium's chemical symbol?", choices: ['Va', 'V', 'Vn', 'Vd'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'vanadium', angle: 'protons', prompt: "Vanadium's atomic number is 23. How many protons does it have?", choices: ['5', '13', '23', '51'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'vanadium', angle: 'block',   prompt: 'Vanadium is added to steel to make tools harder. It is a…', choices: ['Transition metal', 'Noble gas', 'Nonmetal', 'Alkali metal'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Chromadillo — Chromium (Cr) ---
+    { elementId: 'chromium', angle: 'symbol',  prompt: "What is chromium's chemical symbol?", choices: ['Ch', 'Cr', 'Cm', 'Co'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'chromium', angle: 'protons', prompt: 'How many protons does chromium (Z=24) have?', choices: ['6', '16', '24', '52'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'chromium', angle: 'property', prompt: "Shiny 'chrome' plating resists rust, so chromium is valued for being…", choices: ['Corrosion-resistant', 'Radioactive', 'A noble gas', 'Liquid at room temp'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Mangacore — Manganese (Mn) ---
+    { elementId: 'manganese', angle: 'symbol',  prompt: "What is manganese's chemical symbol?", choices: ['Mg', 'Mn', 'Ma', 'Mb'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'manganese', angle: 'protons', prompt: "Manganese's atomic number is 25. How many protons does it have?", choices: ['15', '25', '30', '55'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'manganese', angle: 'block',   prompt: 'Manganese sits in the middle of the periodic table. It is a…', choices: ['Transition metal (d-block)', 'Noble gas', 'Halogen', 'Alkali metal'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Co-bolt — Cobalt (Co) ---
+    { elementId: 'cobalt', angle: 'symbol',   prompt: "What is cobalt's chemical symbol?", choices: ['C', 'Co', 'Cb', 'Ct'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'cobalt', angle: 'protons',  prompt: 'How many protons does cobalt (Z=27) have?', choices: ['17', '27', '32', '59'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'cobalt', angle: 'property', prompt: 'Cobalt is used in strong magnets and rechargeable battery cathodes. It is a…', choices: ['Magnetic transition metal', 'Noble gas', 'Nonmetal gas', 'Alkali metal'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Nickawatt — Nickel (Ni) ---
+    { elementId: 'nickel', angle: 'symbol',   prompt: "What is nickel's chemical symbol?", choices: ['Ni', 'N', 'Nk', 'Ne'], correctIndex: 0, quarterTheme: 'starter' },
+    { elementId: 'nickel', angle: 'protons',  prompt: "Nickel's atomic number is 28. How many protons does it have?", choices: ['14', '18', '28', '59'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'nickel', angle: 'property', prompt: 'Nickel is magnetic and used with cobalt in rechargeable batteries and coins. It is a…', choices: ['Transition metal', 'Halogen', 'Noble gas', 'Alkali metal'], correctIndex: 0, quarterTheme: 'starter' },
 ];
 
 /** All seed questions for one element. */
