@@ -32,9 +32,10 @@ export const ELEMENTS: ElementInfo[] = [
     { id: 'sulfur',    symbol: 'S',  name: 'Sulfur',    monster: 'Brimora',   number: 16, tint: 0xffca28 },
     { id: 'scandium',  symbol: 'Sc', name: 'Scandium',  monster: 'Scandion',  number: 21, tint: 0x4a7c7c },
     // Flame-test Elementals (desert Lesson Three — see data/flameTest.ts). Added
-    // 2026-10-01 so the beacon puzzle can use genuine flame colours. ⚠️ ALL SIX
-    // NEED REAL ART (high priority — see ART-NEEDED.md); until then they render as
-    // tinted placeholders (tint = their flame colour) and are NOT in elementalArt ART_IDS.
+    // 2026-10-01 so the beacon puzzle can use genuine flame colours. Real pixel art
+    // dropped 2026-10-04 (Gemini art, orange bg stripped via tools/remove_bg.py →
+    // src/assets/elementals/<id>.png); all six are registered in elementalArt ART_IDS.
+    // The `tint` below is now only the flame-colour fallback if art fails to load.
     { id: 'potassium', symbol: 'K',  name: 'Potassium', monster: 'Kaliflare',  number: 19, tint: 0xb060e0 },
     { id: 'copper',    symbol: 'Cu', name: 'Copper',    monster: 'Cupragleam', number: 29, tint: 0x3fae57 },
     { id: 'barium',    symbol: 'Ba', name: 'Barium',    monster: 'Bariglow',   number: 56, tint: 0x7fd651 },

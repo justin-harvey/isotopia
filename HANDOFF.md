@@ -1,11 +1,69 @@
 # Isotopia — Session Handoff
 
 A running summary of what this is and where it stands, so work can resume after a
-context reset. Last updated 2026-10-02.
+context reset. Last updated 2026-10-04.
 
 ## ▶ NEXT SESSION — planned work (Justin, 2026-10-02)
-Two concrete asks for the next session. Both are scoped below with root cause, exact files, and a
-recommended path; neither is started yet.
+Open asks below with root cause, exact files, and a recommended path. Task #2 (totem trim) is DONE +
+merged. Tasks #1 (water) and #3 (gameplay redesign) are not started. A pre-reset content audit
+(art / questions / gameplay) is captured in the next section.
+
+## 📋 Pre-reset content audit (2026-10-02)
+Snapshot of roster health + a gameplay critique Justin asked for before a context reset.
+
+### Elemental ("elemonster") art — 26 real / 0 placeholder / 0 missing ✅
+26 creatures defined in `data/elements.ts`; every one is registered in `data/elementalArt.ts` `ART_IDS`,
+so none fall back to the bare tinted-NPC sprite. **All 26 now have real art** (no placeholders left):
+- **Real art (26):** hydrogen, helium, carbon, nitrogen, oxygen, fluorine, neon, sodium, magnesium,
+  aluminum, silicon, phosphorus, sulfur, chlorine, argon, scandium, iron, uranium, beryllium, boron,
+  plus the flame-test metals **potassium, copper, barium, lithium, strontium, calcium**.
+  (Si/P/Cl/Ar are real Gemini art with the orange bg stripped, added 2026-10-01i.)
+- **Flame-test six — real art shipped 2026-10-04:** potassium (Kaliflare), copper (Cupragleam),
+  barium (Bariglow), lithium (Lithflare), strontium (Stronflare), calcium (Calciglow). Gemini art,
+  orange bg stripped via `tools/remove_bg.py` → `src/assets/elementals/<id>.png`. The procedural
+  placeholders they replaced can be regenerated with `tools/gen_placeholder_elementals.py`.
+- **Stray file:** `src/assets/elementals/neonu-reeves.png` exists on disk but is NOT in `ART_IDS`
+  (27 files, 26 mapped) — an unused alt/easter-egg sprite; harmless, left as-is.
+- **Totem art (separate from creatures): all placeholder.** Carved-stone monoliths from
+  `tools/gen_totems.py`; real animal-spirit art is nice-to-have. After the 8-totem trim only 8 totem
+  PNGs are used (carbon, neon, sodium, aluminum, silicon, argon, scandium, iron); the other 5
+  (nitrogen, oxygen, phosphorus, sulfur, chlorine) remain on disk but **unplaced**.
+
+### Questions — every creature meets the ≥3 minimum ✅
+All **26 elements have exactly 3** seed questions (78 total) in `data/questions.ts`. **None are
+deficient** — no creature needs more to clear the bar. Notes:
+- Teachers can add/override via Firebase RTDB `questions` node (`data/questionSource.ts`), so the bank
+  can grow without code.
+- Optional (not required): all 78 are 4-option MCQ (one modality) and re-catching an Elemental redraws
+  from just its 3, so repeats come quickly. Bumping the hero/early creatures to 4–5 and adding
+  non-MCQ item types would reduce fatigue (ties into the gameplay redesign below).
+
+### Gameplay critique (jungle + desert tests) — "repetitive, hardly memorable"
+Honest read of the two lesson set-pieces as learning-for-kids:
+- **Core catch loop:** walk up to a wild Elemental → one 4-option MCQ → caught. Clean, but it's the
+  same modality every time (see questions note).
+- **Jungle "Canopy Energy Network" (`CanopyOverlay`) — the weakest.** Every totem is the *identical*
+  interaction: +/- step electron-seeds up the lattice rung by rung, confirm each rung, repeat. Only the
+  target numbers change. Trimming 13→8 helped the length, but it's still the same stepper 8×.
+  Pedagogically sound (drills Aufbau) but mechanically monotonous and low on memory hooks — no stakes,
+  no per-creature personality beyond a blurb, no spatial/visual mnemonic.
+- **Desert "Flame-Test Beacons" (`BeaconOverlay`) — the stronger one.** A deduction puzzle: match a
+  caught element's flame colour to each beacon, with teachable collisions (multiple greens/reds) and
+  decoys (sulfur blue, magnesium white), plus a cloaked hidden-creature hunt (Rad Finder). Genuinely
+  more memorable; the pyramid-rise payoff is a nice beat.
+
+**Recommended direction (new task #3 below):** keep the strong bones (desert deduction, hidden hunt,
+visible payoffs); attack the jungle's monotony by *varying the interaction* instead of repeating one
+stepper, giving each spirit a tiny memorable reaction, and making most totems optional (3 required,
+rest bonus). Add retrieval callbacks (an element met in town → configured in jungle → burned in desert)
+and a couple of non-MCQ question types. Full task spec in **### 3** below.
+
+**Bug found during the audit (desert beacons, 3-vs-5):** the puzzle actually **requires all 5** beacons
+(`BeaconOverlay.solved()` = `litCount() === BEACONS.length`, meter label "N of 5"), and the README is
+correct (5). BUT `BeaconOverlay`'s meter hard-codes `aria-valuemax="3"` (a11y bug — should be
+`BEACONS.length`), and `DesertScene.ts` still has stale "three cold flame-test beacons" / "Match all
+three" comments (and its header lists Sulfur=blue as a beacon colour, but it's a decoy). Comment/a11y
+only, not a logic bug. Quick fix worth doing with task #3.
 
 ### 1. Remove the yellow/orange "triangle" texture from ALL water
 **Symptom (Justin):** every body of water shows repeating orange/tan triangular blobs; worst in the
@@ -64,11 +122,41 @@ re-derive automatically. A grep confirmed no hard-coded count (only comments sai
    (`JungleScene.createNpcs` / `WILD_ELEMENTALS`) and valid dex Elementals; P and Cl simply no longer
    have totems. Their generated totem PNGs on disk are harmless when unplaced. The wild-Elemental
    comment in `JungleScene` was updated to say so honestly.
-**Verified:** `npm run build` clean (Node 22). NOT yet E2E-driven or real-browser-checked this change —
-a follow-up should confirm the jungle boots with exactly 8 totems placed and configuring all eight →
-banner / "8/8 totems configured" / Canopy Key / grove celebration with 0 console errors. (`?e2e` trips
-the dormant-until-caught bypass, so also confirm the "sleeps until caught" gate in a real browser; and
-Scandium/Iron must have been caught earlier or their totems stay dormant.)
+**Verified:** `npm run build` clean (Node 22). **Shipped — merged to `main` 2026-10-02 (PR #2, squash
+commit `a72d0a5`); Netlify auto-deploying to is0topia.netlify.app.** NOT yet E2E-driven or
+real-browser-checked this change — a follow-up should confirm the jungle boots with exactly 8 totems
+placed and configuring all eight → banner / "8/8 totems configured" / Canopy Key / grove celebration
+with 0 console errors. (`?e2e` trips the dormant-until-caught bypass, so also confirm the "sleeps until
+caught" gate in a real browser; and Scandium/Iron must have been caught earlier or their totems stay
+dormant. Service-worker/PWA cache can serve the old 13-totem bundle until a hard refresh.)
+
+### 3. Make the lesson gameplay less repetitive + more memorable for kids (NOT started)
+**Goal (Justin, 2026-10-02):** the jungle/desert tests feel repetitive and aren't memorable enough for
+kids. Rework toward variety + memory hooks. See the "Gameplay critique" in the audit section above for
+the full read. This is a design task — recommend scoping a small v1 rather than a big rewrite.
+**Suggested v1 scope (pick a subset, ship incrementally, each headless-verifiable):**
+1. **Break the jungle's one-stepper monotony (`CanopyOverlay`).** Don't repeat the identical fill 8×.
+   e.g. keep the guided stepper for the first 1–2 totems to teach it, then switch later totems to a
+   *recognition* variant (pick the correct config from 4 options) and make the Sc/Fe finale a distinct
+   "catch the 4s-before-3d trap" beat. Variety is the point.
+2. **Fewer required, more optional.** Make ~3 totems required to power the network and the rest bonus
+   (right now all 8 are required). Keep Sc/Fe reachable as the finale. Lets a kid finish faster but
+   rewards curiosity.
+3. **Per-spirit memory hook.** On waking a totem, play a 1-line in-character reaction + a small distinct
+   animation (the `blurb` strings already exist; add a spoken beat + unique cue) so element↔animal pairs
+   stick.
+4. **Retrieval callbacks across levels.** Reuse the same roster deliberately: when you configure/burn an
+   element you met earlier, surface a one-liner ("You met Sodium in town — now watch it burn yellow").
+   The shared roster already supports this; just add the callbacks.
+5. **Non-MCQ question types in the catch loop (`QuizOverlay`).** Add true/false, symbol↔name match, or
+   "tap the element on a mini periodic table" so encounters aren't all identical 4-option MCQ. Ties to
+   the questions-audit note (more variety per creature).
+6. **Fold in the beacon fixes** from the audit (meter `aria-valuemax` → `BEACONS.length`; refresh the
+   stale "three beacons" comments + decoy wording in `DesertScene.ts`).
+**Files:** `src/ui/CanopyOverlay.ts`, `src/data/aufbau.ts` (required-vs-bonus flag), `src/ui/QuizOverlay.ts`
++ `src/data/questions.ts` (item types), `src/ui/BeaconOverlay.ts` / `src/Scenes/DesertScene.ts` (beacon
+fixes), `src/Scenes/JungleScene.ts` (per-spirit reaction). **Verify:** `npm run build` + the `?e2e`
+harness per lesson.
 
 ## Shipped (2026-10-02) — jungle lesson + 4 Elementals merged to `main` → deploying
 The 2026-10-01g/h/i work below — the Jungle **"Canopy Energy Network"** lesson (Phases 0–4) plus the
@@ -249,16 +337,17 @@ stone/paths so every zone shares one palette.
   `DesertScene.SPAWN_CANDIDATES` (12 tucked tiles, walkability-filtered to the first 6). Verified
   headless: all 6 still spawn, 5-beacon puzzle solves → rise, 0 errors.
 
-## New this session (2026-10-01c) — 6 flame-test Elementals added (art needed)
+## New this session (2026-10-01c) — 6 flame-test Elementals added (real art shipped 2026-10-04)
 Added the six classic flame-test metals as real, catchable Elementals so the beacon puzzle uses
 the authentic palette: **Potassium, Copper, Barium, Lithium, Strontium, Calcium** (`data/elements.ts`,
 18 new quiz questions incl. a `flame`-colour angle, placed as wild spawns in `DesertScene.createNpcs`
 on walkability-filtered sand). The beacon puzzle expanded from 3 to **5 beacons** (yellow/green/lilac/
 red/orange) with the Cu/Ba/B "all green" and Li/Sr "both red" collisions as teachable gotchas; S(blue)
-and Mg(white) are now distractors. **Art status: PLACEHOLDER art shipped** — little flame-creature
-sprites in each element's flame colour (`tools/gen_placeholder_elementals.py`), registered in
-`elementalArt.ts` ART_IDS so they render as art, not tinted discs. Real/nicer art still welcome
-(overwrite the `<id>.png` + rebuild) — tracked in `ART-NEEDED.md` (now 🟠, no longer blocking).
+and Mg(white) are now distractors. **Art status: REAL art shipped 2026-10-04** — Gemini pixel art
+(orange bg stripped via `tools/remove_bg.py`) replaced the earlier placeholders in
+`src/assets/elementals/{potassium,copper,barium,lithium,strontium,calcium}.png`; already in
+`elementalArt.ts` ART_IDS, so no code change. The old placeholders can be regenerated with
+`tools/gen_placeholder_elementals.py`. Tracked as ✅ DONE in `ART-NEEDED.md`.
 Verified headless (`?e2e&dev`): all 6 spawn + load as art, 5 beacons solve → rise, **0 console errors**.
 Deploy note: they spawn by default (`releaseAllNow:true`); a scheduled class must release them.
 
