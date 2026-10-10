@@ -74,6 +74,18 @@ export const ELEMENTS: ElementInfo[] = [
     { id: 'bromine',   symbol: 'Br', name: 'Bromine',   monster: 'Brome-Garde', number: 35, tint: 0xb03a2e },
     { id: 'krypton',   symbol: 'Kr', name: 'Krypton',   monster: 'Krypto-Glow', number: 36, tint: 0xa8c6e0 },
     { id: 'rubidium',  symbol: 'Rb', name: 'Rubidium',  monster: 'Rubi-Clock',  number: 37, tint: 0x4fa8a0 },
+    // Second-row (4d) transition metals (2026-10-09 batch 2). Real pixel art in
+    // src/assets/elementals/<id>.png (AI art, orange bg stripped + centred via
+    // tools/prep_elemental_sprite.py); registered in data/elementalArt ART_IDS.
+    // Contiguous 40→46 (Rb was 37; #39 Yttrium still has no art). `tint` is only the
+    // fallback if art fails to load. See SPRITE-BATCH-PLAYBOOK.md.
+    { id: 'zirconium',  symbol: 'Zr', name: 'Zirconium',  monster: 'Zirc-Armor',  number: 40, tint: 0xb4bcc4 },
+    { id: 'niobium',    symbol: 'Nb', name: 'Niobium',    monster: 'Nio-Coil',    number: 41, tint: 0x8fa3bf },
+    { id: 'molybdenum', symbol: 'Mo', name: 'Molybdenum', monster: 'Moly-Glide',  number: 42, tint: 0x9aa0a8 },
+    { id: 'technetium', symbol: 'Tc', name: 'Technetium', monster: 'Techne-Scan', number: 43, tint: 0x58c6c0 },
+    { id: 'ruthenium',  symbol: 'Ru', name: 'Ruthenium',  monster: 'Ruthen-Spark',number: 44, tint: 0x8f9aa6 },
+    { id: 'rhodium',    symbol: 'Rh', name: 'Rhodium',    monster: 'Rhodi-Mirror',number: 45, tint: 0xd3d9de },
+    { id: 'palladium',  symbol: 'Pd', name: 'Palladium',  monster: 'Palla-Sponge',number: 46, tint: 0xb0b6bd },
 ];
 
 export const ELEMENTS_BY_ID: Record<string, ElementInfo> =

@@ -46,6 +46,14 @@ export const ELEMENTAL_LOCATION: Record<string, string> = {
     bromine:   `${CITY} — middle of the map, east of centre`,
     krypton:   `${CITY} — far west side, lower down`,
     rubidium:  `${CITY} — southeast corner`,
+    // Second-row (4d) transition metals (2026-10-09 batch 2) — roaming the City streets.
+    zirconium:  `${CITY} — near the top, centre column`,
+    niobium:    `${CITY} — far east side, near the top`,
+    molybdenum: `${CITY} — far west edge, middle`,
+    technetium: `${CITY} — lower-middle, east of centre`,
+    ruthenium:  `${CITY} — southwest corner`,
+    rhodium:    `${CITY} — along the south edge, west of centre`,
+    palladium:  `${CITY} — along the south edge, east side`,
 };
 
 export function elementalLocation(id: string): string {

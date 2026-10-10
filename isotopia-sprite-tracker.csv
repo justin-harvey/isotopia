@@ -38,13 +38,13 @@ Atomic #,Symbol,Element,Monster Name,In Playable Roster,Has Sprite,Sprite File,S
 37,Rb,Rubidium,Rubi-Clock,Yes,Yes,src/assets/elementals/rubidium.png,Done
 38,Sr,Strontium,Stronflare,Yes,Yes,src/assets/elementals/strontium.png,Done
 39,Y,Yttrium,,No,No,,Needs monster design + sprite
-40,Zr,Zirconium,,No,No,,Needs monster design + sprite
-41,Nb,Niobium,,No,No,,Needs monster design + sprite
-42,Mo,Molybdenum,,No,No,,Needs monster design + sprite
-43,Tc,Technetium,,No,No,,Needs monster design + sprite
-44,Ru,Ruthenium,,No,No,,Needs monster design + sprite
-45,Rh,Rhodium,,No,No,,Needs monster design + sprite
-46,Pd,Palladium,,No,No,,Needs monster design + sprite
+40,Zr,Zirconium,Zirc-Armor,Yes,Yes,src/assets/elementals/zirconium.png,Done
+41,Nb,Niobium,Nio-Coil,Yes,Yes,src/assets/elementals/niobium.png,Done
+42,Mo,Molybdenum,Moly-Glide,Yes,Yes,src/assets/elementals/molybdenum.png,Done
+43,Tc,Technetium,Techne-Scan,Yes,Yes,src/assets/elementals/technetium.png,Done
+44,Ru,Ruthenium,Ruthen-Spark,Yes,Yes,src/assets/elementals/ruthenium.png,Done
+45,Rh,Rhodium,Rhodi-Mirror,Yes,Yes,src/assets/elementals/rhodium.png,Done
+46,Pd,Palladium,Palla-Sponge,Yes,Yes,src/assets/elementals/palladium.png,Done
 47,Ag,Silver,,No,No,,Needs monster design + sprite
 48,Cd,Cadmium,,No,No,,Needs monster design + sprite
 49,In,Indium,,No,No,,Needs monster design + sprite

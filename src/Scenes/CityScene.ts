@@ -59,6 +59,10 @@ const CITY_ELEMENTALS: [string, number, number][] = [
     // walls layer, spread across the city and ≥3 tiles from every other elemental.
     ['zinc', 4, 2], ['gallium', 34, 2], ['germanium', 19, 4], ['arsenic', 49, 4],
     ['selenium', 49, 23], ['bromine', 36, 28], ['krypton', 2, 59], ['rubidium', 49, 69],
+    // Second-row (4d) transition metals (2026-10-09 batch 2). Tiles flood-fill-reachable
+    // from START and 3x3-clear against the walls layer, ≥3 tiles from every other elemental.
+    ['zirconium', 18, 12], ['niobium', 46, 13], ['molybdenum', 2, 36], ['technetium', 35, 50],
+    ['ruthenium', 5, 69], ['rhodium', 14, 69], ['palladium', 39, 69],
 ];
 
 export default class CityScene extends GameScene {

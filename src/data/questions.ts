@@ -213,6 +213,41 @@ export const QUESTIONS: Question[] = [
     { elementId: 'rubidium', angle: 'protons', prompt: 'How many protons does rubidium (atomic number 37) have?', choices: ['19', '37', '48', '85'], correctIndex: 1, quarterTheme: 'starter' },
     { elementId: 'rubidium', angle: 'ion',     prompt: 'Rubidium is an alkali metal in group 1. What ion does it form?', choices: ['Rb⁻', 'Rb⁺', 'Rb²⁺', 'Rb³⁺'], correctIndex: 1, quarterTheme: 'starter' },
     { elementId: 'rubidium', angle: 'valence', prompt: 'Like sodium and potassium, rubidium is very reactive. How many valence electrons does it have?', choices: ['1', '2', '7', '8'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Zirc-Armor — Zirconium (Zr) --- (2026-10-09 batch 2)
+    { elementId: 'zirconium', angle: 'protons', prompt: "Zirconium's atomic number is 40. How many protons does it have?", choices: ['20', '38', '40', '91'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'zirconium', angle: 'symbol',  prompt: "What is zirconium's chemical symbol?", choices: ['Zi', 'Zr', 'Zn', 'Zc'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'zirconium', angle: 'block',   prompt: 'Zirconium resists heat and corrosion and sits in the middle of the periodic table. It is a…', choices: ['Transition metal (d-block)', 'Noble gas', 'Halogen', 'Alkali metal'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Nio-Coil — Niobium (Nb) ---
+    { elementId: 'niobium', angle: 'protons',  prompt: 'How many protons does niobium (atomic number 41) have?', choices: ['21', '41', '51', '93'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'niobium', angle: 'symbol',   prompt: "What is niobium's chemical symbol?", choices: ['Ni', 'Nb', 'No', 'N'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'niobium', angle: 'property', prompt: 'Niobium is used in the superconducting magnets of MRI machines because when very cold it carries electricity with…', choices: ['No resistance', 'More rust', 'Less gravity', 'Bright light'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Moly-Glide — Molybdenum (Mo) ---
+    { elementId: 'molybdenum', angle: 'protons',  prompt: "Molybdenum's atomic number is 42. How many protons does it have?", choices: ['22', '42', '54', '96'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'molybdenum', angle: 'symbol',   prompt: "What is molybdenum's chemical symbol?", choices: ['Ml', 'Mo', 'Md', 'Mb'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'molybdenum', angle: 'property', prompt: 'Molybdenum has a very high melting point, so it is added to steel to make it…', choices: ['Stronger at high heat', 'Softer', 'Magnetic', 'Radioactive'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Techne-Scan — Technetium (Tc) ---
+    { elementId: 'technetium', angle: 'protons',  prompt: 'How many protons does technetium (atomic number 43) have?', choices: ['23', '43', '53', '99'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'technetium', angle: 'property', prompt: 'Technetium was the first element made artificially in a lab. Every isotope of it is…', choices: ['Radioactive', 'A noble gas', 'A liquid', 'Magnetic'], correctIndex: 0, quarterTheme: 'starter' },
+    { elementId: 'technetium', angle: 'property', prompt: 'Doctors inject a tiny amount of technetium-99m to take pictures inside the body. This makes it useful in…', choices: ['Medical imaging scans', 'Batteries', 'Fireworks', 'Magnets'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Ruthen-Spark — Ruthenium (Ru) ---
+    { elementId: 'ruthenium', angle: 'protons', prompt: "Ruthenium's atomic number is 44. How many protons does it have?", choices: ['24', '44', '54', '101'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'ruthenium', angle: 'symbol',  prompt: "What is ruthenium's chemical symbol?", choices: ['Ru', 'Rh', 'Rn', 'R'], correctIndex: 0, quarterTheme: 'starter' },
+    { elementId: 'ruthenium', angle: 'block',   prompt: 'Ruthenium is a hard, silvery metal from the middle of the periodic table. It is a…', choices: ['Transition metal', 'Noble gas', 'Alkali metal', 'Halogen'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Rhodi-Mirror — Rhodium (Rh) ---
+    { elementId: 'rhodium', angle: 'protons',  prompt: 'How many protons does rhodium (atomic number 45) have?', choices: ['25', '45', '58', '103'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'rhodium', angle: 'symbol',   prompt: "What is rhodium's chemical symbol?", choices: ['Rd', 'Rh', 'Ro', 'Re'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'rhodium', angle: 'property', prompt: 'Rhodium is a rare, costly metal used to make mirrors and jewelry bright. It is prized for being…', choices: ['Highly reflective', 'Radioactive', 'A gas', 'Magnetic'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Palla-Sponge — Palladium (Pd) ---
+    { elementId: 'palladium', angle: 'protons',  prompt: "Palladium's atomic number is 46. How many protons does it have?", choices: ['26', '46', '60', '106'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'palladium', angle: 'symbol',   prompt: "What is palladium's chemical symbol?", choices: ['Pd', 'Pa', 'Pl', 'P'], correctIndex: 0, quarterTheme: 'starter' },
+    { elementId: 'palladium', angle: 'property', prompt: 'Palladium can soak up large amounts of hydrogen gas, acting like a…', choices: ['Sponge', 'Magnet', 'Battery', 'Mirror'], correctIndex: 0, quarterTheme: 'starter' },
 ];
 
 /** All seed questions for one element. */
