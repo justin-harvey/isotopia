@@ -36,6 +36,16 @@ export const ELEMENTAL_LOCATION: Record<string, string> = {
     phosphorus: JUNGLE,
     chlorine:   JUNGLE,
     argon:      JUNGLE,
+    // Period-4 post-transition/metalloids/noble gas + period-5 alkali (2026-10-09) —
+    // roaming the City streets, spread to the corners and mid-map.
+    zinc:      `${CITY} — northwest corner`,
+    gallium:   `${CITY} — along the north edge, middle`,
+    germanium: `${CITY} — near the top, just right of middle`,
+    arsenic:   `${CITY} — northeast corner`,
+    selenium:  `${CITY} — far east side, upper-middle`,
+    bromine:   `${CITY} — middle of the map, east of centre`,
+    krypton:   `${CITY} — far west side, lower down`,
+    rubidium:  `${CITY} — southeast corner`,
 };
 
 export function elementalLocation(id: string): string {

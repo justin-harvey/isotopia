@@ -28,14 +28,14 @@ Atomic #,Symbol,Element,Monster Name,In Playable Roster,Has Sprite,Sprite File,S
 27,Co,Cobalt,Co-bolt,Yes,Yes,src/assets/elementals/cobalt.png,Done
 28,Ni,Nickel,Nickawatt,Yes,Yes,src/assets/elementals/nickel.png,Done
 29,Cu,Copper,Cupragleam,Yes,Yes,src/assets/elementals/copper.png,Done
-30,Zn,Zinc,,No,No,,Needs monster design + sprite
-31,Ga,Gallium,,No,No,,Needs monster design + sprite
-32,Ge,Germanium,,No,No,,Needs monster design + sprite
-33,As,Arsenic,,No,No,,Needs monster design + sprite
-34,Se,Selenium,,No,No,,Needs monster design + sprite
-35,Br,Bromine,,No,No,,Needs monster design + sprite
-36,Kr,Krypton,,No,No,,Needs monster design + sprite
-37,Rb,Rubidium,,No,No,,Needs monster design + sprite
+30,Zn,Zinc,Zincoat,Yes,Yes,src/assets/elementals/zinc.png,Done
+31,Ga,Gallium,Galli-Melt,Yes,Yes,src/assets/elementals/gallium.png,Done
+32,Ge,Germanium,Germani-Ray,Yes,Yes,src/assets/elementals/germanium.png,Done
+33,As,Arsenic,Arsen-Chip,Yes,Yes,src/assets/elementals/arsenic.png,Done
+34,Se,Selenium,Solenium,Yes,Yes,src/assets/elementals/selenium.png,Done
+35,Br,Bromine,Brome-Garde,Yes,Yes,src/assets/elementals/bromine.png,Done
+36,Kr,Krypton,Krypto-Glow,Yes,Yes,src/assets/elementals/krypton.png,Done
+37,Rb,Rubidium,Rubi-Clock,Yes,Yes,src/assets/elementals/rubidium.png,Done
 38,Sr,Strontium,Stronflare,Yes,Yes,src/assets/elementals/strontium.png,Done
 39,Y,Yttrium,,No,No,,Needs monster design + sprite
 40,Zr,Zirconium,,No,No,,Needs monster design + sprite

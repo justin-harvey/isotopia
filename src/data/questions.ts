@@ -173,6 +173,46 @@ export const QUESTIONS: Question[] = [
     { elementId: 'nickel', angle: 'symbol',   prompt: "What is nickel's chemical symbol?", choices: ['Ni', 'N', 'Nk', 'Ne'], correctIndex: 0, quarterTheme: 'starter' },
     { elementId: 'nickel', angle: 'protons',  prompt: "Nickel's atomic number is 28. How many protons does it have?", choices: ['14', '18', '28', '59'], correctIndex: 2, quarterTheme: 'starter' },
     { elementId: 'nickel', angle: 'property', prompt: 'Nickel is magnetic and used with cobalt in rechargeable batteries and coins. It is a…', choices: ['Transition metal', 'Halogen', 'Noble gas', 'Alkali metal'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Zincoat — Zinc (Zn) --- (2026-10-09 batch)
+    { elementId: 'zinc', angle: 'protons',  prompt: "Zinc's atomic number is 30. How many protons does it have?", choices: ['15', '28', '30', '60'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'zinc', angle: 'ion',      prompt: 'Zinc almost always forms an ion with what charge?', choices: ['−2', '+1', '+2', '+3'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'zinc', angle: 'property', prompt: 'Steel is coated ("galvanized") with zinc mainly to protect it from…', choices: ['Rust', 'Sunlight', 'Magnets', 'Heat'], correctIndex: 0, quarterTheme: 'starter' },
+
+    // --- Galli-Melt — Gallium (Ga) ---
+    { elementId: 'gallium', angle: 'protons',  prompt: 'How many protons does gallium (atomic number 31) have?', choices: ['13', '29', '31', '41'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'gallium', angle: 'property', prompt: 'Gallium melts at about 30 °C. What happens if you hold a solid piece in your warm hand?', choices: ['It freezes harder', 'It melts into a liquid', 'Nothing changes', 'It catches fire'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'gallium', angle: 'ion',      prompt: 'Gallium is in group 13 with 3 valence electrons. What ion does it commonly form?', choices: ['Ga⁻', 'Ga⁺', 'Ga²⁺', 'Ga³⁺'], correctIndex: 3, quarterTheme: 'starter' },
+
+    // --- Germani-Ray — Germanium (Ge) ---
+    { elementId: 'germanium', angle: 'protons',  prompt: "Germanium's atomic number is 32. How many protons does it have?", choices: ['14', '30', '32', '64'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'germanium', angle: 'classify', prompt: 'Germanium sits on the metal/nonmetal staircase and is used in semiconductors. It is a…', choices: ['Metal', 'Noble gas', 'Metalloid', 'Alkali metal'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'germanium', angle: 'valence',  prompt: 'Germanium is in group 14. How many valence electrons does it have?', choices: ['2', '4', '6', '8'], correctIndex: 1, quarterTheme: 'starter' },
+
+    // --- Arsen-Chip — Arsenic (As) ---
+    { elementId: 'arsenic', angle: 'protons', prompt: 'How many protons does arsenic (atomic number 33) have?', choices: ['15', '31', '33', '75'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'arsenic', angle: 'symbol',  prompt: "What is arsenic's chemical symbol?", choices: ['Ar', 'As', 'Au', 'A'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'arsenic', angle: 'valence', prompt: 'Arsenic is in group 15. How many valence electrons does it have?', choices: ['3', '5', '7', '8'], correctIndex: 1, quarterTheme: 'starter' },
+
+    // --- Solenium — Selenium (Se) ---
+    { elementId: 'selenium', angle: 'protons',  prompt: "Selenium's atomic number is 34. How many protons does it have?", choices: ['16', '32', '34', '68'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'selenium', angle: 'ion',      prompt: 'Selenium is in group 16 and tends to gain 2 electrons. What ion does it form?', choices: ['Se⁺', 'Se²⁺', 'Se⁻', 'Se²⁻'], correctIndex: 3, quarterTheme: 'starter' },
+    { elementId: 'selenium', angle: 'property', prompt: 'Selenium conducts electricity better in light than in dark, so it is used in…', choices: ['Batteries', 'Solar cells and light sensors', 'Magnets', 'Balloons'], correctIndex: 1, quarterTheme: 'starter' },
+
+    // --- Brome-Garde — Bromine (Br) ---
+    { elementId: 'bromine', angle: 'protons',  prompt: 'How many protons does bromine (atomic number 35) have?', choices: ['17', '35', '45', '80'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'bromine', angle: 'property', prompt: 'Bromine is unusual because at room temperature it is a…', choices: ['Solid metal', 'Red-brown liquid', 'Green solid', 'Colorless gas'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'bromine', angle: 'ion',      prompt: 'Bromine is a halogen in group 17. What ion does it form?', choices: ['Br⁺', 'Br⁻', 'Br²⁻', 'Br (no charge)'], correctIndex: 1, quarterTheme: 'starter' },
+
+    // --- Krypto-Glow — Krypton (Kr) ---
+    { elementId: 'krypton', angle: 'protons', prompt: "Krypton's atomic number is 36. How many protons does it have?", choices: ['18', '34', '36', '72'], correctIndex: 2, quarterTheme: 'starter' },
+    { elementId: 'krypton', angle: 'config',  prompt: 'Why does krypton, a noble gas, almost never react?', choices: ['It has 1 valence electron', 'Its outer shell is full', 'It is a metal', 'It has no protons'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'krypton', angle: 'valence', prompt: 'How many valence electrons does krypton have in its outer shell?', choices: ['2', '6', '8', '18'], correctIndex: 2, quarterTheme: 'starter' },
+
+    // --- Rubi-Clock — Rubidium (Rb) ---
+    { elementId: 'rubidium', angle: 'protons', prompt: 'How many protons does rubidium (atomic number 37) have?', choices: ['19', '37', '48', '85'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'rubidium', angle: 'ion',     prompt: 'Rubidium is an alkali metal in group 1. What ion does it form?', choices: ['Rb⁻', 'Rb⁺', 'Rb²⁺', 'Rb³⁺'], correctIndex: 1, quarterTheme: 'starter' },
+    { elementId: 'rubidium', angle: 'valence', prompt: 'Like sodium and potassium, rubidium is very reactive. How many valence electrons does it have?', choices: ['1', '2', '7', '8'], correctIndex: 0, quarterTheme: 'starter' },
 ];
 
 /** All seed questions for one element. */
