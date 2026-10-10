@@ -54,6 +54,11 @@ const CITY_ELEMENTALS: [string, number, number][] = [
     // walls layer of city_map.json, spaced from the others, buildings and the exit.
     ['titanium', 4, 12], ['vanadium', 34, 16], ['chromium', 18, 20],
     ['manganese', 18, 30], ['cobalt', 18, 40], ['nickel', 18, 50],
+    // Period-4 post-transition metals / metalloids / noble gas + period-5 alkali
+    // (2026-10-09). Tiles flood-fill-reachable from START and 3x3-clear against the
+    // walls layer, spread across the city and ≥3 tiles from every other elemental.
+    ['zinc', 4, 2], ['gallium', 34, 2], ['germanium', 19, 4], ['arsenic', 49, 4],
+    ['selenium', 49, 23], ['bromine', 36, 28], ['krypton', 2, 59], ['rubidium', 49, 69],
 ];
 
 export default class CityScene extends GameScene {

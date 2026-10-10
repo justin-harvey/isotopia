@@ -60,6 +60,20 @@ export const ELEMENTS: ElementInfo[] = [
     { id: 'manganese',  symbol: 'Mn', name: 'Manganese',  monster: 'Mangacore',   number: 25, tint: 0x9d8aa6 },
     { id: 'cobalt',     symbol: 'Co', name: 'Cobalt',     monster: 'Co-bolt',     number: 27, tint: 0x3f6fd1 },
     { id: 'nickel',     symbol: 'Ni', name: 'Nickel',     monster: 'Nickawatt',   number: 28, tint: 0x8fae8f },
+    // Period-4 post-transition metals / metalloids / noble gas + the first period-5
+    // alkali metal (2026-10-09 art drop). Real pixel art in src/assets/elementals/<id>.png
+    // (AI art, orange bg stripped + centred via tools/remove_bg.py); registered in
+    // data/elementalArt ART_IDS. Fills the roster contiguously 30→37 (Cu was 29, Sr 38).
+    // `tint` is only the fallback if art fails to load. New Elementals ship LOCKED under a
+    // release schedule (releaseAllNow still defaults true) — teachers assign an unlock day.
+    { id: 'zinc',      symbol: 'Zn', name: 'Zinc',      monster: 'Zincoat',     number: 30, tint: 0xb0bec5 },
+    { id: 'gallium',   symbol: 'Ga', name: 'Gallium',   monster: 'Galli-Melt',  number: 31, tint: 0xb5bdc6 },
+    { id: 'germanium', symbol: 'Ge', name: 'Germanium', monster: 'Germani-Ray', number: 32, tint: 0x8a9ba8 },
+    { id: 'arsenic',   symbol: 'As', name: 'Arsenic',   monster: 'Arsen-Chip',  number: 33, tint: 0x8f9e7e },
+    { id: 'selenium',  symbol: 'Se', name: 'Selenium',  monster: 'Solenium',    number: 34, tint: 0xd4694a },
+    { id: 'bromine',   symbol: 'Br', name: 'Bromine',   monster: 'Brome-Garde', number: 35, tint: 0xb03a2e },
+    { id: 'krypton',   symbol: 'Kr', name: 'Krypton',   monster: 'Krypto-Glow', number: 36, tint: 0xa8c6e0 },
+    { id: 'rubidium',  symbol: 'Rb', name: 'Rubidium',  monster: 'Rubi-Clock',  number: 37, tint: 0x4fa8a0 },
 ];
 
 export const ELEMENTS_BY_ID: Record<string, ElementInfo> =

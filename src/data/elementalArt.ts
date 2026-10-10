@@ -14,6 +14,9 @@ const ART_IDS = new Set<string>([
     'silicon', 'phosphorus', 'chlorine', 'argon',
     // First-row transition metals (2026-10) — real art, bg stripped via tools/remove_bg.py.
     'titanium', 'vanadium', 'chromium', 'manganese', 'cobalt', 'nickel',
+    // Period-4 post-transition/metalloids/noble gas + period-5 alkali (2026-10-09) —
+    // real art, bg stripped + centred via tools/remove_bg.py.
+    'zinc', 'gallium', 'germanium', 'arsenic', 'selenium', 'bromine', 'krypton', 'rubidium',
 ]);
 
 /** Texture cache key for an Elemental's art, or undefined if it has no art. */
