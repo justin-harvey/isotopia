@@ -57,9 +57,11 @@ export default class WoodsScene extends GameScene {
     // other Elemental in the game: fixed, cloaked, found with the Rad Finder). There
     // are NO random tall-grass encounters here anymore; the tall grass is decoration.
     // Carbon moved down into the Museum basement (in the city).
+    // Re-scrambled for the official season (2026-10-13): nitrogen took the meadow,
+    // neon the eastern tall grass — breaks testers' memorized spots.
     private static readonly WILD: { elementId: string; x: number; y: number }[] = [
-        { elementId: 'oxygen',   x: 16, y: 8 },    // up north in the meadow
-        { elementId: 'nitrogen', x: 25, y: 10 },   // by the eastern tall grass
+        { elementId: 'nitrogen', x: 16, y: 8 },    // up north in the meadow
+        { elementId: 'neon',     x: 25, y: 10 },   // by the eastern tall grass
     ];
 
     // Cainos "Pixel Art Top Down - Basic" props, sliced into src/assets/woods/ by

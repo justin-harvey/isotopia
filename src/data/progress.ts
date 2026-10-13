@@ -9,6 +9,7 @@
 
 import { getFirebaseApp } from './firebase';
 import { getDatabase, ref, get, set } from 'firebase/database';
+import { loadSeasonId } from './season';
 
 export type MonsterStatus = 'unseen' | 'seen' | 'caught';
 
@@ -64,6 +65,10 @@ async function pushCloud(): Promise<void> {
             seen: state.seen,
             caught: state.caught,
             stats: state.stats,
+            // The season this record was last reset for. Lets a returning student
+            // (or a fresh device) tell whether the cloud copy predates the current
+            // season and needs a one-time wipe — see attachStudent below.
+            season: getLocalSeason(),
         });
         // Intentionally NOT writing class membership here: registering only
         // creates the student's own record (the "registrant pool"). A staff member
@@ -79,15 +84,25 @@ export async function attachStudent(uid: string, name: string, email: string): P
     studentInfo = { name, email };
     const d = db();
     if (!d) return;
+    const globalSeason = await loadSeasonId();
     try {
         const snap = await get(ref(d, `students/${uid}`));
         if (snap.exists()) {
-            const v = snap.val() as Partial<ProgressState>;
+            const v = snap.val() as Partial<ProgressState> & { season?: string };
             state = { seen: v.seen ?? {}, caught: v.caught ?? {}, stats: v.stats ?? {} };
             saveLocal();
-            await pushCloud();          // ensure name/email are current
+            // New season? The cloud record is from a prior season (or pre-season);
+            // wipe the dex once, stamp the new season, and push the clean record.
+            if (globalSeason && (v.season ?? null) !== globalSeason) {
+                applySeasonReset(globalSeason);
+            } else {
+                await pushCloud();      // ensure name/email (and season) are current
+            }
         } else {
-            await pushCloud();          // first sign-in: migrate local progress up
+            // First sign-in: the local copy was already season-reset at startup
+            // (maybeResetForSeason in game.ts), so just stamp + migrate it up.
+            if (globalSeason) setLocalSeason(globalSeason);
+            await pushCloud();
         }
     } catch { /* leave local state as-is if the read fails */ }
 }
@@ -134,6 +149,63 @@ export function counts(): { seen: number; caught: number } {
         seen: Object.keys(state.seen).length,
         caught: Object.keys(state.caught).length,
     };
+}
+
+// ---- Season reset ---------------------------------------------------------
+// The device's record of which season it last cleared for, compared against the
+// global season (data/season.ts). When they differ, everything the student has
+// earned is wiped ONCE and the device restamps — so the official season starts
+// from a clean slate without staff needing write access to each student's record.
+const SEASON_STAMP_KEY = 'isotopia.season.v1';
+
+function getLocalSeason(): string | null {
+    try { return localStorage.getItem(SEASON_STAMP_KEY); }
+    catch { return null; }
+}
+function setLocalSeason(id: string): void {
+    try { localStorage.setItem(SEASON_STAMP_KEY, id); }
+    catch { /* storage unavailable — stamp stays unset this session */ }
+}
+
+/** Wipe EVERYTHING a student has earned — the Isotopedex (seen/caught), answer
+ *  stats, Evolution Lab fusions, inventory items/keys, and the resonance /
+ *  pyramid / canopy puzzle completions — in memory and in localStorage. If a
+ *  student is signed in, the cleared record is pushed to the cloud too (they can
+ *  write their own students/{uid}), so their dex resets everywhere. Name, email,
+ *  and class assignment are untouched. */
+export function resetAllProgress(): void {
+    state = { seen: {}, caught: {}, stats: {} };
+    evolvedState = {};
+    itemsState = {};
+    resonanceState = { attuned: {}, enlightened: false };
+    pyramidState = { risen: false };
+    canopyState = { attuned: {}, complete: false };
+    saveLocal();
+    saveEvolved();
+    saveItems();
+    saveResonance();
+    savePyramid();
+    saveCanopy();
+    void pushCloud();   // no-op unless a student is signed in
+}
+
+/** Stamp the device for `season`, then wipe all progress for the new season. The
+ *  stamp is written first so the subsequent pushCloud records the new season. */
+function applySeasonReset(season: string): void {
+    setLocalSeason(season);
+    resetAllProgress();
+}
+
+/** Startup / guest path: if the global season is newer than what this device last
+ *  cleared for, wipe local progress once and restamp. Returns true if it reset.
+ *  Safe before any sign-in — guests have no cloud record, so this only touches
+ *  localStorage. Signed-in students are handled by attachStudent against their
+ *  cloud record's season. A null/unknown season never triggers a wipe. */
+export function maybeResetForSeason(globalSeason: string | null): boolean {
+    if (!globalSeason) return false;
+    if (getLocalSeason() === globalSeason) return false;
+    applySeasonReset(globalSeason);
+    return true;
 }
 
 // ---- Evolved / fused compound forms (Evolution Lab) -----------------------

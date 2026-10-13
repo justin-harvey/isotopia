@@ -8,6 +8,10 @@
       ".read": "auth != null",
       ".write": "auth != null && (auth.token.teacher === true || root.child('admins').child(auth.uid).val() === true)"
     },
+    "season": {
+      ".read": "auth != null",
+      ".write": "auth != null && (auth.token.teacher === true || root.child('admins').child(auth.uid).val() === true)"
+    },
     "classes": {
       "$cid": {
         ".read": "auth != null",

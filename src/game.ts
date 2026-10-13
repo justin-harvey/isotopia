@@ -21,6 +21,8 @@ import { ensureSignedIn } from "./data/auth";
 import { initStudentAuth } from "./data/studentAuth";
 import { loadQuestionBank } from "./data/questionSource";
 import { loadAndCacheSettings } from "./data/classConfig";
+import { loadSeasonId } from "./data/season";
+import { maybeResetForSeason } from "./data/progress";
 import { initIsotopedex } from "./ui/Isotopedex";
 import { initIntro } from "./ui/Intro";
 import { mountRadFinder } from "./ui/RadFinder";
@@ -51,7 +53,16 @@ const STARTUP_TIMEOUT_MS = 8000;
     try {
         const online = (async () => {
             const uid = await ensureSignedIn();
-            await Promise.all([loadQuestionBank(), loadAndCacheSettings()]);
+            const [, , season] = await Promise.all([
+                loadQuestionBank(), loadAndCacheSettings(), loadSeasonId(),
+            ]);
+            // Guest / local reset: if staff have started a new season, wipe this
+            // device's collection once before the first scene loads. Signed-in
+            // students get the same treatment against their cloud record in
+            // attachStudent (studentAuth → progress), which may run slightly later.
+            if (maybeResetForSeason(season)) {
+                console.log(`Isotopia: new season "${season}" — collection reset for a fresh start.`);
+            }
             return uid;
         })();
         const timedOut = new Promise<'timeout'>(resolve =>

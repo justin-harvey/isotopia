@@ -23,6 +23,7 @@ import {
 import {
     loadRoster, setMembership, setMembershipBulk, loadAdmins, setAdmin, StudentRow, AdminRow,
 } from './data/studentAdmin';
+import { loadSeasonId, setSeason, seasonId } from './data/season';
 
 const app = document.getElementById('app') as HTMLDivElement;
 
@@ -468,6 +469,20 @@ function renderSchedule(): void {
 // ---------------------------------------------------------------- settings
 function renderSettings(): void {
     const panel = document.getElementById('panel') as HTMLElement;
+    // The season control is global + destructive, so super-only.
+    const seasonCard = session?.isSuper ? `
+        <h2 style="margin-top:32px">Season</h2>
+        <p class="muted small">Starting a new season resets <strong>every</strong> student's
+            Isotopedex — collection, answer stats, evolutions, items, and puzzle
+            progress — the next time they open the game. Names, emails, and class
+            assignments are kept. Use this once when testing ends and the official
+            season begins. Set a new label (e.g. <code>2026-fall</code>) and save.</p>
+        <label>Season label
+            <input type="text" id="season-id" placeholder="e.g. 2026-fall" value="">
+        </label>
+        <p class="muted small">Current season: <span id="season-current">loading…</span></p>
+        <div class="row"><button id="season-save" class="btn danger">Start new season (reset all dexes)</button></div>` : '';
+
     panel.innerHTML = `
         <h2>Game settings</h2>
         <label>Correct answers needed to catch an Elemental
@@ -475,7 +490,8 @@ function renderSettings(): void {
         </label>
         <p class="muted small">1 = catch on the first correct answer. Higher values
             turn each encounter into a short battle (used when the HP-bar battle lands).</p>
-        <div class="row"><button id="set-save" class="btn primary">Save settings</button></div>`;
+        <div class="row"><button id="set-save" class="btn primary">Save settings</button></div>
+        ${seasonCard}`;
 
     const setSaveBtn = document.getElementById('set-save') as HTMLButtonElement;
     setSaveBtn.addEventListener('click', async () => {
@@ -484,6 +500,20 @@ function renderSettings(): void {
         const ok = await withBusy(setSaveBtn, 'Saving…', async () => { await saveSettings(myClassId(), settings); }, 'Settings saved.');
         if (ok) renderSettings();
     });
+
+    if (session?.isSuper) {
+        const curEl = document.getElementById('season-current') as HTMLSpanElement;
+        void loadSeasonId().then(id => { curEl.textContent = id || '(none set)'; });
+        const seasonSaveBtn = document.getElementById('season-save') as HTMLButtonElement;
+        seasonSaveBtn.addEventListener('click', async () => {
+            const id = (document.getElementById('season-id') as HTMLInputElement).value.trim();
+            if (!id) { alert('Enter a season label first.'); return; }
+            if (id === seasonId()) { alert('That is already the current season.'); return; }
+            if (!confirm(`Start season "${id}"? This resets every student's dex on next load. This cannot be undone.`)) return;
+            const ok = await withBusy(seasonSaveBtn, 'Starting…', async () => { await setSeason(id); }, `Season "${id}" started — all dexes will reset.`);
+            if (ok) renderSettings();
+        });
+    }
 }
 
 // ---------------------------------------------------------------- class

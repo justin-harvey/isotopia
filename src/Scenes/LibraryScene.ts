@@ -1,11 +1,11 @@
 import { InteriorScene } from './InteriorScene';
 import { SceneName } from './enums/SceneNames';
 
-// The Gray Public Library (blue storefront in town) — a quiet study. Home to
-// Uranium (Glowbun — the science-reference heavyweight) and Boron (Borolith —
-// reactor control rods, borosilicate lab glass).
+// The Gray Public Library (blue storefront in town) — a quiet study. Re-scrambled
+// for the official season (2026-10-13): Iron (Ironclank) now lives here; Uranium
+// moved to the Auto shop.
 export default class LibraryScene extends InteriorScene {
     constructor() {
-        super(SceneName.Library, 'library-interior.png', ['uranium'], 'room_library');
+        super(SceneName.Library, 'library-interior.png', ['iron'], 'room_library');
     }
 }

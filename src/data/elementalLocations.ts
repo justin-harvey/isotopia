@@ -14,15 +14,17 @@ const MUSEUM_B2 = `${CITY} — in the Museum, second basement level`;
 const JUNGLE = 'Jungle (north from the City) — roaming the clearings';
 
 export const ELEMENTAL_LOCATION: Record<string, string> = {
+    // Town placements re-scrambled for the official season (2026-10-13) — keep
+    // these hints in sync with the scene spawns (TestScene, WoodsScene, the venues).
     hydrogen:  MUSEUM_B1,
-    neon:      'Town — the plaza',
-    oxygen:    'North Woods',
-    nitrogen:  'North Woods — tall grass',
+    neon:      'North Woods — by the eastern tall grass',
+    oxygen:    'Town — the plaza',
+    nitrogen:  'North Woods — up north in the meadow',
     carbon:    MUSEUM_B2,
-    iron:      'Hardware store',
-    sodium:    'Hannaford (grocery)',
-    magnesium: 'Auto shop',
-    uranium:   'Library',
+    iron:      'Library',
+    sodium:    'Hardware store',
+    magnesium: 'Hannaford (grocery)',
+    uranium:   'Auto shop',
     helium:    MUSEUM_B1,
     // Directions relative to where you arrive (bottom middle of the city map).
     aluminum:  `${CITY} — far west side, halfway up`,

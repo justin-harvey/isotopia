@@ -6,12 +6,14 @@ import GameScene from "./GameScene"
 import { LayerType } from './enums/LayerType';
 import { MAPS } from '../data/maps';
 
-// The Elementals that live outdoors in town. Neon roams the plaza like a glowing
-// sign. Oxygen and Nitrogen live wild up in the North Woods; Hydrogen and Carbon
-// have moved down into the Museum basement (in the city). The rest live inside the
-// venues. Coordinates are walkable grass, clear of paths/lake.
+// The Elementals that live outdoors in town. Placements were re-scrambled for the
+// official season (2026-10-13) so testers' memorized spots no longer hold — gases
+// still roam outdoors, metals still live in the shops, but every slot changed.
+// Oxygen now roams the plaza; Neon and Nitrogen are wild up in the North Woods;
+// Hydrogen and Carbon live in the Museum basement (in the city). The rest live
+// inside the venues. Coordinates are walkable grass, clear of paths/lake.
 const MONSTER_SPAWNS: { elementId: string; x: number; y: number }[] = [
-    { elementId: 'neon',     x: 16, y: 14 },
+    { elementId: 'oxygen',   x: 16, y: 14 },
 ];
 
 // Each venue's walkable door tile (bottom of the painted doorway) and the room
