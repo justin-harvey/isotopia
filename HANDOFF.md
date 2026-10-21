@@ -3,6 +3,40 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-21.
 
+## 🆕 Shipped 2026-10-21 — Teacher portal UX: roster grouped by class + student-facing rollout
+Shipped to **`main`** (`c67876c` + `6d92340`), live after Netlify redeploy. Two teacher-portal
+improvements (student game untouched). Files: `src/teacher.ts`, `src/teacher.css`,
+`src/data/studentAdmin.ts`, `src/data/classConfig.ts`. Build + tsc green (Node 22 via `nvm use 22`).
+- **Roster tab now groups every student under a named class** instead of one mixed table:
+  "In [Your Class]" (your color swatch + onboarding empty state) → one section per OTHER class,
+  each resolved to its real name/color (`loadClassNames` in classConfig — fetches `classes/$cid/meta`
+  per id, since RTDB rules allow reading each class node but not the `/classes` root) → "Not in any
+  class yet" pool. `StudentRow` gained `assignedClassId`. Supers get per-row **Claim**; admins see
+  other classes read-only. This answers "which kids are in which class" at a glance.
+- **Schedule tab now shows a read-only rollout timeline** above the edit table — grouped by day with
+  calendar dates and a today/released/upcoming marker, built from the SAME `isElementReleased` /
+  `currentUnitDay` the game uses, so the teacher previews exactly what students experience. An
+  audience line names the in-class student count (live `loadRoster`), tying roster ↔ schedule.
+- **NOTE / open question (Justin to decide):** regular admins can now SEE other teachers' class
+  names + members (the DB rules already permitted reading that data — this just surfaces it). If
+  that's not wanted, gate the other-class names/sections to supers only and show admins an anonymous
+  "in another class" instead. Low-effort change in `paintRoster`.
+
+### ▶ BACKLOG (next session) — let a teacher own MORE THAN ONE class
+Today each staff member owns exactly ONE class, hardwired as **classId === their own uid**
+(`myClassId()` in teacher.ts; `classes/{uid}` in classConfig.ts; `assignments/{studentUid} = classId`).
+Justin wants to support multiple classes per teacher (e.g. Period 1 vs Period 3). Two paths —
+**decide which before building:**
+- **Full multi-class (schema change):** make class id a generated key (`classes/{autoId}` with an
+  `ownerUid` field) instead of the uid; add a class picker/switcher in the portal header and scope
+  every tab (Schedule, Settings, Roster) to the selected class; change teacher-side queries from
+  "my uid" to "classes I own"; and rework `database.rules.json` — the write gate is currently
+  `auth.uid === $cid`, which must become an ownership check (harder to express safely in RTDB rules).
+  Student side stays one-class-per-student (already works).
+- **Lightweight (no id/rules surgery):** keep one class per teacher but add a **section/period tag**
+  per student, and optionally let the schedule vary by section. Good enough if teachers only need to
+  split periods, not run truly separate classes.
+
 ## 🆕 Shipped 2026-10-21 — Selectable avatars earned from roaming quiz NPCs
 Branch `feature/avatar-unlock-npcs`. The dog is no longer the only skin: 24 extra
 characters (15 townsfolk, 6 animals, pigeon, gull, hamster — art ported from the
