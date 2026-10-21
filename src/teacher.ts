@@ -15,7 +15,7 @@ import { PERIODIC_TABLE, getPeriodicElement, elementLabel } from './data/periodi
 import {
     ClassSettings, loadSettings, saveSettings, DEFAULT_SETTINGS,
     isElementReleased, currentUnitDay, UNIT_LENGTH_DAYS,
-    ClassMeta, loadClassMeta, saveClassMeta, DEFAULT_CLASS_COLOR,
+    ClassMeta, loadClassMeta, saveClassMeta, loadClassNames, DEFAULT_CLASS_COLOR,
 } from './data/classConfig';
 import {
     StoredQuestion, loadAllQuestions, saveQuestion, deleteQuestion, importStarterQuestions,
@@ -46,6 +46,7 @@ function myClassName(): string { return classMeta?.name?.trim() || 'My Class'; }
 let editing: StoredQuestion | null = null;      // question being added/edited
 let rosterRows: StudentRow[] = [];              // cached roster (filtered client-side)
 let rosterFilter = '';
+let classNames = new Map<string, { name: string; color: string }>(); // other classes' names, by id
 let adminRows: AdminRow[] = [];                 // cached registrant list for role mgmt
 let adminFilter = '';
 let pickerQuery = '';                            // element-picker search text (editor)
@@ -655,6 +656,14 @@ async function renderStudents(): Promise<void> {
     document.getElementById('stu-refresh')?.addEventListener('click', () => void renderStudents());
 
     rosterRows = await loadRoster(myClassId()).catch(() => []);
+    // Resolve the names of the OTHER classes students are in, so each kid shows
+    // up under a named class rather than an anonymous "another class".
+    const otherClassIds = rosterRows
+        .filter(r => r.assignedElsewhere && r.assignedClassId)
+        .map(r => r.assignedClassId as string);
+    classNames = otherClassIds.length
+        ? await loadClassNames(otherClassIds).catch(() => new Map())
+        : new Map();
     if (rosterRows.length === 0) {
         panel.innerHTML = `<div class="row between"><h2>Roster</h2>
             <button id="stu-refresh" class="btn">Refresh</button></div>${intro}
@@ -737,7 +746,7 @@ function rosterRowHtml(r: StudentRow): string {
     const rosterCell = r.inClass
         ? `<button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="1">Remove</button>`
         : r.assignedElsewhere
-            ? `<span class="muted small">another class</span>${locked ? '' : ` <button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="0">Claim</button>`}`
+            ? (locked ? `<span class="muted small">—</span>` : `<button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="0">Claim</button>`)
             : `<button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="0">Add</button>`;
     return `<tr>
         <td>${locked ? '' : `<input type="checkbox" class="roster-check" data-uid="${esc(r.uid)}" data-in="${r.inClass ? '1' : '0'}">`}</td>
@@ -769,22 +778,49 @@ function paintRoster(): void {
         host.innerHTML = `<p class="muted">No registrants match "${esc(rosterFilter)}".</p>`;
         return;
     }
-    // Split into "in my class" vs "everyone else" so it's unmistakable who the
-    // class actually contains. The class swatch ties this to the header + schedule.
+    // Group by class so it's unmistakable which kids are in which class: my class
+    // first, then each OTHER class by name, then the not-yet-assigned pool. The
+    // color swatch per group ties each class to its identity.
+    const swatchFor = (color: string): string =>
+        `<span class="class-swatch" style="background:${esc(color)}"></span>`;
     const mine = rows.filter(r => r.inClass);
-    const others = rows.filter(r => !r.inClass);
-    const swatch = `<span class="class-swatch" style="background:${esc(classMeta?.color || DEFAULT_CLASS_COLOR)}"></span>`;
-    // When a filter is active, an empty "mine" just means nothing matched — skip
-    // the onboarding placeholder so it doesn't read as "class is empty".
+    const unassigned = rows.filter(r => !r.inClass && !r.assignedElsewhere);
+    const elsewhere = rows.filter(r => r.assignedElsewhere);
+
+    // My class — with onboarding empty state (unless filtering, when empty just
+    // means nothing matched).
+    const mySwatch = swatchFor(classMeta?.color || DEFAULT_CLASS_COLOR);
     const mineHtml = mine.length === 0
-        ? (rosterFilter.trim() ? '' : `<section class="roster-group mine"><h3 class="roster-head">${swatch}In ${esc(myClassName())} <span class="muted">(0)</span></h3>
-            <p class="muted small roster-sub">No students yet — add registrants from the list below. These students
+        ? (rosterFilter.trim() ? '' : `<section class="roster-group mine"><h3 class="roster-head">${mySwatch}In ${esc(myClassName())} <span class="muted">(0)</span></h3>
+            <p class="muted small roster-sub">No students yet — add registrants from the groups below. These students
             get the rollout on your <b>Schedule</b> tab.</p></section>`)
-        : rosterSection(`${swatch}In ${esc(myClassName())}`,
+        : rosterSection(`${mySwatch}In ${esc(myClassName())}`,
             `These students see the Elementals and rollout you set on the <b>Schedule</b> tab.`, mine, 'mine');
-    host.innerHTML = mineHtml +
-        rosterSection('Other registrants',
-            'Signed up but not in your class. Add the ones who belong to you.', others);
+
+    // Each other class, sorted by name. Admins can't claim these (locked); supers
+    // get a Claim button per row to reassign.
+    const byClass = new Map<string, StudentRow[]>();
+    elsewhere.forEach(r => {
+        const id = r.assignedClassId || '?';
+        const list = byClass.get(id) ?? [];
+        list.push(r);
+        byClass.set(id, list);
+    });
+    const otherClassesHtml = Array.from(byClass.entries())
+        .map(([id, rs]) => {
+            const meta = classNames.get(id);
+            const name = meta?.name || `Class ${id.slice(0, 6)}`;
+            return { name, html: rosterSection(`${swatchFor(meta?.color || DEFAULT_CLASS_COLOR)}In ${esc(name)}`,
+                session?.isSuper ? 'Another teacher’s class — use Claim to move a student into yours.'
+                    : 'Another teacher’s class. Ask a super admin to move a student if needed.', rs) };
+        })
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(x => x.html).join('');
+
+    const unassignedHtml = rosterSection('Not in any class yet',
+        'Signed up but not assigned to a class. Add the ones who belong to you.', unassigned);
+
+    host.innerHTML = mineHtml + otherClassesHtml + unassignedHtml;
     host.querySelectorAll<HTMLButtonElement>('.roster-toggle').forEach(btn =>
         btn.addEventListener('click', async () => {
             const uid = btn.dataset.uid as string;

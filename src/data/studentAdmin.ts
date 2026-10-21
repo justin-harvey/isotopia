@@ -17,6 +17,7 @@ export interface StudentRow {
     stats: Record<string, { attempts: number; correct: number }>;
     inClass: boolean;               // assigned to THIS class
     assignedElsewhere: boolean;     // assigned to a different class (can't claim unless super)
+    assignedClassId: string | null; // the class they're in (null = unassigned), for naming it
 }
 
 function db() {
@@ -48,6 +49,7 @@ export async function loadRoster(classId: string): Promise<StudentRow[]> {
             stats: v.stats || {},
             inClass: assigned === classId,
             assignedElsewhere: !!assigned && assigned !== classId,
+            assignedClassId: assigned,
         };
     });
     return rows.sort((a, b) =>

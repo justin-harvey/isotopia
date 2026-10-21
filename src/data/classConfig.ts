@@ -72,6 +72,32 @@ export async function loadClassMeta(classId: string): Promise<ClassMeta | null> 
     return { name: '', color: DEFAULT_CLASS_COLOR, ownerUid: classId, ...snap.val() };
 }
 
+/** Resolve display name + color for a set of class ids (e.g. the classes other
+ *  students are assigned to). Rules allow any signed-in staff to read each
+ *  classes/$cid node, but NOT the /classes root, so we fetch per id. Unknown or
+ *  meta-less classes fall back to a short id label. */
+export async function loadClassNames(
+    classIds: string[],
+): Promise<Map<string, { name: string; color: string }>> {
+    const d = db();
+    const out = new Map<string, { name: string; color: string }>();
+    if (!d) return out;
+    const ids = Array.from(new Set(classIds.filter(Boolean)));
+    await Promise.all(ids.map(async (cid) => {
+        try {
+            const snap = await get(ref(d, `classes/${cid}/meta`));
+            const v = snap.exists() ? snap.val() : {};
+            out.set(cid, {
+                name: (v.name || '').trim() || `Class ${cid.slice(0, 6)}`,
+                color: v.color || DEFAULT_CLASS_COLOR,
+            });
+        } catch {
+            out.set(cid, { name: `Class ${cid.slice(0, 6)}`, color: DEFAULT_CLASS_COLOR });
+        }
+    }));
+    return out;
+}
+
 export async function saveClassMeta(classId: string, meta: ClassMeta): Promise<void> {
     const d = db();
     if (!d) throw new Error('Firebase is not configured.');
