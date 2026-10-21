@@ -32,13 +32,17 @@ export abstract class InteriorScene extends GameScene {
     private readonly backgroundPath: string;
     private bgImage?: Phaser.GameObjects.Image;
     private readonly nav?: InteriorFloorNav;   // set for painted rooms (portal exit)
+    // An unlockable-avatar character who lives in this room (one per building). Walk up
+    // to earn them — see GameScene.spawnQuizNpc. Undefined = no resident.
+    protected avatarNpcId?: string;
 
-    constructor(sceneName: SceneName, backgroundFile: string, elementIds: string[], collisionMap?: string) {
+    constructor(sceneName: SceneName, backgroundFile: string, elementIds: string[], collisionMap?: string, avatarNpcId?: string) {
         const nav = collisionMap ? INTERIOR_NAV[collisionMap] : undefined;
         const start = nav?.start ?? InteriorScene.START;
         super(sceneName, start.x, start.y, [LayerType.Floor, LayerType.Walls]);
         this.elementIds = elementIds;
         this.nav = nav;
+        this.avatarNpcId = avatarNpcId;
         this.backgroundKey = `${sceneName}_bg`;
         this.backgroundPath = `assets/rooms/${backgroundFile}`;
 
@@ -138,6 +142,13 @@ export abstract class InteriorScene extends GameScene {
             if (!tile) return;
             this.spawnElemental(id, tile.x, tile.y);
         });
+        // This building's resident avatar NPC (if any) stands on the next free spawn
+        // tile after the Elementals — guaranteed reachable. Stationary (radius 0) so a
+        // single person in a small room doesn't pace onto the exit pad.
+        if (this.avatarNpcId) {
+            const tile = tiles[this.elementIds.length];
+            if (tile) this.spawnQuizNpc(this.avatarNpcId, tile.x, tile.y, 0);
+        }
     }
 
     // For painted rooms: walkable, non-portal tiles that are actually REACHABLE

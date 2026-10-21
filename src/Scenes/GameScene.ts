@@ -634,11 +634,12 @@ export default abstract class GameScene extends Phaser.Scene {
         faceFlip(this.playerSprite, def, facing as unknown as string)
     }
 
-    // A roaming "avatar NPC": one of the unlockable characters, wandering the world.
-    // Walk up to it (proximity) to open an extra-credit chemistry quiz; answer correctly
-    // and that character joins your 🎨 avatars (ui/UnlockQuiz). Once earned, it greets
-    // you instead of re-quizzing. 3-direction critters (hamster/birds) are mirrored for
-    // the 'right' facing via faceFlip, same as the player.
+    // An "avatar NPC": one of the unlockable characters, placed in the world. Walk up
+    // to it (proximity) to open an extra-credit chemistry quiz; answer correctly and that
+    // character joins your 🎨 avatars (ui/UnlockQuiz). Once earned, it greets you instead
+    // of re-quizzing. `radius > 0` makes it wander that many tiles (outdoor worlds);
+    // `radius = 0` keeps it standing still (interiors — one calm person per room).
+    // 3-direction critters (hamster/birds) are mirrored for the 'right' facing via faceFlip.
     spawnQuizNpc(characterId: string, x: number, y: number, radius: number = 3): void {
         const def = getCharacter(characterId)
         const npc = new Npc({
@@ -659,7 +660,7 @@ export default abstract class GameScene extends Phaser.Scene {
             },
         })
         npc.proximityTrigger = true
-        this.gridEngine.moveRandomly(npc.name, 1500, radius)
+        if (radius > 0) this.gridEngine.moveRandomly(npc.name, 1500, radius)
         const sprite = this.gridEngine.getSprite(npc.name)
         if (sprite && def.mirror) {
             // Keep the critter facing the way it walks while it wanders.

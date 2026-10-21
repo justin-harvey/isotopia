@@ -10,9 +10,14 @@ interactive-book-club fork into `src/assets/Characters/{townsfolk,animals}`) now
 worlds as NPCs. Walk up to one → an **extra-credit chemistry quiz** (`ui/UnlockQuiz` +
 `data/avatarQuestions`, one question per character); answer right and that character joins
 your avatars, pickable from the new **🎨 Avatar panel** (`ui/AvatarPanel`, mounted globally
-in `game.ts` like the dex). Placement: **pigeon + tf1–tf8 in the City, gull + tf9–tf15 in the
-Town, all 6 animals + hamster in the Woods** (each scene's `createNpcs()` via the new
-`GameScene.spawnQuizNpc`). Key pieces:
+in `game.ts` like the dex). Placement (spread out, one of each, nowhere crowded): **each of
+the 15 townsfolk lives inside a different building** — tf1–tf5 in the Town interiors
+(Home/Hardware/Hannaford/Auto/Library) and tf6–tf15 in the City interiors (the 9 buildings +
+Museum B1), set per-room via `avatarNpcId`/`cfg.avatarNpc`, spawned STATIONARY on a free
+reachable tile. The **gull roams the Town square**, the **pigeon roams the City streets**, and
+the 7 animals split **4 in the Woods (cat_gray, fox, bird_white, hamster) + 3 in the Jungle
+(cat_orange, raccoon, bird_blue)** — all via `GameScene.spawnQuizNpc` (radius 0 = stationary
+indoors, >0 = wander outdoors). Key pieces:
 - `data/characters.ts` — ported `CharacterDef` roster (dog default; dog now carries a sheet
   crop so the picker shows a real mini-Perli, not a 🐕 emoji). `data/avatar.ts` — the chosen
   skin (localStorage `isotopia:character`) + `onAvatarChange`.

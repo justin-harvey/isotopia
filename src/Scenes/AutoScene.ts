@@ -6,6 +6,6 @@ import { SceneName } from './enums/SceneNames';
 // now lives here; Magnesium moved to Hannaford.
 export default class AutoScene extends InteriorScene {
     constructor() {
-        super(SceneName.Auto, 'treats-interior.png', ['uranium'], 'room_treats');
+        super(SceneName.Auto, 'treats-interior.png', ['uranium'], 'room_treats', 'tf4');
     }
 }

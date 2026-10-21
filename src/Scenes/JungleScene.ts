@@ -271,6 +271,15 @@ export default class JungleScene extends GameScene {
             const tile = free[i];
             if (tile) this.spawnElemental(id, tile.x, tile.y);
         });
+
+        // Roaming "avatar NPCs": three of the animals wander the jungle (the other four
+        // are in the woods). They take the free spawn tiles left over after the wild
+        // Elementals, so they always land on reachable ground. Walk up to one and answer
+        // its chemistry question to unlock it as an avatar.
+        ['cat_orange', 'raccoon', 'bird_blue'].forEach((id, i) => {
+            const tile = free[JungleScene.WILD_ELEMENTALS.length + i];
+            if (tile) this.spawnQuizNpc(id, tile.x, tile.y);
+        });
     }
 
     // ---- Canopy totems -----------------------------------------------------------

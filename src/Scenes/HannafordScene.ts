@@ -6,6 +6,6 @@ import { SceneName } from './enums/SceneNames';
 // now lives here; Sodium moved to the Hardware store.
 export default class HannafordScene extends InteriorScene {
     constructor() {
-        super(SceneName.Hannaford, 'cafe-interior.png', ['magnesium'], 'room_cafe');
+        super(SceneName.Hannaford, 'cafe-interior.png', ['magnesium'], 'room_cafe', 'tf3');
     }
 }

@@ -6,6 +6,6 @@ import { SceneName } from './enums/SceneNames';
 // moved to the Auto shop.
 export default class LibraryScene extends InteriorScene {
     constructor() {
-        super(SceneName.Library, 'library-interior.png', ['iron'], 'room_library');
+        super(SceneName.Library, 'library-interior.png', ['iron'], 'room_library', 'tf5');
     }
 }

@@ -6,6 +6,6 @@ import { SceneName } from './enums/SceneNames';
 // into the Museum basement (in the city).
 export default class HomeScene extends InteriorScene {
     constructor() {
-        super(SceneName.Home, 'home-interior.png', [], 'room_home');
+        super(SceneName.Home, 'home-interior.png', [], 'room_home', 'tf1');
     }
 }

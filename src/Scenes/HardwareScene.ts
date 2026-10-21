@@ -6,6 +6,6 @@ import { SceneName } from './enums/SceneNames';
 // now lives here; Iron moved to the Library.
 export default class HardwareScene extends InteriorScene {
     constructor() {
-        super(SceneName.Hardware, 'treats-interior.png', ['sodium'], 'room_treats');
+        super(SceneName.Hardware, 'treats-interior.png', ['sodium'], 'room_treats', 'tf2');
     }
 }

@@ -38,6 +38,9 @@ interface CityRoomConfig {
     // Repurpose this floor as the Evolution Lab: spawn a console technician you walk
     // up to (proximity) that opens the evolution overlay. See spawnEvolutionConsole.
     lab?: boolean;
+    // An unlockable-avatar character who lives in this building (one per interior).
+    // Walk up to earn them — see GameScene.spawnQuizNpc. Undefined = no resident.
+    avatarNpc?: string;
 }
 
 // Shared landscape-room behaviour. Concrete scenes below only supply their art
@@ -275,6 +278,22 @@ abstract class CityInteriorScene extends GameScene {
             this.spawnElemental(id, tile.x, tile.y);
         });
         if (this.cfg.lab) this.spawnEvolutionConsole(tiles.slice(this.elementIds.length));
+
+        // This building's resident avatar NPC (if any). Stand them on the free tile
+        // FARTHEST from the entrance (and not used by an Elemental), so they never land
+        // on the player's arrival tile or the lab console's nearest-tile spot. Stationary.
+        if (this.cfg.avatarNpc) {
+            const start = this.nav?.start ?? CityInteriorScene.START;
+            const usedByElems = new Set(this.elementIds
+                .map((_, i) => tiles[i]).filter(Boolean)
+                .map(t => `${t!.x},${t!.y}`));
+            const candidates = tiles.filter(t => !usedByElems.has(`${t.x},${t.y}`));
+            const dist = (t: { x: number; y: number }) => Math.abs(t.x - start.x) + Math.abs(t.y - start.y);
+            const spot = candidates.length
+                ? candidates.reduce((best, t) => (dist(t) > dist(best) ? t : best), candidates[0])
+                : undefined;
+            if (spot) this.spawnQuizNpc(this.cfg.avatarNpc, spot.x, spot.y, 0);
+        }
     }
 
     // The Evolution Lab console: a technician you walk up to (proximity) who opens
@@ -337,40 +356,40 @@ abstract class CityInteriorScene extends GameScene {
 
 // ---- Standalone building interiors (bottom door → back out to the city) ----
 export class CityPowerTowerScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityPowerTower, { background: 'power-tower-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_power_tower' }); }
+    constructor() { super(SceneName.CityPowerTower, { background: 'power-tower-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_power_tower', avatarNpc: 'tf6' }); }
 }
 export class CityFinanceScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityFinance, { background: 'finance-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_finance' }); }
+    constructor() { super(SceneName.CityFinance, { background: 'finance-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_finance', avatarNpc: 'tf7' }); }
 }
 export class CityLargeTowerScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityLargeTower, { background: 'large-tower-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_large_tower' }); }
+    constructor() { super(SceneName.CityLargeTower, { background: 'large-tower-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_large_tower', avatarNpc: 'tf8' }); }
 }
 export class CityChurchScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityChurch, { background: 'church-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_church' }); }
+    constructor() { super(SceneName.CityChurch, { background: 'church-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_church', avatarNpc: 'tf9' }); }
 }
 export class CityFashionScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityFashion, { background: 'fashion-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_fashion' }); }
+    constructor() { super(SceneName.CityFashion, { background: 'fashion-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_fashion', avatarNpc: 'tf10' }); }
 }
 export class CityRadioTowerScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityRadioTower, { background: 'radio-tower-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_radio_tower' }); }
+    constructor() { super(SceneName.CityRadioTower, { background: 'radio-tower-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_radio_tower', avatarNpc: 'tf11' }); }
 }
 export class CityPowerStationScene extends CityInteriorScene {
     // Repurposed as the Evolution Lab — a console technician runs molecular fusion.
-    constructor() { super(SceneName.CityPowerStation, { background: 'power-station-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_power_station', lab: true }); }
+    constructor() { super(SceneName.CityPowerStation, { background: 'power-station-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_power_station', lab: true, avatarNpc: 'tf12' }); }
 }
 export class CityRadioTower2Scene extends CityInteriorScene {
-    constructor() { super(SceneName.CityRadioTower2, { background: 'radio-tower-2-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_radio_tower2' }); }
+    constructor() { super(SceneName.CityRadioTower2, { background: 'radio-tower-2-interior.png', up: SceneName.City, upLabel: 'EXIT', collisionMap: 'room_radio_tower2', avatarNpc: 'tf13' }); }
 }
 
 // ---- Museum: ground floor + four basement levels, each deeper ----
 // Each floor uses its own painted collision grid and navigates via painted
 // portals (green=up, blue=down, purple=Atlantis sanctum) instead of fixed doors.
 export class CityMuseumScene extends CityInteriorScene {
-    constructor() { super(SceneName.CityMuseum, { background: 'museum-interior.png', up: SceneName.City, upLabel: 'EXIT', down: SceneName.CityMuseumB1, collisionMap: 'museum_ground' }); }
+    constructor() { super(SceneName.CityMuseum, { background: 'museum-interior.png', up: SceneName.City, upLabel: 'EXIT', down: SceneName.CityMuseumB1, collisionMap: 'museum_ground', avatarNpc: 'tf14' }); }
 }
 export class CityMuseumB1Scene extends CityInteriorScene {
     // First basement: Hydrogen (was the town lake) and Helium (was Home).
-    constructor() { super(SceneName.CityMuseumB1, { background: 'museum-level-1.png', up: SceneName.CityMuseum, upLabel: 'UP', down: SceneName.CityMuseumB2, collisionMap: 'museum_b1', elementIds: ['hydrogen', 'helium'] }); }
+    constructor() { super(SceneName.CityMuseumB1, { background: 'museum-level-1.png', up: SceneName.CityMuseum, upLabel: 'UP', down: SceneName.CityMuseumB2, collisionMap: 'museum_b1', elementIds: ['hydrogen', 'helium'], avatarNpc: 'tf15' }); }
 }
 export class CityMuseumB2Scene extends CityInteriorScene {
     // Second basement: Carbon (was the North Woods), moved down from B1.
