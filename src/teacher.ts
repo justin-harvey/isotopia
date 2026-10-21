@@ -415,11 +415,80 @@ function fillElementPicker(host: HTMLElement, q: StoredQuestion): void {
 }
 
 // ---------------------------------------------------------------- schedule
+// Format the calendar date for a given unit day (day 1 = unitStartDate), or null
+// if no start date is set yet.
+function dateForUnitDay(s: ClassSettings, day: number): Date | null {
+    if (!s.unitStartDate) return null;
+    const start = new Date(s.unitStartDate + 'T00:00:00');
+    return new Date(start.getTime() + (day - 1) * 86_400_000);
+}
+const fmtDate = (d: Date): string =>
+    d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+
+// The read-only "rollout" preview: exactly what students experience, built from
+// the same release math the game uses (isElementReleased / currentUnitDay). The
+// teacher sees which Elementals unlock on which day, in order, with today marked.
+function rolloutTimeline(s: ClassSettings): string {
+    const today = currentUnitDay(s);
+    // Group the catchable Elementals by their scheduled unlock day.
+    const byDay = new Map<number, typeof ELEMENTS>();
+    const unscheduled: typeof ELEMENTS = [];
+    ELEMENTS.forEach(el => {
+        const d = s.release[el.id];
+        if (d == null) { unscheduled.push(el); return; }
+        const list = byDay.get(d) ?? [];
+        list.push(el);
+        byDay.set(d, list);
+    });
+    const days = Array.from(byDay.keys()).sort((a, b) => a - b);
+    const chip = (el: typeof ELEMENTS[number]): string =>
+        `<span class="el-chip" title="${esc(el.name)} — creature ${esc(el.monster)}">
+            <b>${esc(el.symbol)}</b> ${esc(el.monster)}</span>`;
+
+    if (days.length === 0 && unscheduled.length === ELEMENTS.length) {
+        return `<div class="rollout-empty muted small">No unlock days set yet — every
+            Elemental is in "not yet scheduled" below. Give elements a day in the table
+            to build the rollout, or leave "Release everything now" on to show them all.</div>`;
+    }
+
+    const dayBlocks = days.map(d => {
+        const date = dateForUnitDay(s, d);
+        // Released state mirrors the game: everything is "released" under the testing
+        // override; otherwise it depends on whether this day has arrived.
+        const released = s.releaseAllNow || (!!s.unitStartDate && d <= today);
+        const isToday = !s.releaseAllNow && !!s.unitStartDate && d === today;
+        const cls = ['rollout-day', isToday ? 'today' : '', released ? 'released' : 'upcoming'].filter(Boolean).join(' ');
+        return `<div class="${cls}">
+            <div class="day-head">
+                <span class="day-num">Day ${d}</span>
+                ${date ? `<span class="muted small">${esc(fmtDate(date))}</span>` : ''}
+                ${isToday ? `<span class="badge ok">today</span>`
+                    : released ? `<span class="badge ok">released</span>`
+                    : `<span class="badge lock">upcoming</span>`}
+            </div>
+            <div class="day-els">${(byDay.get(d) as typeof ELEMENTS).map(chip).join('')}</div>
+        </div>`;
+    }).join('');
+
+    const unsched = unscheduled.length === 0 ? '' : `
+        <div class="rollout-day unscheduled">
+            <div class="day-head"><span class="day-num">Not yet scheduled</span>
+                <span class="muted small">hidden from students until given a day</span></div>
+            <div class="day-els">${unscheduled.map(chip).join('')}</div>
+        </div>`;
+
+    return `<div class="rollout">${dayBlocks}${unsched}</div>`;
+}
+
 function renderSchedule(): void {
     const panel = document.getElementById('panel') as HTMLElement;
     const day = currentUnitDay(settings);
     panel.innerHTML = `
         <h2>Release schedule <span class="muted">(${UNIT_LENGTH_DAYS}-day unit)</span></h2>
+        <p class="muted small sched-audience">
+            <b id="sched-count">…</b> in <span class="class-tag"><span class="class-swatch"
+                style="background:${esc(classMeta?.color || DEFAULT_CLASS_COLOR)}"></span>${esc(myClassName())}</span>
+            follow the rollout below — the same order and timing students see in the game.</p>
         <div class="grid2">
             <label>Unit start date (day 1)
                 <input type="date" id="s-start" value="${esc(settings.unitStartDate)}">
@@ -430,17 +499,24 @@ function renderSchedule(): void {
             </label>
         </div>
         ${settings.releaseAllNow
-            ? `<p class="muted small">"Release everything now" is on — every element is visible regardless of the days below.</p>`
+            ? `<div class="warn">"Release everything now" is on — students can catch <b>every</b> Elemental regardless of the days below. The timeline shows the rollout that will apply once you turn this off.</div>`
             : (!settings.unitStartDate
                 ? `<div class="warn">Set a unit start date, or nothing unlocks: while "Release everything now" is off, every element without a reached unlock day stays hidden.</div>`
-                : `<p class="muted small">Today is <b>day ${day}</b> of ${UNIT_LENGTH_DAYS}. Elements with no day, or a later day, stay hidden.</p>`)}
+                : `<p class="muted small">Today is <b>day ${day}</b> of ${UNIT_LENGTH_DAYS}.</p>`)}
+
+        <h3 style="margin-top:22px">Rollout — what your students see</h3>
+        ${rolloutTimeline(settings)}
+
+        <h3 style="margin-top:26px">Set unlock days</h3>
+        <p class="muted small">Give each Elemental the unit day (1–${UNIT_LENGTH_DAYS}) it unlocks.
+            Leave blank to keep it hidden. The rollout above updates when you save.</p>
         <table class="sched">
             <thead><tr><th>Element</th><th>Unlock day (1–${UNIT_LENGTH_DAYS})</th><th>Status now</th></tr></thead>
             <tbody>
                 ${ELEMENTS.map(el => {
                     const released = isElementReleased(settings, el.id);
                     return `<tr>
-                        <td>${esc(el.symbol)} · ${esc(el.name)}</td>
+                        <td>${esc(el.symbol)} · ${esc(el.name)} <span class="muted small">${esc(el.monster)}</span></td>
                         <td><input type="number" min="1" max="${UNIT_LENGTH_DAYS}" class="s-day"
                              data-el="${el.id}" value="${settings.release[el.id] ?? ''}" placeholder="—"></td>
                         <td><span class="badge ${released ? 'ok' : 'lock'}">${released ? 'Released' : 'Locked'}</span></td>
@@ -449,6 +525,16 @@ function renderSchedule(): void {
             </tbody>
         </table>
         <div class="row"><button id="sched-save" class="btn primary">Save schedule</button></div>`;
+
+    // Fill the audience line with the live in-class count (async — same roster the
+    // Roster tab shows), so the schedule names who it applies to.
+    const countEl = document.getElementById('sched-count') as HTMLElement;
+    void loadRoster(myClassId()).then(rows => {
+        const n = rows.filter(r => r.inClass).length;
+        countEl.textContent = n === 0 ? 'No students yet' : `${n} student${n === 1 ? '' : 's'}`;
+        if (n === 0) countEl.insertAdjacentHTML('afterend',
+            ` <span class="muted small">— add them on the <b>Roster</b> tab.</span>`);
+    }).catch(() => { countEl.textContent = 'Your students'; });
 
     const schedSaveBtn = document.getElementById('sched-save') as HTMLButtonElement;
     schedSaveBtn.addEventListener('click', async () => {
@@ -642,6 +728,39 @@ function exportRosterCsv(): void {
     URL.revokeObjectURL(url);
 }
 
+/** One table row for a student. */
+function rosterRowHtml(r: StudentRow): string {
+    const { attempts: att, correct: cor } = statTotals(r);
+    const acc = att ? Math.round((cor / att) * 100) : 0;
+    // "Assigned elsewhere" is only claimable by a super (rules block admins).
+    const locked = r.assignedElsewhere && !session?.isSuper;
+    const rosterCell = r.inClass
+        ? `<button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="1">Remove</button>`
+        : r.assignedElsewhere
+            ? `<span class="muted small">another class</span>${locked ? '' : ` <button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="0">Claim</button>`}`
+            : `<button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="0">Add</button>`;
+    return `<tr>
+        <td>${locked ? '' : `<input type="checkbox" class="roster-check" data-uid="${esc(r.uid)}" data-in="${r.inClass ? '1' : '0'}">`}</td>
+        <td>${esc(r.name)}<div class="muted small">${esc(r.email)}</div></td>
+        <td>${rosterCell}</td>
+        <td>${r.caught}</td>
+        <td>${r.seen}</td>
+        <td>${att ? `${acc}% <span class="muted small">(${cor}/${att})</span>` : '—'}</td>
+    </tr>`;
+}
+
+/** A labeled roster table for one group of students (returns '' if empty). */
+function rosterSection(title: string, subtitle: string, rows: StudentRow[], extraClass = ''): string {
+    if (rows.length === 0) return '';
+    return `<section class="roster-group ${extraClass}">
+        <h3 class="roster-head">${title} <span class="muted">(${rows.length})</span></h3>
+        <p class="muted small roster-sub">${subtitle}</p>
+        <table class="sched">
+            <thead><tr><th></th><th>Student</th><th>Roster</th><th>Caught</th><th>Seen</th><th>Accuracy</th></tr></thead>
+            <tbody>${rows.map(rosterRowHtml).join('')}</tbody>
+        </table></section>`;
+}
+
 function paintRoster(): void {
     const host = document.getElementById('roster-table');
     if (!host) return;
@@ -650,28 +769,22 @@ function paintRoster(): void {
         host.innerHTML = `<p class="muted">No registrants match "${esc(rosterFilter)}".</p>`;
         return;
     }
-    host.innerHTML = `<table class="sched">
-        <thead><tr><th></th><th>Student</th><th>Roster</th><th>Caught</th><th>Seen</th><th>Accuracy</th></tr></thead>
-        <tbody>${rows.map(r => {
-            const { attempts: att, correct: cor } = statTotals(r);
-            const acc = att ? Math.round((cor / att) * 100) : 0;
-            // "Assigned elsewhere" is only claimable by a super (rules block admins).
-            const locked = r.assignedElsewhere && !session?.isSuper;
-            const rosterCell = r.inClass
-                ? `<span class="pill">in class</span> <button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="1">Remove</button>`
-                : r.assignedElsewhere
-                    ? `<span class="muted small">another class</span>${locked ? '' : ` <button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="0">Claim</button>`}`
-                    : `<button class="btn small roster-toggle" data-uid="${esc(r.uid)}" data-in="0">Add</button>`;
-            return `<tr>
-                <td>${locked ? '' : `<input type="checkbox" class="roster-check" data-uid="${esc(r.uid)}" data-in="${r.inClass ? '1' : '0'}">`}</td>
-                <td>${esc(r.name)}<div class="muted small">${esc(r.email)}</div></td>
-                <td>${rosterCell}</td>
-                <td>${r.caught}</td>
-                <td>${r.seen}</td>
-                <td>${att ? `${acc}% <span class="muted small">(${cor}/${att})</span>` : '—'}</td>
-            </tr>`;
-        }).join('')}</tbody>
-    </table>`;
+    // Split into "in my class" vs "everyone else" so it's unmistakable who the
+    // class actually contains. The class swatch ties this to the header + schedule.
+    const mine = rows.filter(r => r.inClass);
+    const others = rows.filter(r => !r.inClass);
+    const swatch = `<span class="class-swatch" style="background:${esc(classMeta?.color || DEFAULT_CLASS_COLOR)}"></span>`;
+    // When a filter is active, an empty "mine" just means nothing matched — skip
+    // the onboarding placeholder so it doesn't read as "class is empty".
+    const mineHtml = mine.length === 0
+        ? (rosterFilter.trim() ? '' : `<section class="roster-group mine"><h3 class="roster-head">${swatch}In ${esc(myClassName())} <span class="muted">(0)</span></h3>
+            <p class="muted small roster-sub">No students yet — add registrants from the list below. These students
+            get the rollout on your <b>Schedule</b> tab.</p></section>`)
+        : rosterSection(`${swatch}In ${esc(myClassName())}`,
+            `These students see the Elementals and rollout you set on the <b>Schedule</b> tab.`, mine, 'mine');
+    host.innerHTML = mineHtml +
+        rosterSection('Other registrants',
+            'Signed up but not in your class. Add the ones who belong to you.', others);
     host.querySelectorAll<HTMLButtonElement>('.roster-toggle').forEach(btn =>
         btn.addEventListener('click', async () => {
             const uid = btn.dataset.uid as string;

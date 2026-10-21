@@ -255,3 +255,37 @@ fieldset.choices legend { font-size: 13px; color: var(--muted); padding: 0 6px; 
     padding: 0;
 }
 .swatch-pick.on { border-color: #303030; box-shadow: 0 0 0 2px #fff inset; }
+
+/* ---- Schedule: audience line + rollout timeline ---- */
+.sched-audience { margin: -4px 0 14px; }
+.class-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 1px 9px 2px; border-radius: 999px;
+    background: #fff; border: 1px solid var(--line); font-weight: 600; color: var(--ink);
+}
+.rollout { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.rollout-empty { padding: 14px; border: 1px dashed var(--line); border-radius: 10px; background: #fff; }
+.rollout-day {
+    border: 1px solid var(--line); border-left: 4px solid var(--line);
+    border-radius: 10px; background: #fff; padding: 10px 14px;
+}
+.rollout-day.released { border-left-color: #2f7a3d; }
+.rollout-day.upcoming { border-left-color: var(--line); opacity: 0.85; }
+.rollout-day.today { border-left-color: var(--primary); box-shadow: 0 0 0 2px #eaf1fb inset; opacity: 1; }
+.rollout-day.unscheduled { border-left-color: #d9b24a; background: #fffdf6; }
+.day-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.day-head .day-num { font-weight: 700; }
+.day-els { display: flex; flex-wrap: wrap; gap: 6px; }
+.el-chip {
+    display: inline-flex; align-items: baseline; gap: 5px;
+    padding: 3px 10px; border-radius: 999px;
+    background: #eef1f7; font-size: 13px; color: var(--ink);
+}
+.el-chip b { font-weight: 700; }
+
+/* ---- Roster: grouped sections (in-class vs everyone else) ---- */
+.roster-group { margin-top: 20px; }
+.roster-head { display: flex; align-items: center; gap: 8px; font-size: 17px; color: var(--ink); margin: 0; }
+.roster-group.mine .roster-head { color: var(--ink); }
+.roster-sub { margin: 4px 0 0; }
+.roster-group.mine table.sched { background: #fcfdff; border-radius: 10px; }
