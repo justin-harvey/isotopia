@@ -15,7 +15,7 @@ import { elementalLocation } from '../data/elementalLocations'
 import { startBattle } from '../ui/QuizOverlay'
 import { showNpcDialog } from '../ui/NpcDialog'
 import { isRadFinderEquipped, getRadTarget, setRadReading } from '../ui/RadFinder'
-import { getCharacter, textureKeyFor, loadCharacterSheets, faceFlip, type CharacterDef } from '../data/characters'
+import { getCharacter, textureKeyFor, loadCharacterSheets, faceFlip, type CharacterDef, type WalkMap } from '../data/characters'
 import { getSelectedCharacter, onAvatarChange } from '../data/avatar'
 import { openUnlockQuiz, alreadyUnlocked } from '../ui/UnlockQuiz'
 
@@ -50,6 +50,7 @@ export default abstract class GameScene extends Phaser.Scene {
     keyS: Phaser.Input.Keyboard.Key;
     keyD: Phaser.Input.Keyboard.Key;
     keyR: Phaser.Input.Keyboard.Key;
+    keyF!: Phaser.Input.Keyboard.Key;   // birds only: toggle flight
 
     // menu keys
     backKey!: Phaser.Input.Keyboard.Key;
@@ -63,6 +64,17 @@ export default abstract class GameScene extends Phaser.Scene {
     // walk frames and scale, and whether the dog-only bark/sit/sniff actions apply.
     playerCharacter!: CharacterDef;
     private avatarUnsub?: () => void;
+    // Birds (characters with a `fly` frame map) can take off with F. Visual flight —
+    // frames swap to the wing-spread poses; collision is unchanged.
+    flying = false;
+    // The look currently rendered on the player — character id + flight state. Lets
+    // applyCharacter() rebuild when only flight toggles (same id, different frames).
+    private appliedLook = '';
+    // Avatar NPCs that only have a side row (hamster/birds) and so must be mirrored for
+    // the 'right'-vs-'left' facing. grid-engine's directionChanged doesn't fire reliably
+    // for programmatic (moveRandomly) movement, so — like the player — we re-flip these
+    // every frame from their current facing in update() (see the gull-walks-left bug).
+    private mirroredNpcs: { name: string; sprite: Phaser.GameObjects.Sprite; def: CharacterDef }[] = [];
 
     // action sounds
     bark: Phaser.Sound.BaseSound;
@@ -142,6 +154,7 @@ export default abstract class GameScene extends Phaser.Scene {
         this.keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
         this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
         this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+        this.keyF = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
 
         // add sounds
         this.bark = this.sound.add('bark', { loop: false });
@@ -159,6 +172,7 @@ export default abstract class GameScene extends Phaser.Scene {
         // before createNpcs() (which calls spawnElemental) repopulates them.
         this.elementalTargets = [];
         this.rfLastMs = 0;
+        this.mirroredNpcs = [];
         this.createNpcs();
         basicMovement(this);
         clickToMove(this);
@@ -215,6 +229,22 @@ export default abstract class GameScene extends Phaser.Scene {
         if (this.playerCharacter?.mirror) {
             faceFlip(this.playerSprite, this.playerCharacter, this.gridEngine.getFacingDirection(this.playerName) as unknown as string);
         }
+
+        // Same mirror fix for 3-direction avatar NPCs (the roaming gull/pigeon). Their
+        // left and right art is one side row, so only faceFlip distinguishes the two;
+        // directionChanged misses programmatic turns, leaving a left-walking bird showing
+        // its right-facing art ("walking backwards"). Re-flip from live facing each frame.
+        for (const npc of this.mirroredNpcs) {
+            if (!this.gridEngine.hasCharacter(npc.name)) continue;
+            faceFlip(npc.sprite, npc.def, this.gridEngine.getFacingDirection(npc.name) as unknown as string);
+        }
+
+        // Birds can fly (F). Take-off/landing swaps the frame map; a hovering bird keeps
+        // flapping (grid-engine only animates while moving).
+        if (this.keyF && Phaser.Input.Keyboard.JustDown(this.keyF)) {
+            this.toggleFlight();
+        }
+        this.updateFlightFlap();
 
         // Dog-only actions (bark/sit/sniff). Their animations live on Perli's sheet, so
         // they only apply when the player is wearing the dog; other avatars skip them.
@@ -592,6 +622,7 @@ export default abstract class GameScene extends Phaser.Scene {
         // resolves to its per-scene texture key; pixel characters use their own global
         // sheet. Each character carries its own walk-frame mapping and on-screen scale.
         this.playerCharacter = getCharacter(getSelectedCharacter())
+        if (!this.playerCharacter.fly) this.flying = false   // non-birds never stay airborne
         const texture = textureKeyFor(this, this.playerCharacter)
         this.playerSprite = createCharacterSprite(this, 0, 0, texture, this.playerCharacter.scale)
         const gridEngineConfig = {
@@ -600,7 +631,7 @@ export default abstract class GameScene extends Phaser.Scene {
                     id: this.playerName,
                     sprite: this.playerSprite,
                     startPosition: this.gridEngineSettings.startPosition,
-                    walkingAnimationMapping: this.playerCharacter.walk as any,
+                    walkingAnimationMapping: this.effectiveMap() as any,
                 },
             ],
             layerOverlay: this.gridEngineSettings.layerOverlay,
@@ -608,6 +639,7 @@ export default abstract class GameScene extends Phaser.Scene {
         }
         this.gridEngine.create(this.map, gridEngineConfig)
         faceFlip(this.playerSprite, this.playerCharacter, this.gridEngine.getFacingDirection(this.playerName) as unknown as string)
+        this.appliedLook = this.currentLook()
     }
 
     // Re-skin the player when a different avatar is chosen from the 🎨 panel. Rebuilds
@@ -616,22 +648,84 @@ export default abstract class GameScene extends Phaser.Scene {
     applyCharacter(): void {
         if (!this.gridEngine?.hasCharacter(this.playerName)) return
         const def = getCharacter(getSelectedCharacter())
-        if (def.id === this.playerCharacter?.id) return
+        if (!def.fly) this.flying = false   // non-birds can't fly — land them on re-skin
+        this.playerCharacter = def          // set before currentLook() so flight maps resolve
+        const look = this.currentLook()
+        if (look === this.appliedLook) return
         const pos = this.gridEngine.getPosition(this.playerName)
         const facing = this.gridEngine.getFacingDirection(this.playerName)
         this.gridEngine.removeCharacter(this.playerName)
         this.playerSprite?.destroy()
-        this.playerCharacter = def
         this.playerSprite = createCharacterSprite(this, 0, 0, textureKeyFor(this, def), def.scale)
         this.gridEngine.addCharacter({
             id: this.playerName,
             sprite: this.playerSprite,
             startPosition: pos,
-            walkingAnimationMapping: def.walk as any,
+            walkingAnimationMapping: this.effectiveMap() as any,
             facingDirection: facing,
         })
         this.cameras.main.startFollow(this.playerSprite, true)
         faceFlip(this.playerSprite, def, facing as unknown as string)
+        this.appliedLook = look
+    }
+
+    // The frame mapping in effect: a bird's flying poses while flight is toggled on,
+    // otherwise its normal walk cycle.
+    private effectiveMap(): WalkMap {
+        return (this.flying && this.playerCharacter.fly) ? this.playerCharacter.fly : this.playerCharacter.walk
+    }
+
+    // Identity of what's drawn on the player — character id + flight state — so
+    // applyCharacter() can detect a flight toggle (same id, different frames).
+    private currentLook(): string {
+        return `${this.playerCharacter?.id ?? ''}|${this.flying ? 'fly' : 'walk'}`
+    }
+
+    // Take off / land (birds only) — press F. Rebuilds the avatar with the fly/walk frames.
+    toggleFlight(): void {
+        if (!this.playerCharacter?.fly) return
+        this.flying = !this.flying
+        this.applyCharacter()
+    }
+
+    // Wing-flap for a hovering bird. grid-engine only cycles frames while the character is
+    // moving, so a stationary flyer would freeze on one pose. While flying AND stopped we
+    // loop the flap ourselves; while moving, grid-engine's walk cycle through the fly frames
+    // already beats the wings, so we hand control back to it.
+    private updateFlightFlap(): void {
+        if (!this.flying || !this.playerCharacter?.fly) return
+        if (this.gridEngine.isMoving(this.playerName)) {
+            if (this.playerSprite.anims.isPlaying) this.playerSprite.anims.stop()
+            return
+        }
+        const dir = this.gridEngine.getFacingDirection(this.playerName) as unknown as string
+        const key = this.ensureFlapAnim(dir)
+        if (this.playerSprite.anims.currentAnim?.key !== key || !this.playerSprite.anims.isPlaying) {
+            this.playerSprite.anims.play(key, true)
+        }
+    }
+
+    // Build (once) and name the looping flap animation for a flying direction. The fly poses
+    // sit in cols 4-7 of a bird sheet's direction row; the four flap frames run from that
+    // row's standing frame. left/right share the side row (mirrored by faceFlip). Keyed by
+    // texture so pigeon and gull don't collide in the global anim store.
+    private ensureFlapAnim(dir: string): string {
+        const fly = this.playerCharacter.fly!
+        const row = dir === 'up' ? fly.up : dir === 'down' ? fly.down : fly.right
+        const group = dir === 'up' ? 'up' : dir === 'down' ? 'down' : 'side'
+        const key = `flap_${this.playerCharacter.textureKey}_${group}`
+        if (!this.anims.exists(key)) {
+            const base = row.standing
+            this.anims.create({
+                key,
+                frames: this.anims.generateFrameNumbers(this.playerCharacter.textureKey!, {
+                    frames: [base, base + 1, base + 2, base + 3],
+                }),
+                frameRate: 8,
+                repeat: -1,
+            })
+        }
+        return key
     }
 
     // An "avatar NPC": one of the unlockable characters, placed in the world. Walk up
@@ -663,10 +757,11 @@ export default abstract class GameScene extends Phaser.Scene {
         if (radius > 0) this.gridEngine.moveRandomly(npc.name, 1500, radius)
         const sprite = this.gridEngine.getSprite(npc.name)
         if (sprite && def.mirror) {
-            // Keep the critter facing the way it walks while it wanders.
-            this.gridEngine.directionChanged().subscribe(({ charId, direction }) => {
-                if (charId === npc.name) faceFlip(sprite, def, direction as unknown as string)
-            })
+            // Mirror the critter to match its walk direction. grid-engine's directionChanged
+            // doesn't fire for moveRandomly turns, so (like the player) we re-flip from its
+            // live facing every frame in update() — registering it here. Prime it once now.
+            faceFlip(sprite, def, this.gridEngine.getFacingDirection(npc.name) as unknown as string)
+            this.mirroredNpcs.push({ name: npc.name, sprite, def })
         }
     }
 

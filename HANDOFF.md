@@ -53,7 +53,33 @@ indoors, >0 = wander outdoors). Key pieces:
   + jungle NPCs use the scenes' own reachable-tile logic, so those are safe. Cloud-sync the
   unlocks if desired (needs a `database.rules.json` field).
 
-## ▶ NEXT SESSION (2026-10-21) — port the bird flight mechanic for the gull & pigeon avatars
+## ✅ DONE (2026-10-21) — bird flight mechanic ported + mirrored-NPC "walks backwards" fixed
+Both shipped in `src/Scenes/GameScene.ts` (build green, headless-verified via `?e2e`:
+`/tmp/pw/verify-birds.mjs`, 0 console errors).
+- **Bird flight (gull & pigeon):** ported the book-club mechanic — `flying` state +
+  `toggleFlight()` (press **F**), `effectiveMap()` (swaps `playerCharacter.fly` ↔ `.walk`),
+  `updateFlightFlap()` + `ensureFlapAnim(dir)` (a looped wing-beat so a hovering bird keeps
+  flapping; grid-engine only cycles frames while moving). `applyCharacter()` now keys off a
+  `currentLook()` = id+flight (not just id) so a flight toggle rebuilds the sprite, and lands
+  (`flying=false`) any non-flyer; `initiateGridEngine()` uses `effectiveMap()`. Only characters
+  with a `fly` map (the two birds) can take off. Verified: gull flies + flap-map swaps, dog
+  can't fly, swapping bird→dog auto-lands.
+- **Mirrored avatar NPCs no longer walk backwards (gull/pigeon/hamster).** Root cause: the
+  3-direction critters have one side row (left==right frames) distinguished only by `faceFlip`'s
+  `flipX`; `spawnQuizNpc` set it via a `directionChanged` subscription, but grid-engine doesn't
+  fire that for `moveRandomly` turns — so a left-walking NPC kept the default (unflipped)
+  right-facing art. Fix mirrors the PLAYER's proven approach: register every `mirror` NPC in
+  `this.mirroredNpcs` and re-flip each from its live facing EVERY frame in `update()` (replacing
+  the subscription). General to all three mirrored critters. Verified: across 60 forced L/R
+  frames the gull's flipX always matched its facing.
+- **Nice-to-haves still open (BACKLOG — future session):**
+  - **Tap-the-bird to fly (mobile).** Flight is keyboard-only (F) today, but the classroom
+    target is iPads with no F key. Make tapping the player's own bird sprite act as the F key
+    (call `toggleFlight()`), so flight is reachable on touch. (Justin's ask, 2026-10-21.)
+  - A HUD "press F / tap to fly" hint shown only while wearing a bird.
+  - Optionally raise the sprite / add a shadow while airborne.
+
+## (original ask, now done) — port the bird flight mechanic for the gull & pigeon avatars
 When a player is wearing the **gull** or **pigeon** avatar, they should be able to **fly** —
 port the mechanic that already exists in the **interactive-book-club** fork into Isotopia.
 - **What to port (from book-club `main`, latest commits):**
