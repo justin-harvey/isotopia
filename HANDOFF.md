@@ -1,7 +1,7 @@
 # Isotopia — Session Handoff
 
 A running summary of what this is and where it stands, so work can resume after a
-context reset. Last updated 2026-10-04.
+context reset. Last updated 2026-10-21.
 
 ## 🆕 Shipped 2026-10-21 — Selectable avatars earned from roaming quiz NPCs
 Branch `feature/avatar-unlock-npcs`. The dog is no longer the only skin: 24 extra
@@ -28,10 +28,54 @@ indoors, >0 = wander outdoors). Key pieces:
   its own local-only key (`isotopia.avatars.v1`), outside the cloud-synced students/{uid}
   schema (same reasoning as the evolved/items stores). Cloud sync is a clean follow-up
   (needs a `database.rules.json` field). Wiped by `resetAllProgress` (season reset).
+- `ui/UnlockQuiz.ts` + `data/avatarQuestions.ts` — the friendlier single-question pop-up
+  (reuses the GBA `.quiz-card.battle` styling) and the 24 chemistry questions (one per
+  character). `ui/AvatarPanel.ts` + the `iso-avatar__*` / `unlock-*` CSS in `index.css`.
+- **Favicon fix (both repos):** the dog avatar thumbnail in the picker used to be a 🐕
+  emoji; the dog `CharacterDef` now carries a `Perli.png` sheet crop (frame 28), and the
+  picker renders a real mini-dog (smooth, not pixelated). Also fixed in interactive-book-club.
 - Verified headlessly (real Phaser via `?e2e`): boot, player re-skin (fox), an NPC quiz
-  opening with 4 choices, a correct answer unlocking + persisting. `npm run build` green.
-- Follow-ups: NPC tile coords were chosen from known-walkable bands but not each verified on
-  the live maps — eyeball them in-game. Cloud-sync the unlocks if desired.
+  opening + a correct answer unlocking & persisting, and the spread-out distribution (town
+  = gull only, woods = 4 animals, jungle = 3, interiors spawn their one resident). Build green.
+
+### Repo / branch state (2026-10-21)
+- Shipped to **`main`** (`9a365a9`): avatar feature (`6a4dd78`) + the one-person-per-interior
+  placement refactor. Feature branches `feature/avatar-unlock-npcs` and
+  `feature/avatar-npc-placement` also exist on origin. `main` sits on top of the 3
+  `flame-test-art` WIP commits (season reset + the Zn–Rb / Zr–Pd Elemental batches) that were
+  merged in per Justin's call.
+- **interactive-book-club `main`** (`71669d5`): the source fork. It has the ORIGINAL bird
+  flight mechanic (see next section) plus the same dog-thumbnail favicon fix.
+- `flame-test-art` is Justin's separate WIP branch (unrelated `questionAdmin.ts` / `teacher.ts`
+  edits, left uncommitted) — untouched by the avatar work.
+- Follow-ups: outdoor NPC tile coords (gull town, pigeon city, woods animals) were chosen from
+  known-walkable bands but not each verified on the live maps — eyeball them in-game. Interior
+  + jungle NPCs use the scenes' own reachable-tile logic, so those are safe. Cloud-sync the
+  unlocks if desired (needs a `database.rules.json` field).
+
+## ▶ NEXT SESSION (2026-10-21) — port the bird flight mechanic for the gull & pigeon avatars
+When a player is wearing the **gull** or **pigeon** avatar, they should be able to **fly** —
+port the mechanic that already exists in the **interactive-book-club** fork into Isotopia.
+- **What to port (from book-club `main`, latest commits):**
+  - `GameScene.flying` state + `toggleFlight()` (press **F** to take off / land), wired in
+    `update()` behind `this.playerCharacter?.fly`.
+  - `GameScene.updateFlightFlap()` + `ensureFlapAnim(dir)` — a looping wing-flap so a hovering
+    bird keeps flapping (grid-engine only animates frames while moving, so a stationary flyer
+    would otherwise freeze on one pose). Birds flap both while moving (walk cycle through the
+    fly frames) and while idle (the looped anim).
+  - `applyCharacter()` must pick `playerCharacter.fly` vs `.walk` as the grid-engine mapping
+    while `flying` is on, and reset `flying` when switching to a non-flyer.
+- **Already in place in Isotopia** (copied with the roster): `CharacterDef.fly` and the
+  `BIRD_FLY` frame map in `data/characters.ts`, set on `pigeon` + `gull`. So the DATA is here;
+  only the GameScene behaviour (F-key, flight state, flap animation, fly/walk mapping swap)
+  needs wiring in. Nothing qualifies to fly except characters with a `fly` map (just the two
+  birds today).
+- **Nice-to-haves:** a HUD hint ("press F to fly") shown only while wearing a bird; make it
+  mobile-friendly (a tap button, since iPads have no F key); optionally raise the sprite /
+  add a shadow while airborne.
+- Reference: book-club `src/Scenes/GameScene.ts` (`flying`, `toggleFlight`, `updateFlightFlap`,
+  `ensureFlapAnim`) and its `src/data/characters.ts` `BIRD_FLY` — identical engine fork, so the
+  code should drop in with only import/path tweaks.
 
 ## ▶ NEXT SESSION — planned work (Justin, 2026-10-02)
 Open asks below with root cause, exact files, and a recommended path. Task #2 (totem trim) is DONE +
