@@ -3,6 +3,31 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-04.
 
+## 🆕 Shipped 2026-10-21 — Selectable avatars earned from roaming quiz NPCs
+Branch `feature/avatar-unlock-npcs`. The dog is no longer the only skin: 24 extra
+characters (15 townsfolk, 6 animals, pigeon, gull, hamster — art ported from the
+interactive-book-club fork into `src/assets/Characters/{townsfolk,animals}`) now roam the
+worlds as NPCs. Walk up to one → an **extra-credit chemistry quiz** (`ui/UnlockQuiz` +
+`data/avatarQuestions`, one question per character); answer right and that character joins
+your avatars, pickable from the new **🎨 Avatar panel** (`ui/AvatarPanel`, mounted globally
+in `game.ts` like the dex). Placement: **pigeon + tf1–tf8 in the City, gull + tf9–tf15 in the
+Town, all 6 animals + hamster in the Woods** (each scene's `createNpcs()` via the new
+`GameScene.spawnQuizNpc`). Key pieces:
+- `data/characters.ts` — ported `CharacterDef` roster (dog default; dog now carries a sheet
+  crop so the picker shows a real mini-Perli, not a 🐕 emoji). `data/avatar.ts` — the chosen
+  skin (localStorage `isotopia:character`) + `onAvatarChange`.
+- `GameScene.initiateGridEngine`/`applyCharacter` — the player is built from, and re-skinned
+  live to, the chosen character (texture/walk-frames/scale); bark/sit/sniff now gate on the
+  dog only; 3-dir critters mirror via `faceFlip`.
+- `data/progress.ts` — `unlockAvatar`/`isAvatarUnlocked`/`unlockedAvatarIds`, stored under
+  its own local-only key (`isotopia.avatars.v1`), outside the cloud-synced students/{uid}
+  schema (same reasoning as the evolved/items stores). Cloud sync is a clean follow-up
+  (needs a `database.rules.json` field). Wiped by `resetAllProgress` (season reset).
+- Verified headlessly (real Phaser via `?e2e`): boot, player re-skin (fox), an NPC quiz
+  opening with 4 choices, a correct answer unlocking + persisting. `npm run build` green.
+- Follow-ups: NPC tile coords were chosen from known-walkable bands but not each verified on
+  the live maps — eyeball them in-game. Cloud-sync the unlocks if desired.
+
 ## ▶ NEXT SESSION — planned work (Justin, 2026-10-02)
 Open asks below with root cause, exact files, and a recommended path. Task #2 (totem trim) is DONE +
 merged. Tasks #1 (water) and #3 (gameplay redesign) are not started. A pre-reset content audit

@@ -27,12 +27,14 @@ import { initIsotopedex } from "./ui/Isotopedex";
 import { initIntro } from "./ui/Intro";
 import { mountRadFinder } from "./ui/RadFinder";
 import { mountDevWarp } from "./ui/DevWarp";
+import { mountAvatarButton } from "./ui/AvatarPanel";
 import { refreshHud } from "./ui/hud";
 
 // Mount the persistent Isotopedex corner button (independent of Phaser scenes),
-// the first-run "how to play" card + "?" help button, and the Rad Finder HUD
-// (hidden until the student equips it from the dex).
+// the 🎨 Avatar picker, the first-run "how to play" card + "?" help button, and the
+// Rad Finder HUD (hidden until the student equips it from the dex).
 initIsotopedex();
+mountAvatarButton();
 initIntro();
 mountRadFinder();
 

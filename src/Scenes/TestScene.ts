@@ -167,6 +167,16 @@ export default class TestScene extends GameScene {
         // One Elemental per outdoor spawn — real art if it has any, else a tinted
         // placeholder. Walk within one tile to start its quiz (see spawnElemental).
         MONSTER_SPAWNS.forEach(spawn => this.spawnElemental(spawn.elementId, spawn.x, spawn.y));
+
+        // Roaming "avatar NPCs": the gull + half the townsfolk wander the town square.
+        // Walk up to one and answer its chemistry question to unlock it as an avatar
+        // (the other townsfolk live in the city; the animals live in the woods).
+        const townFolk: [string, number, number][] = [
+            ['gull', 18, 16],
+            ['tf9', 10, 12], ['tf10', 26, 12], ['tf11', 14, 16], ['tf12', 22, 16],
+            ['tf13', 30, 14], ['tf14', 8, 14], ['tf15', 12, 18],
+        ];
+        townFolk.forEach(([id, x, y]) => this.spawnQuizNpc(id, x, y));
     }
 
     update(): void {

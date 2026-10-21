@@ -15,6 +15,9 @@ import { elementalLocation } from '../data/elementalLocations'
 import { startBattle } from '../ui/QuizOverlay'
 import { showNpcDialog } from '../ui/NpcDialog'
 import { isRadFinderEquipped, getRadTarget, setRadReading } from '../ui/RadFinder'
+import { getCharacter, textureKeyFor, loadCharacterSheets, faceFlip, type CharacterDef } from '../data/characters'
+import { getSelectedCharacter, onAvatarChange } from '../data/avatar'
+import { openUnlockQuiz, alreadyUnlocked } from '../ui/UnlockQuiz'
 
 // Real Elemental art is a big single image; this scale reads it down to roughly
 // character size on the grid (the placeholder NPC spritesheet uses ~0.7).
@@ -55,6 +58,11 @@ export default abstract class GameScene extends Phaser.Scene {
     playerSprite!: Phaser.Physics.Arcade.Sprite;
     playerName!: string;
     avatarScale: number = 0.15;
+    // The character the player is currently wearing (Perli the dog by default; other
+    // characters are earned, see ui/AvatarPanel). Drives the player sprite's texture,
+    // walk frames and scale, and whether the dog-only bark/sit/sniff actions apply.
+    playerCharacter!: CharacterDef;
+    private avatarUnsub?: () => void;
 
     // action sounds
     bark: Phaser.Sound.BaseSound;
@@ -121,6 +129,9 @@ export default abstract class GameScene extends Phaser.Scene {
         this.load.audio('bark', 'assets/music/bark.wav');
         this.load.audio('sniff', 'assets/music/sniffing.wav');
         this.load.audio('whatDaDogDoin', 'assets/music/what-da-dog-doin.mp3');
+        // The unlockable avatar sheets (townsfolk/animals/birds) — also used as the
+        // roaming quiz NPCs' art. Idempotent across scenes (guards on textures.exists).
+        loadCharacterSheets(this)
     }
 
     create(): void {
@@ -152,6 +163,10 @@ export default abstract class GameScene extends Phaser.Scene {
         basicMovement(this);
         clickToMove(this);
         NpcsAndObjects.interaction(this)
+
+        // Re-skin the player live when the avatar is changed from the 🎨 panel.
+        this.avatarUnsub = onAvatarChange(() => this.applyCharacter())
+        this.events.once('shutdown', () => { this.avatarUnsub?.(); this.avatarUnsub = undefined })
 
         // stop animations like bark or sniff when player starts to move
         this.gridEngine.movementStarted().subscribe(() => {
@@ -194,28 +209,30 @@ export default abstract class GameScene extends Phaser.Scene {
     update(): void {
         this.refreshRadFinder();
 
-        // code to set habilities
-        if (Phaser.Input.Keyboard.JustDown(this.keyA)) {
-            /* uncomment this to use it as a hint to see the tile where player is placed ingame */
-            // console.log(`facingPosition: (${this.gridEngine.getFacingPosition(this.playerName).x
-            //     }, ${this.gridEngine.getFacingPosition(this.playerName).y})`);
+        // Mirror 3-direction characters (hamster/birds) for the 'right' facing. Done
+        // every frame from the current facing — grid-engine's directionChanged doesn't
+        // fire during tap-to-move. No-op for the dog and other 4-direction art.
+        if (this.playerCharacter?.mirror) {
+            faceFlip(this.playerSprite, this.playerCharacter, this.gridEngine.getFacingDirection(this.playerName) as unknown as string);
+        }
 
+        // Dog-only actions (bark/sit/sniff). Their animations live on Perli's sheet, so
+        // they only apply when the player is wearing the dog; other avatars skip them.
+        if (Phaser.Input.Keyboard.JustDown(this.keyA) && this.playerCharacter?.special) {
             this.bark.play();
             this.gridEngine.getFacingDirection(this.playerName) === "right"
                 ? this.playerSprite.anims.play("barkingRight", true)
                 : this.playerSprite.anims.play("barking", true);
         };
 
-        if (Phaser.Input.Keyboard.JustDown(this.keyS)) {
-            console.log("sit");
+        if (Phaser.Input.Keyboard.JustDown(this.keyS) && this.playerCharacter?.special) {
             this.gridEngine.getFacingDirection(this.playerName) === "right"
                 ? this.playerSprite.anims.play("sitRight", true)
                 : this.playerSprite.anims.play("sit", true);
             this.registerDogAction('S');
         };
 
-        if (Phaser.Input.Keyboard.JustDown(this.keyD)) {
-            console.log("sniff");
+        if (Phaser.Input.Keyboard.JustDown(this.keyD) && this.playerCharacter?.special) {
             this.sniff.play();
             this.gridEngine.getFacingDirection(this.playerName) === "right"
                 ? this.playerSprite.anims.play("sniffRight", true)
@@ -571,42 +588,85 @@ export default abstract class GameScene extends Phaser.Scene {
 
     // GridEngine methods should only be used after this method was called!**
     initiateGridEngine(): void {
-        this.playerSprite = createCharacterSprite(this, 0, 0, this.imageNames.Perli, this.avatarScale)
+        // Build the player from the chosen avatar (Perli the dog by default). The dog
+        // resolves to its per-scene texture key; pixel characters use their own global
+        // sheet. Each character carries its own walk-frame mapping and on-screen scale.
+        this.playerCharacter = getCharacter(getSelectedCharacter())
+        const texture = textureKeyFor(this, this.playerCharacter)
+        this.playerSprite = createCharacterSprite(this, 0, 0, texture, this.playerCharacter.scale)
         const gridEngineConfig = {
             characters: [
                 {
                     id: this.playerName,
                     sprite: this.playerSprite,
                     startPosition: this.gridEngineSettings.startPosition,
-                    // you can use this to set custom walking animations, or use the default
-                    walkingAnimationMapping: {
-                        up: {
-                            leftFoot: 25,
-                            standing: 24,
-                            rightFoot: 26,
-                        },
-                        down: {
-                            leftFoot: 29,
-                            standing: 28,
-                            rightFoot: 30,
-                        },
-                        left: {
-                            leftFoot: 9,
-                            standing: 8,
-                            rightFoot: 11,
-                        },
-                        right: {
-                            leftFoot: 13,
-                            standing: 12,
-                            rightFoot: 15,
-                        },
-                    },
+                    walkingAnimationMapping: this.playerCharacter.walk as any,
                 },
             ],
             layerOverlay: this.gridEngineSettings.layerOverlay,
             characterCollisionStrategy: this.gridEngineSettings.characterCollisionStrategy
         }
         this.gridEngine.create(this.map, gridEngineConfig)
+        faceFlip(this.playerSprite, this.playerCharacter, this.gridEngine.getFacingDirection(this.playerName) as unknown as string)
+    }
+
+    // Re-skin the player when a different avatar is chosen from the 🎨 panel. Rebuilds
+    // the grid-engine character in place (same id, tile and facing) so movement and
+    // camera-follow keep working. No-op if the chosen character hasn't changed.
+    applyCharacter(): void {
+        if (!this.gridEngine?.hasCharacter(this.playerName)) return
+        const def = getCharacter(getSelectedCharacter())
+        if (def.id === this.playerCharacter?.id) return
+        const pos = this.gridEngine.getPosition(this.playerName)
+        const facing = this.gridEngine.getFacingDirection(this.playerName)
+        this.gridEngine.removeCharacter(this.playerName)
+        this.playerSprite?.destroy()
+        this.playerCharacter = def
+        this.playerSprite = createCharacterSprite(this, 0, 0, textureKeyFor(this, def), def.scale)
+        this.gridEngine.addCharacter({
+            id: this.playerName,
+            sprite: this.playerSprite,
+            startPosition: pos,
+            walkingAnimationMapping: def.walk as any,
+            facingDirection: facing,
+        })
+        this.cameras.main.startFollow(this.playerSprite, true)
+        faceFlip(this.playerSprite, def, facing as unknown as string)
+    }
+
+    // A roaming "avatar NPC": one of the unlockable characters, wandering the world.
+    // Walk up to it (proximity) to open an extra-credit chemistry quiz; answer correctly
+    // and that character joins your 🎨 avatars (ui/UnlockQuiz). Once earned, it greets
+    // you instead of re-quizzing. 3-direction critters (hamster/birds) are mirrored for
+    // the 'right' facing via faceFlip, same as the player.
+    spawnQuizNpc(characterId: string, x: number, y: number, radius: number = 3): void {
+        const def = getCharacter(characterId)
+        const npc = new Npc({
+            scene: this,
+            xPosition: x,
+            yPosition: y,
+            texture: textureKeyFor(this, def),
+            scale: def.scale,
+            walkingAnimationMapping: def.walk as any,
+            action: () => {
+                npc.proximityTrigger = false
+                const rearm = (): void => { npc.proximityTrigger = true }
+                if (alreadyUnlocked(characterId)) {
+                    showNpcDialog(def.label, [`You already earned me! Tap 🎨 to wear me.`], rearm)
+                } else {
+                    openUnlockQuiz(characterId, rearm)
+                }
+            },
+        })
+        npc.proximityTrigger = true
+        this.gridEngine.moveRandomly(npc.name, 1500, radius)
+        const sprite = this.gridEngine.getSprite(npc.name)
+        if (sprite && def.mirror) {
+            // Keep the critter facing the way it walks while it wanders.
+            this.gridEngine.directionChanged().subscribe(({ charId, direction }) => {
+                if (charId === npc.name) faceFlip(sprite, def, direction as unknown as string)
+            })
+        }
     }
 
     // create cameras

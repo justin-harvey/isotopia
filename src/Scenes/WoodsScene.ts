@@ -157,6 +157,15 @@ export default class WoodsScene extends GameScene {
         // eastern edge of the woods, well off the central trail. Walk up to it to
         // claim the mysterious key.
         this.spawnTreasureChest(37, 13);
+
+        // Roaming "avatar NPCs": every animal lives out here in the woods. Walk up and
+        // answer the chemistry question to unlock each as an avatar.
+        const critters: [string, number, number][] = [
+            ['cat_gray', 14, 18], ['cat_orange', 24, 18], ['fox', 18, 14],
+            ['raccoon', 28, 16], ['bird_white', 12, 12], ['bird_blue', 22, 12],
+            ['hamster', 20, 19],
+        ];
+        critters.forEach(([id, x, y]) => this.spawnQuizNpc(id, x, y));
     }
 
     update(): void {

@@ -177,11 +177,13 @@ export function resetAllProgress(): void {
     state = { seen: {}, caught: {}, stats: {} };
     evolvedState = {};
     itemsState = {};
+    avatarsState = {};
     resonanceState = { attuned: {}, enlightened: false };
     pyramidState = { risen: false };
     canopyState = { attuned: {}, complete: false };
     saveLocal();
     saveEvolved();
+    saveAvatars();
     saveItems();
     saveResonance();
     savePyramid();
@@ -238,6 +240,40 @@ export function markEvolved(compoundId: string): void {
 export function isEvolved(compoundId: string): boolean { return !!evolvedState[compoundId]; }
 export function evolvedIds(): string[] {
     return Object.keys(evolvedState).filter(k => evolvedState[k]);
+}
+
+// ---- Unlocked avatars (earned by beating a walking NPC's quiz) ------------
+// Characters the student has won the right to wear from the 🎨 Avatar panel, each
+// earned by answering a roaming NPC's extra-credit quiz correctly (see ui/UnlockQuiz
+// + data/avatarQuestions). Kept under its OWN local-only key, deliberately outside the
+// cloud-synced students/{uid} schema for the same reason as the evolved/items stores
+// above: a new field there could fail the RTDB write validation. The dog is always
+// available and is never stored here. Cloud sync is a clean follow-up (plus a
+// database.rules.json update), exactly like evolved forms.
+const AVATARS_KEY = 'isotopia.avatars.v1';
+
+function loadAvatars(): Record<string, boolean> {
+    try {
+        const raw = localStorage.getItem(AVATARS_KEY);
+        if (raw) return JSON.parse(raw) as Record<string, boolean>;
+    } catch { /* ignore corrupt/unavailable storage */ }
+    return {};
+}
+
+let avatarsState: Record<string, boolean> = loadAvatars();
+
+function saveAvatars(): void {
+    try { localStorage.setItem(AVATARS_KEY, JSON.stringify(avatarsState)); }
+    catch { /* storage unavailable — stays in-memory this session */ }
+}
+
+/** Record that the student earned the right to wear a character avatar. */
+export function unlockAvatar(characterId: string): void {
+    if (!avatarsState[characterId]) { avatarsState[characterId] = true; saveAvatars(); }
+}
+export function isAvatarUnlocked(characterId: string): boolean { return !!avatarsState[characterId]; }
+export function unlockedAvatarIds(): string[] {
+    return Object.keys(avatarsState).filter(k => avatarsState[k]);
 }
 
 // ---- Inventory items (chests, keys, etc.) ---------------------------------

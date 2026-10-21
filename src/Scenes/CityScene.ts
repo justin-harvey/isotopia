@@ -208,6 +208,16 @@ export default class CityScene extends GameScene {
         // Elementals relocated from the town interiors now roam the streets. Walk
         // up to one to start its quiz (proximity trigger, same as everywhere).
         CITY_ELEMENTALS.forEach(([id, x, y]) => this.spawnElemental(id, x, y));
+
+        // Roaming "avatar NPCs": the city pigeon + half the townsfolk. Walk up and
+        // answer the chemistry question to unlock each as an avatar. Placed on the
+        // avenues/plaza — the same walkable bands as the pedestrians above.
+        const cityFolk: [string, number, number][] = [
+            ['pigeon', 26, 69],
+            ['tf1', 12, 26], ['tf2', 40, 26], ['tf3', 12, 52], ['tf4', 40, 52],
+            ['tf5', 22, 56], ['tf6', 34, 56], ['tf7', 14, 69], ['tf8', 38, 69],
+        ];
+        cityFolk.forEach(([id, x, y]) => this.spawnQuizNpc(id, x, y));
     }
 
     update(): void {

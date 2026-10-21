@@ -1874,3 +1874,113 @@ html, body {
     .canopy-meter-fill { transition: none; }
 }
 .evo-pe { color: #ffd166; }
+/* ================= Avatar picker (🎨) + unlock quiz ================= */
+
+/* Corner button: stacks just below the Isotopedex button (top-right). */
+.iso-avatar__btn {
+    position: fixed;
+    top: calc(80px + env(safe-area-inset-top));
+    right: calc(12px + env(safe-area-inset-right));
+    z-index: 950;                 /* above HUD (900), below the quiz (1000) */
+    display: flex;                /* mounted once, visible across all scenes */
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    font-size: 26px;
+    line-height: 1;
+    border: 3px solid #f2f4f8;
+    border-radius: 12px;
+    background: linear-gradient(#5b8cf0, #3a5fc0);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.08s ease;
+}
+.iso-avatar__btn:hover { transform: translateY(-1px) scale(1.03); }
+.iso-avatar__btn:active { transform: scale(0.96); }
+
+.iso-avatar {
+    position: fixed;
+    inset: 0;
+    display: none;                /* flex when open */
+    justify-content: center;
+    align-items: center;
+    background: rgba(10, 12, 24, 0.6);
+    z-index: 1000;
+    font-family: var(--gba-font);
+}
+.iso-avatar__panel {
+    width: min(460px, 94vw);
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    background: #08101f;
+    color: #f4f8ff;
+    border: 4px solid #f4f8ff;
+    border-radius: 8px;
+    box-shadow: 0 0 0 4px #08101f, 0 10px 30px rgba(0, 0, 0, 0.55);
+    padding: 12px;
+    box-sizing: border-box;
+}
+.iso-avatar__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.iso-avatar__title { font-size: 13px; }
+.iso-avatar__close {
+    font-family: var(--gba-font);
+    font-size: 10px;
+    color: #10203a;
+    background: #ffd166;
+    border: 2px solid #fff;
+    border-radius: 14px;
+    padding: 8px 12px;
+    min-height: 36px;
+    cursor: pointer;
+}
+.iso-avatar__chars {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    gap: 8px;
+}
+.iso-avatar__char {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1 / 1;
+    background: #0e1b33;
+    border: 2px solid #2a3b5e;
+    border-radius: 8px;
+    cursor: pointer;
+    overflow: hidden;
+    font-size: 22px;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.08s ease, border-color 0.08s ease;
+}
+.iso-avatar__char:hover { transform: translateY(-1px); border-color: #5b8cf0; }
+.iso-avatar__char--on { border-color: #ffd166; background: #17294a; box-shadow: 0 0 0 2px #ffd166 inset; }
+.iso-avatar__thumb { display: block; background-repeat: no-repeat; }
+.iso-avatar__count { margin-top: 12px; font-size: 9px; line-height: 1.6; opacity: 0.85; text-align: center; }
+
+/* Friendlier single-question unlock pop-up (reuses .quiz-card.battle chrome). */
+.unlock-card { width: min(460px, 94vw); }
+.unlock-head { display: flex; align-items: center; gap: 12px; margin: 2px 0 12px; }
+.unlock-portrait-wrap {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: #0e1b33;
+    border: 2px solid #f4f8ff;
+    border-radius: 6px;
+    overflow: hidden;
+}
+.unlock-portrait { display: block; background-repeat: no-repeat; }
+.unlock-intro { flex: 1 1 auto; }
+.unlock-title { font-size: 12px; line-height: 1.5; }
+.unlock-sub { font-size: 9px; opacity: 0.85; margin-top: 4px; line-height: 1.5; }
+.unlock-prompt { font-size: 11px; line-height: 1.7; margin-bottom: 10px; }
