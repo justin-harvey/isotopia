@@ -75,6 +75,28 @@ html, body {
 #hud .hud-title { color: #ffd166; font-weight: bold; }
 #hud b { color: #ffd166; }
 
+/* ---- Flight hint pill (only while wearing a bird; see ui/FlightHint.ts) ---- */
+.flight-hint {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    /* sit just above the bottom HUD strip */
+    bottom: calc(var(--hud-h) + env(safe-area-inset-bottom) + 10px);
+    box-sizing: border-box;
+    padding: 6px 14px;
+    background: rgba(16, 32, 58, 0.92);
+    color: #eef4ff;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    white-space: nowrap;
+    border: 2px solid #ffd166;
+    border-radius: 999px;
+    z-index: 901;
+    pointer-events: none;   /* purely informational — never eats a tap */
+}
+.flight-hint[hidden] { display: none; }
+.flight-hint b { color: #ffd166; }
+
 /* ---- First-fight dog reaction pop ---- */
 .dog-reaction {
     position: fixed;

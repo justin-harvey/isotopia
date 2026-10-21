@@ -27,6 +27,19 @@ export function clickToMove(
             y: scene.map.worldToTileY(pointer.worldY),
         }
 
+        // Tap-to-fly (touch equivalent of the F key): tapping your OWN tile while
+        // wearing a bird takes off / lands, instead of a no-op move-to-self. iPads
+        // have no F key, so this is the only way to fly on touch. Non-birds fall
+        // through to normal movement (tapping your own tile does nothing anyway).
+        if (scene.playerCharacter?.fly) {
+            const pos = scene.gridEngine.getPosition(scene.playerName)
+            if (targetTile.x === pos.x && targetTile.y === pos.y) {
+                showTapRipple(scene, pointer.worldX, pointer.worldY)
+                scene.toggleFlight()
+                return
+            }
+        }
+
         // Visual confirmation that the tap registered (important on touch — kids
         // otherwise can't tell if a tap "took"). A ring blooms and fades where
         // they tapped.

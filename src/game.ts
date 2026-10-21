@@ -28,6 +28,7 @@ import { initIntro } from "./ui/Intro";
 import { mountRadFinder } from "./ui/RadFinder";
 import { mountDevWarp } from "./ui/DevWarp";
 import { mountAvatarButton } from "./ui/AvatarPanel";
+import { mountFlightHint } from "./ui/FlightHint";
 import { refreshHud } from "./ui/hud";
 
 // Mount the persistent Isotopedex corner button (independent of Phaser scenes),
@@ -35,6 +36,7 @@ import { refreshHud } from "./ui/hud";
 // Rad Finder HUD (hidden until the student equips it from the dex).
 initIsotopedex();
 mountAvatarButton();
+mountFlightHint();
 initIntro();
 mountRadFinder();
 

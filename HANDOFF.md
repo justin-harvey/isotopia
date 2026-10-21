@@ -3,6 +3,35 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-21.
 
+## 🆕 Shipped 2026-10-21 — Tap-to-fly (mobile) + flight hint + water de-speckle
+Two backlog items cleared this session (build + tsc green via `nvm use 22`; both headless-verified,
+0 console errors). NOT yet committed/pushed — left on the working tree for Justin to branch/ship.
+
+- **Tap-to-fly (mobile flight).** Flight was keyboard-only (F); iPads have no F key. `clickToMove`
+  (`src/Scenes/components/Characters.ts`) now intercepts a tap on the player's OWN tile while wearing
+  a bird (a character with a `fly` map = gull/pigeon) and calls `scene.toggleFlight()` instead of the
+  no-op move-to-self. Non-birds fall through to normal movement. Verified headless
+  (`/tmp/pw/verify-tapfly.mjs`, **PASS**): self-tap toggles flight on, a second self-tap lands, a tap
+  on a far tile does NOT toggle (it moves), the dog never flies, 0 errors.
+- **Flight hint pill (discoverability).** New `src/ui/FlightHint.ts` (mounted in `game.ts` like the
+  Avatar button) shows a "🐦 Tap yourself (or press F) to fly" pill ONLY while wearing a bird —
+  toggled via `avatar.onAvatarChange`. CSS `.flight-hint` in `index.css` (rounded pill above the HUD
+  strip, `pointer-events:none` so it never eats a tap). Without it kids wouldn't know to tap themselves.
+- **Water de-speckle (NEXT-SESSION task #1 — DONE).** Removed the orange/tan triangle blobs from ALL
+  water. Root cause was two desert-tileset cells (`src/assets/tiles/desert_tileset.png` (4,2) & (5,1))
+  with ~11% baked-in warm speckle that propagate everywhere (jungle tileset cells 6/7 → `water.png` →
+  Town lake; desert oasis reads the tileset directly). New idempotent **`tools/clean_water.py`** masks
+  the warm pixels and fills from the surrounding teal (neighbour relaxation), writing the tileset back
+  in place; re-run the chain `clean_water.py` → `slice_jungle.py` → `slice_water.py` → `npm run build`
+  (no map re-embed — only pixels change). Verified: 57 pixels cleaned (30+27), 0 remaining in all water
+  cells across desert/jungle/water.png in `dist/`; idempotent (0 on re-run); before/after preview
+  `/tmp/water-clean-preview.png`; live Town-lake screenshot `/tmp/pw/town-lake2.png` reads clean teal,
+  0 console errors. Original backed up at `/tmp/desert_tileset.orig.png`. Chose patch-the-pixels (v1)
+  over the Lost_Valleys clean-water swap, per the task's recommendation.
+- **Still open in the backlog:** gameplay redesign (task #3, below), multi-class-per-teacher (needs
+  Justin's decision — full schema change vs. section tag), cloud-sync the avatar unlocks, and the
+  remaining flight nice-to-haves (raise sprite / shadow while airborne).
+
 ## 🆕 Shipped 2026-10-21 — Teacher portal UX: roster grouped by class + student-facing rollout
 Shipped to **`main`** (`c67876c` + `6d92340`), live after Netlify redeploy. Two teacher-portal
 improvements (student game untouched). Files: `src/teacher.ts`, `src/teacher.css`,
@@ -107,10 +136,10 @@ Both shipped in `src/Scenes/GameScene.ts` (build green, headless-verified via `?
   the subscription). General to all three mirrored critters. Verified: across 60 forced L/R
   frames the gull's flipX always matched its facing.
 - **Nice-to-haves still open (BACKLOG — future session):**
-  - **Tap-the-bird to fly (mobile).** Flight is keyboard-only (F) today, but the classroom
-    target is iPads with no F key. Make tapping the player's own bird sprite act as the F key
-    (call `toggleFlight()`), so flight is reachable on touch. (Justin's ask, 2026-10-21.)
-  - A HUD "press F / tap to fly" hint shown only while wearing a bird.
+  - ✅ **DONE 2026-10-21 — Tap-the-bird to fly (mobile).** Tapping your own tile while wearing a
+    bird now toggles flight (`clickToMove` in Characters.ts). See the top "Shipped 2026-10-21" entry.
+  - ✅ **DONE 2026-10-21 — HUD "press F / tap to fly" hint** shown only while wearing a bird
+    (`src/ui/FlightHint.ts`).
   - Optionally raise the sprite / add a shadow while airborne.
 
 ## (original ask, now done) — port the bird flight mechanic for the gull & pigeon avatars
@@ -199,7 +228,10 @@ correct (5). BUT `BeaconOverlay`'s meter hard-codes `aria-valuemax="3"` (a11y bu
 three" comments (and its header lists Sulfur=blue as a beacon colour, but it's a decoy). Comment/a11y
 only, not a logic bug. Quick fix worth doing with task #3.
 
-### 1. Remove the yellow/orange "triangle" texture from ALL water
+### 1. ✅ DONE (2026-10-21) — Remove the yellow/orange "triangle" texture from ALL water
+Shipped via `tools/clean_water.py` (patch-the-pixels v1). See the top "Shipped 2026-10-21" entry for
+the full write-up + verification. Original symptom/root-cause analysis preserved below for reference.
+
 **Symptom (Justin):** every body of water shows repeating orange/tan triangular blobs; worst in the
 **Town lake** at the first town, where it tiles on an obvious grid.
 **Root cause (traced this session — one source, three surfaces):** the orange specks are baked into
