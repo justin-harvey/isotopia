@@ -45,6 +45,30 @@ spot-checking a few cases in the **Firebase console → Realtime Database → Ru
 - **NOT verified headlessly:** the live teacher-login flow (needs real Firebase auth — no emulator in
   the sandbox: no java/CLI/rules-unit-testing). Build + tsc + a 0-error page load are the automated
   coverage; the rules want a simulator spot-check + a real two-account click-through after deploy.
+- **✅ LIVE & working (2026-10-22):** rules deployed (`firebase deploy --only database`) and the portal
+  tested in prod — Justin signs in, sees the tabs + class switcher. (Deploy flow note: the Firebase
+  console Rules editor had the OLD full ruleset; Justin selected-all → deleted → pasted the new
+  `database.rules.json` → published. That's correct because our file is the COMPLETE ruleset, not a
+  fragment. The RTDB Rules **Simulator** denies everything when no uid is entered — that's expected,
+  not a rules bug; it needs an authenticated identity to be meaningful.)
+
+### ▶ BACKLOG (next session) — class management: DELETE + inline rename
+Justin's ask (2026-10-22): with multiple classes you now need to **delete** a class and rename more
+easily. Current state: **rename already works** via the **Class** tab (names/colors the *selected*
+class), but there is **no delete**, and renaming means switching to a whole tab.
+- **Delete a class** (`src/data/classConfig.ts` + `src/teacher.ts` header). Add `deleteClass(ownerUid,
+  classId)` that atomically removes `classes/{cid}`, `owners/{ownerUid}/{cid}`, and **unassigns every
+  student in it** (`assignments/{sid}` → null for each `sid` where the value === cid). The rules already
+  permit this for the owner (owner may null `classes/{cid}`; `owners/$ownerUid` writable by owner; an
+  owner may unassign a student from a class they own). **Guard rails:** confirm dialog, refuse to delete
+  the LAST remaining class (a teacher should always own ≥1), and after delete select another owned class.
+  Add a small "🗑 Delete class" control (Class tab, or a trash icon by the header switcher).
+- **Inline rename** (nice-to-have): let the switcher rename without leaving the current tab — e.g. a
+  pencil icon next to the `class-select` that prompts for a new name and calls `saveClassMeta` +
+  refreshes `ownedMetas`/the switcher label. The Class tab stays as the full name+color editor.
+- **Verify:** build + tsc; after deploy, a real click-through (create 2 classes, rename one inline,
+  delete one, confirm its students fall back to "Not in any class yet" and the switcher updates). No new
+  rules deploy needed — delete uses the existing ownership rules.
 
 ## 🆕 Shipped 2026-10-21 — Tap-to-fly (mobile) + flight hint + water de-speckle
 Two backlog items cleared this session (build + tsc green via `nvm use 22`; both headless-verified,
