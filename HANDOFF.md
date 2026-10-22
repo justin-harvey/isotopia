@@ -3,6 +3,49 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-22.
 
+## 🆕 Shipped 2026-10-22 — Margin "Setup guide" (teacher onboarding) + flow fixes
+A persistent, self-updating onboarding checklist that lives in the **right gutter** of the teacher
+portal, walking a new teacher through the real create-class → assign-students order. Build + tsc green
+(Node 22); teacher.html loads with 0 console errors; guide strings confirmed in `dist/teacher.js`;
+CSS layout screenshotted (`/tmp/guide-preview.png`). NOT yet committed — on the working tree. **No rules
+change.** NOT verified under live auth (the guide only paints inside `renderPortal`, which needs real
+Firebase sign-in — same constraint as every prior teacher-portal ship).
+
+- **Two-column work area (`teacher.ts` renderPortal + `.work`/`.work-main`/`.guide` in teacher.css).**
+  The panel keeps its ~860px column; a sticky `<aside class="guide">` rides the right gutter (≥1080px),
+  and stacks as a card above the panel below 1080px. The class-summary strip + panel were moved into
+  `.work-main` with their standalone centring neutralised so everything stays left-aligned.
+- **`renderGuide()` — 5-step checklist.** (1) Name your class, (2) Students sign up, (3) Add to roster,
+  (4) Set the schedule, (5) Build the question bank (optional). Each step shows **✓** when its state is
+  met, **…** while the roster loads, or its number when still to do; the step matching the current tab is
+  highlighted. Status is derived live: `classNamed` = `!isDefaultClassName`, `scheduleSet` =
+  releaseAllNow OR (start date + ≥1 release day), `hasQuestions` = bank non-empty, and the two
+  roster-dependent steps read `guideRoster` (filled by `fillClassSummary`'s existing roster load — no
+  extra fetch). Jump buttons reuse a new shared `switchTab()`; the sign-up step has a **Copy invite**
+  button (game URL + sign-up steps → clipboard). Progress counter `done/5` in the header. **Dismissible**
+  (persisted to `localStorage` `isotopia.teacher.guideHidden`) → collapses to a slim "❔ Setup guide"
+  reopen pill.
+- **Side flow fixes (fell out of the audit):** the header **class-summary strip now refreshes after
+  roster add/remove** (previously went stale until a full repaint — `void fillClassSummary()` added to
+  the roster toggle + bulk handlers); the guide's roster/question steps refresh on the same paths.
+- **After ship, verify under real auth:** sign in, confirm the guide shows in the gutter with correct
+  ✓s, Copy invite lands the URL on the clipboard, each jump button switches tabs, the dismiss pill
+  persists across reload, and the ≤1080px stacked layout looks right on a tablet.
+
+### Flow audit — remaining improvements (not yet built)
+Isolated while building the guide; none blocking. Roughly priority order:
+- **Student-prerequisite is still discoverable only on an empty roster.** If *some* kids registered but a
+  given teacher's haven't, there's no prompt. The guide's Copy-invite helps, but a roster-tab "Invite
+  students" button (same text) would put it where they look. 
+- **Schedule "nothing unlocks" trap.** Release-all off + no start date = everything hidden. The Schedule
+  tab warns, but a teacher may never open it — the guide step now flags it; consider also surfacing it in
+  the dashboard strip ("0 elementals live — set a start date").
+- **Native `prompt()`/`confirm()`** for rename/delete/season (already in the backlog as "in-app modal").
+- **No per-step "done" for sign-up beyond ≥1 registrant** — can't know if *all* a teacher's students
+  signed up; acceptable, but a roster "pending invites" notion would be stronger.
+- Carried-over backlog (unsaved-changes guard, archive-vs-delete, bulk CSV roster import, per-student
+  drill-down, responsive topbar) is unchanged below.
+
 ## 🆕 Shipped 2026-10-22 — Per-class dashboard strip + clone schedule (teacher portal)
 Two backlog UX items, built on top of the delete/rename work below. Build + tsc green (Node 22);
 teacher.html loads with 0 console errors; new code confirmed in `dist/teacher.js`. NOT yet committed —

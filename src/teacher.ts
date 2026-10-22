@@ -48,6 +48,17 @@ let ownedClassIds: string[] = [];
 let selectedClassId = '';
 const ownedMetas = new Map<string, ClassMeta>();
 
+// Margin "Getting started" guide: a persistent, collapsible checklist in the
+// right gutter that walks a new teacher through name class → students sign up →
+// add to roster → set schedule. `guideRoster` caches the roster-derived counts
+// (filled async by fillClassSummary, reset on class switch) so the student steps
+// can show live ✓s; `guideHidden` persists the teacher's dismiss choice.
+const GUIDE_KEY = 'isotopia.teacher.guideHidden';
+let guideHidden = false;
+try { guideHidden = localStorage.getItem(GUIDE_KEY) === '1'; } catch { /* storage blocked */ }
+let guideRoster: { registered: number; inClass: number } | null = null;
+function persistGuide(): void { try { localStorage.setItem(GUIDE_KEY, guideHidden ? '1' : '0'); } catch { /* ignore */ } }
+
 // The class every tab currently targets (the selected one). myClassName reads the
 // selected class's meta (falls back to a generic label before it loads).
 function myClassId(): string { return selectedClassId; }
@@ -82,6 +93,7 @@ async function selectClass(cid: string): Promise<void> {
     if (!classMeta) classMeta = { name: '', color: DEFAULT_CLASS_COLOR, ownerUid };
     ownedMetas.set(cid, classMeta);
     rosterRows = [];
+    guideRoster = null;     // the new class's roster counts refill on paint
 }
 
 // Create a new class, switch to it, and land on the Class tab to name it.
@@ -297,22 +309,16 @@ function renderPortal(): void {
                 ${esc(session!.user.email || '')}
                 <button id="signout" class="btn small">Sign out</button></span>
         </header>
-        <div id="class-summary" class="class-summary"></div>
-        <main id="panel"></main>`;
+        <div class="work">
+            <div class="work-main">
+                <div id="class-summary" class="class-summary"></div>
+                <main id="panel"></main>
+            </div>
+            <aside id="guide" class="guide" aria-label="Setup guide"></aside>
+        </div>`;
 
     app.querySelectorAll<HTMLButtonElement>('.tabs button').forEach(b =>
-        b.addEventListener('click', () => {
-            tab = b.dataset.tab as typeof tab;
-            editing = null;
-            // Move the active highlight to the clicked tab (renderPanel only
-            // repaints the panel, not the nav).
-            app.querySelectorAll<HTMLButtonElement>('.tabs button').forEach(x => {
-                const on = x === b;
-                x.classList.toggle('on', on);
-                x.setAttribute('aria-selected', String(on));
-            });
-            renderPanel();
-        }));
+        b.addEventListener('click', () => switchTab(b.dataset.tab as typeof tab)));
     (document.getElementById('signout') as HTMLButtonElement)
         .addEventListener('click', () => signOutTeacher());
 
@@ -330,8 +336,137 @@ function renderPortal(): void {
     (document.getElementById('delete-class') as HTMLButtonElement | null)
         ?.addEventListener('click', (e) => void deleteSelectedClass(e.currentTarget as HTMLButtonElement));
 
+    renderGuide();
     void fillClassSummary();
     renderPanel();
+}
+
+// Switch the active tab (shared by the top nav and the margin guide's "Open …"
+// jump buttons). Moves the nav highlight, repaints the panel, and refreshes the
+// guide so its "current step" highlight follows along.
+function switchTab(t: typeof tab): void {
+    tab = t;
+    editing = null;
+    app.querySelectorAll<HTMLButtonElement>('.tabs button').forEach(x => {
+        const on = x.dataset.tab === t;
+        x.classList.toggle('on', on);
+        x.setAttribute('aria-selected', String(on));
+    });
+    renderPanel();
+    renderGuide();
+}
+
+// Human label for a tab id (used by the guide's jump buttons).
+function tabLabel(t: typeof tab): string {
+    return (portalTabs().find(([id]) => id === t)?.[1]) || 'tab';
+}
+
+// The margin setup guide. A numbered, self-updating checklist that mirrors the
+// real onboarding order: name the class, get students to sign up, add them to the
+// roster, then set the release schedule (a 5th optional step covers the question
+// bank). Each step shows ✓ when its state is satisfied, "…" while the roster is
+// still loading, or its number when still to do. Steps jump to the relevant tab;
+// the sign-up step offers a one-tap "Copy invite" with the game URL + steps.
+// Dismissible (persisted) so a set-up teacher can collapse it to a slim reopen tab.
+function renderGuide(): void {
+    const host = document.getElementById('guide');
+    if (!host) return;
+
+    if (guideHidden) {
+        host.classList.add('collapsed');
+        host.innerHTML =
+            `<button id="guide-show" class="guide-reopen" title="Show the setup guide">&#10067; Setup guide</button>`;
+        (host.querySelector('#guide-show') as HTMLButtonElement)
+            .addEventListener('click', () => { guideHidden = false; persistGuide(); renderGuide(); });
+        return;
+    }
+    host.classList.remove('collapsed');
+
+    const classNamed = !isDefaultClassName(classMeta);
+    const scheduleSet = settings.releaseAllNow
+        || (!!settings.unitStartDate && Object.keys(settings.release || {}).length > 0);
+    const hasQuestions = questions.length > 0;
+    const registered = guideRoster?.registered ?? null;
+    const inClass = guideRoster?.inClass ?? null;
+
+    type State = 'done' | 'todo' | 'wait';
+    interface Step {
+        n: number; tabTo: typeof tab | null; title: string; body: string;
+        state: State; invite?: boolean; optional?: boolean;
+    }
+    const steps: Step[] = [
+        {
+            n: 1, tabTo: 'class', title: 'Name your class',
+            body: 'Give this class a name and colour so you can tell your periods apart.',
+            state: classNamed ? 'done' : 'todo',
+        },
+        {
+            n: 2, tabTo: null, title: 'Students sign up', invite: true,
+            body: 'Students open the game, tap the DEX, choose <b>Sign&nbsp;up</b>, then click the '
+                + 'verification link we email them. They can’t join a class until they do.',
+            state: registered == null ? 'wait' : (registered > 0 ? 'done' : 'todo'),
+        },
+        {
+            n: 3, tabTo: 'students', title: 'Add students to the class',
+            body: 'On the <b>Roster</b> tab, tick the students who signed up and press <b>Add</b> '
+                + '(or <b>Add selected</b> for a batch).',
+            state: inClass == null ? 'wait' : (inClass > 0 ? 'done' : 'todo'),
+        },
+        {
+            n: 4, tabTo: 'schedule', title: 'Set the release schedule',
+            body: 'On the <b>Schedule</b> tab set a unit start date (or switch on “Release everything '
+                + 'now” for testing), then give each Elemental an unlock day — otherwise nothing '
+                + 'appears for students.',
+            state: scheduleSet ? 'done' : 'todo',
+        },
+        {
+            n: 5, tabTo: 'questions', title: 'Build your question bank', optional: true,
+            body: 'Import the starter questions or write your own so encounters quiz your content.',
+            state: hasQuestions ? 'done' : 'todo',
+        },
+    ];
+    const done = steps.filter(s => s.state === 'done').length;
+
+    host.innerHTML = `
+        <div class="guide-head">
+            <span class="guide-title">Setup guide</span>
+            <span class="guide-progress" title="Steps completed">${done}/${steps.length}</span>
+            <button id="guide-hide" class="guide-x" title="Hide this guide" aria-label="Hide this guide">&times;</button>
+        </div>
+        <p class="guide-lead muted small">Get a class playing in a few steps. Jump to any tab — a
+            <b>&#10003;</b> appears as each is done.</p>
+        <ol class="guide-steps">
+            ${steps.map(s => `
+                <li class="guide-step ${s.state}${s.tabTo === tab ? ' on' : ''}${s.optional ? ' optional' : ''}">
+                    <span class="guide-dot" aria-hidden="true">${s.state === 'done' ? '✓' : s.state === 'wait' ? '…' : s.n}</span>
+                    <div class="guide-step-body">
+                        <div class="guide-step-title">${s.title}${s.optional ? ' <span class="muted small">(optional)</span>' : ''}</div>
+                        <div class="guide-step-text muted small">${s.body}</div>
+                        <div class="guide-step-actions">
+                            ${s.tabTo ? `<button class="btn small guide-jump" data-tab="${s.tabTo}">Open ${esc(tabLabel(s.tabTo))}</button>` : ''}
+                            ${s.invite ? `<button class="btn small guide-invite">Copy invite</button>` : ''}
+                        </div>
+                    </div>
+                </li>`).join('')}
+        </ol>`;
+
+    (host.querySelector('#guide-hide') as HTMLButtonElement)
+        .addEventListener('click', () => { guideHidden = true; persistGuide(); renderGuide(); });
+    host.querySelectorAll<HTMLButtonElement>('.guide-jump').forEach(b =>
+        b.addEventListener('click', () => switchTab(b.dataset.tab as typeof tab)));
+    const inviteBtn = host.querySelector('.guide-invite') as HTMLButtonElement | null;
+    inviteBtn?.addEventListener('click', () => {
+        const url = location.origin + '/';
+        const text = `Play Isotopia: ${url}\n\nTap the DEX, choose "Sign up", enter your name, email and a `
+            + `password, then click the verification link we email you. See you in class!`;
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(text)
+                .then(() => flash('Invite copied — paste it to your students.'))
+                .catch(() => flash('Could not copy — select and copy the game URL manually.', true));
+        } else {
+            flash(`Share this URL with students: ${url}`);
+        }
+    });
 }
 
 // A compact, always-on class-health strip under the header: how many students
@@ -368,7 +503,13 @@ async function fillClassSummary(): Promise<void> {
         // The class may have been switched again before this resolved — only paint
         // if the strip is still present (renderPortal replaces it on switch).
         const h = document.getElementById('class-summary');
-        if (h) h.innerHTML = strip(String(mine.length), acc);
+        if (h) {
+            h.innerHTML = strip(String(mine.length), acc);
+            // Feed the margin guide's roster-dependent steps (sign-up / add) from
+            // the same load, then repaint it so the ✓s resolve.
+            guideRoster = { registered: rows.length, inClass: mine.length };
+            renderGuide();
+        }
     } catch {
         const h = document.getElementById('class-summary');
         if (h) h.innerHTML = strip('—', '—');
@@ -452,6 +593,7 @@ function renderQuestions(): void {
             const q = questions.find(x => x.id === b.dataset.edit);
             if (q) { editing = { ...q, choices: [...q.choices] }; pickerQuery = ''; renderQuestionEditor(); }
         }));
+    renderGuide();  // keep the guide's "question bank" step ✓ in sync
     panel.querySelectorAll<HTMLButtonElement>('[data-del]').forEach(b =>
         b.addEventListener('click', async () => {
             const q = questions.find(x => x.id === b.dataset.del);
@@ -1045,6 +1187,7 @@ function paintRoster(): void {
                 flash(e instanceof Error ? e.message : 'Could not update the roster.', true);
             }
             void renderStudents();
+            void fillClassSummary();    // refresh the header strip + guide ✓s
         }));
 }
 
@@ -1069,6 +1212,7 @@ async function bulkRoster(add: boolean): Promise<void> {
         flash(e instanceof Error ? e.message : 'Bulk update failed.', true);
     }
     void renderStudents();
+    void fillClassSummary();    // refresh the header strip + guide ✓s
 }
 
 // ---------------------------------------------------------------- admins
