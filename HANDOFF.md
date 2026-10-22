@@ -63,6 +63,18 @@ Fresh ideas surfaced while shipping delete/rename (none blocking; pick per Justi
   elementals 1..N) to speed first-time schedule setup.
 - **Archive instead of hard-delete** — soft-archive a class (hide from switcher, keep data) as a safer
   default than destructive delete for end-of-term.
+- **Bulk roster assignment** — paste a list of student emails (or upload a CSV) and assign the whole
+  class at once, instead of ticking rows one by one; match against registrants, report the misses.
+- **Per-student drill-down** — click a roster row to see that student's accuracy *by element* (which
+  Elementals they're missing), so a teacher can target reteaching. Data's already in `r.stats`.
+- **"Unlocked today" callout** — on the dashboard strip (or Schedule), name the Elemental(s) that
+  unlocked today, so a teacher knows what's new for students at a glance.
+- **Responsive topbar** — on a narrow screen the brand + class switcher + rename/delete/+Class + tabs +
+  email + sign-out crowd one row; wrap or collapse the switcher controls into a menu under ~700px.
+- **In-app confirm modal** — replace the native `confirm()`/`prompt()` used by delete, rename, and
+  season-reset with a styled modal (native dialogs look off-brand and are easy to mis-click).
+- **CSV export for ALL classes at once** — today Export CSV is per selected class; a super may want one
+  combined gradebook across every class.
 
 ## 🆕 Shipped 2026-10-21 — Multi-class per teacher (full schema change) ⚠️ RULES NOT DEPLOYED
 A teacher can now own **several classes** (e.g. Period 1 vs Period 3), chosen from a switcher in the
