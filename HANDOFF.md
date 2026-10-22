@@ -7,9 +7,10 @@ context reset. Last updated 2026-10-22.
 A persistent, self-updating onboarding checklist that lives in the **right gutter** of the teacher
 portal, walking a new teacher through the real create-class → assign-students order. Build + tsc green
 (Node 22); teacher.html loads with 0 console errors; guide strings confirmed in `dist/teacher.js`;
-CSS layout screenshotted (`/tmp/guide-preview.png`). NOT yet committed — on the working tree. **No rules
-change.** NOT verified under live auth (the guide only paints inside `renderPortal`, which needs real
-Firebase sign-in — same constraint as every prior teacher-portal ship).
+CSS layout screenshotted (`/tmp/guide-preview.png`). **Committed + pushed to `main` (`3c2e9f0`)** — live
+after Netlify redeploy. **No rules change.** NOT verified under live auth (the guide only paints inside
+`renderPortal`, which needs real Firebase sign-in — same constraint as every prior teacher-portal ship),
+so the real sign-in click-through below is the open verification.
 
 - **Two-column work area (`teacher.ts` renderPortal + `.work`/`.work-main`/`.guide` in teacher.css).**
   The panel keeps its ~860px column; a sticky `<aside class="guide">` rides the right gutter (≥1080px),
