@@ -16,6 +16,7 @@ import {
     ClassSettings, loadSettings, saveSettings, DEFAULT_SETTINGS,
     isElementReleased, currentUnitDay, UNIT_LENGTH_DAYS,
     ClassMeta, loadClassMeta, saveClassMeta, loadClassNames, DEFAULT_CLASS_COLOR,
+    listOwnedClassIds, createClass,
 } from './data/classConfig';
 import {
     StoredQuestion, loadAllQuestions, saveQuestion, deleteQuestion, importStarterQuestions,
@@ -38,11 +39,60 @@ let session: TeacherSession | null = null;
 let settings: ClassSettings = { ...DEFAULT_SETTINGS };
 let questions: StoredQuestion[] = [];
 let tab: 'questions' | 'schedule' | 'settings' | 'students' | 'admins' | 'class' = 'questions';
-let classMeta: ClassMeta | null = null;         // the logged-in staff member's class
+let classMeta: ClassMeta | null = null;         // the SELECTED class's meta
 
-// This staff member owns one class, keyed by their own uid.
-function myClassId(): string { return session?.user.uid || ''; }
+// A staff member can own several classes (e.g. Period 1 / Period 3). These hold
+// the owned class ids, which one is selected, and a cache of each class's meta
+// for the header switcher labels. All tabs operate on the selected class.
+let ownedClassIds: string[] = [];
+let selectedClassId = '';
+const ownedMetas = new Map<string, ClassMeta>();
+
+// The class every tab currently targets (the selected one). myClassName reads the
+// selected class's meta (falls back to a generic label before it loads).
+function myClassId(): string { return selectedClassId; }
 function myClassName(): string { return classMeta?.name?.trim() || 'My Class'; }
+
+// A class still wearing a starter name — used to nudge the teacher to rename it.
+function isDefaultClassName(m: ClassMeta | null): boolean {
+    const n = (m?.name || '').trim();
+    return !n || n === 'My Class' || n === 'New class';
+}
+
+// Load the staff member's owned classes (creating a first one if they own none),
+// cache each meta for the switcher, and keep/repair the selection.
+async function loadClassList(ownerUid: string): Promise<void> {
+    ownedClassIds = await listOwnedClassIds(ownerUid);
+    if (ownedClassIds.length === 0) {
+        ownedClassIds = [await createClass(ownerUid, 'My Class')];
+    }
+    ownedMetas.clear();
+    await Promise.all(ownedClassIds.map(async cid => {
+        const m = await loadClassMeta(cid);
+        if (m) ownedMetas.set(cid, m);
+    }));
+    if (!ownedClassIds.includes(selectedClassId)) selectedClassId = ownedClassIds[0];
+}
+
+// Point every tab at `cid`: load its settings + meta, drop the stale roster cache.
+async function selectClass(cid: string): Promise<void> {
+    selectedClassId = cid;
+    const ownerUid = session?.user.uid || cid;
+    [settings, classMeta] = await Promise.all([loadSettings(cid), loadClassMeta(cid)]);
+    if (!classMeta) classMeta = { name: '', color: DEFAULT_CLASS_COLOR, ownerUid };
+    ownedMetas.set(cid, classMeta);
+    rosterRows = [];
+}
+
+// Create a new class, switch to it, and land on the Class tab to name it.
+async function newClass(): Promise<void> {
+    const ownerUid = session?.user.uid || '';
+    const cid = await createClass(ownerUid, 'New class');
+    if (!ownedClassIds.includes(cid)) ownedClassIds.push(cid);
+    await selectClass(cid);
+    tab = 'class';
+    renderPortal();
+}
 let editing: StoredQuestion | null = null;      // question being added/edited
 let rosterRows: StudentRow[] = [];              // cached roster (filtered client-side)
 let rosterFilter = '';
@@ -98,15 +148,14 @@ function boot(): void {
     onTeacherAuth(async (s) => {
         session = s;
         if (s?.isStaff) {
-            const cid = s.user.uid;
-            [settings, questions, classMeta] = await Promise.all([
-                loadSettings(cid), loadAllQuestions(), loadClassMeta(cid),
-            ]);
-            // First time this staff member opens the portal: create their class.
-            if (!classMeta) {
-                classMeta = { name: 'My Class', color: DEFAULT_CLASS_COLOR, ownerUid: cid };
-                try { await saveClassMeta(cid, classMeta); } catch { /* rules/offline — retry on Class tab */ }
-            }
+            questions = await loadAllQuestions();
+            // Discover this staff member's classes (adopts a legacy single class, or
+            // creates a first one), then target the selected class.
+            await loadClassList(s.user.uid);
+            await selectClass(selectedClassId);
+            // Rename-friendly first load: if the selected class still wears a starter
+            // name, open the Class tab so the teacher labels their period(s).
+            if (isDefaultClassName(classMeta)) tab = 'class';
         }
         render();
     });
@@ -171,7 +220,16 @@ function renderPortal(): void {
     app.innerHTML = `
         <header class="topbar">
             <span class="brand">Isotopia Teacher</span>
-            <span class="class-chip"><span class="class-swatch" style="background:${esc(classMeta?.color || DEFAULT_CLASS_COLOR)}"></span>${esc(myClassName())}</span>
+            <span class="class-switch">
+                <span class="class-swatch" style="background:${esc(classMeta?.color || DEFAULT_CLASS_COLOR)}"></span>
+                <select id="class-select" class="class-select" aria-label="Select class">
+                    ${ownedClassIds.map(cid => {
+                        const nm = (ownedMetas.get(cid)?.name || '').trim() || 'Untitled class';
+                        return `<option value="${esc(cid)}" ${cid === selectedClassId ? 'selected' : ''}>${esc(nm)}</option>`;
+                    }).join('')}
+                </select>
+                <button id="new-class" class="btn small" title="Create another class">+ Class</button>
+            </span>
             <nav class="tabs" role="tablist">
                 ${portalTabs().map(([t, label]) => {
                     const on = tab === t;
@@ -200,6 +258,17 @@ function renderPortal(): void {
         }));
     (document.getElementById('signout') as HTMLButtonElement)
         .addEventListener('click', () => signOutTeacher());
+
+    // Class switcher: changing the dropdown re-targets every tab at that class;
+    // "+ Class" creates a new one and drops you on the Class tab to name it.
+    (document.getElementById('class-select') as HTMLSelectElement | null)
+        ?.addEventListener('change', async (e) => {
+            await selectClass((e.target as HTMLSelectElement).value);
+            renderPortal();
+        });
+    (document.getElementById('new-class') as HTMLButtonElement | null)
+        ?.addEventListener('click', () => void newClass());
+
     renderPanel();
 }
 
@@ -604,8 +673,8 @@ function renderSettings(): void {
 }
 
 // ---------------------------------------------------------------- class
-// Each staff member names + colors their own class (classId === their own uid).
-// Color is portal-only (students never see it).
+// Name + color the SELECTED class (a teacher may own several). Color is
+// portal-only (students never see it).
 const CLASS_COLORS = ['#3a7afe', '#e2584d', '#2f9e57', '#8b5cf6', '#f59e0b', '#ec4899', '#0ea5e9', '#64748b'];
 
 function renderClass(): void {
@@ -635,9 +704,13 @@ function renderClass(): void {
         e.preventDefault();
         const name = (panel.querySelector('#class-name') as HTMLInputElement).value.trim();
         const saveBtn = panel.querySelector('#class-save') as HTMLButtonElement;
-        const next: ClassMeta = { name, color: chosen, ownerUid: myClassId() };
+        const next: ClassMeta = { name, color: chosen, ownerUid: meta.ownerUid || session!.user.uid };
         const ok = await withBusy(saveBtn, 'Saving…', async () => { await saveClassMeta(myClassId(), next); }, 'Class saved.');
-        if (ok) { classMeta = next; renderPortal(); }   // refresh header chip, stay on tab
+        if (ok) {
+            classMeta = next;
+            ownedMetas.set(myClassId(), next);          // refresh the switcher label
+            renderPortal();                             // repaint header + switcher, stay on tab
+        }
     });
 }
 

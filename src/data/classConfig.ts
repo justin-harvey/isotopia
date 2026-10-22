@@ -1,16 +1,20 @@
 // Per-class settings + the 40-day release schedule, stored at
-// classes/{classId}/settings in Realtime Database. Each staff member (super or
-// admin) owns ONE class, keyed by their own uid (classId === owner uid), with a
-// meta record {name, color}. A student belongs to one class via
-// assignments/{studentUid} = classId, which staff set from the portal; the game
-// resolves the student's class from there and reads that class's schedule.
+// classes/{classId}/settings in Realtime Database. A staff member (super or
+// admin) can own MANY classes (e.g. Period 1 vs Period 3). Each class is keyed by
+// a generated push-id, with a meta record {name, color, ownerUid}; ownerUid is
+// the source of truth for who owns it. An owner index `owners/{ownerUid}/{classId}
+// = true` lets a teacher list their classes without reading the /classes root
+// (rules forbid that). LEGACY classes created under the old one-class-per-teacher
+// model are keyed by the owner's uid (classId === ownerUid) and remain valid — a
+// legacy class is simply "one class owned by that teacher".
 //
-// The teacher portal writes settings/meta for the owner's class; the game reads
-// the student's assigned class to decide which Elementals are "released" and how
+// A student belongs to one class via assignments/{studentUid} = classId, which
+// staff set from the portal; the game resolves the student's class from there and
+// reads that class's schedule to decide which Elementals are "released" and how
 // many correct answers catch one.
 
 import { getFirebaseApp } from './firebase';
-import { getDatabase, ref, get, set } from 'firebase/database';
+import { getDatabase, ref, get, set, push, update } from 'firebase/database';
 import { currentUid } from './auth';
 
 export const UNIT_LENGTH_DAYS = 40;
@@ -63,7 +67,8 @@ export async function saveSettings(classId: string, s: ClassSettings): Promise<v
     await set(ref(d, `classes/${classId}/settings`), s);
 }
 
-/** A class's name/color, or null if it hasn't been set up yet. */
+/** A class's name/color, or null if it hasn't been set up yet. ownerUid falls
+ *  back to the classId only for legacy classes (where id === owner uid). */
 export async function loadClassMeta(classId: string): Promise<ClassMeta | null> {
     const d = db();
     if (!d || !classId) return null;
@@ -102,7 +107,50 @@ export async function saveClassMeta(classId: string, meta: ClassMeta): Promise<v
     const d = db();
     if (!d) throw new Error('Firebase is not configured.');
     if (!classId) throw new Error('No class to save to.');
-    await set(ref(d, `classes/${classId}/meta`), { ...meta, ownerUid: classId });
+    if (!meta.ownerUid) throw new Error('A class needs an owner.');
+    // Preserve the real ownerUid (NOT classId — classId is now a generated key).
+    await set(ref(d, `classes/${classId}/meta`), { ...meta });
+}
+
+// ---- Multi-class: owning several classes per teacher -----------------------
+
+/** The class ids a staff member owns, from the owner index. If the index is
+ *  empty but a LEGACY class exists (keyed by the owner's uid), backfill the
+ *  index with it so old single-class teachers transparently gain the new list. */
+export async function listOwnedClassIds(ownerUid: string): Promise<string[]> {
+    const d = db();
+    if (!d || !ownerUid) return [];
+    const snap = await get(ref(d, `owners/${ownerUid}`));
+    if (snap.exists()) {
+        return Object.keys(snap.val()).filter(cid => snap.val()[cid]);
+    }
+    // No index yet — adopt a legacy class (classes/{ownerUid}) if present.
+    const legacy = await get(ref(d, `classes/${ownerUid}/meta`));
+    if (legacy.exists()) {
+        try { await set(ref(d, `owners/${ownerUid}/${ownerUid}`), true); } catch { /* retry later */ }
+        return [ownerUid];
+    }
+    return [];
+}
+
+/** Create a new class owned by ownerUid: a generated push-id with meta +
+ *  default settings + the owner-index entry, written atomically. Returns the id. */
+export async function createClass(
+    ownerUid: string, name = 'New class', color = DEFAULT_CLASS_COLOR,
+): Promise<string> {
+    const d = db();
+    if (!d) throw new Error('Firebase is not configured.');
+    if (!ownerUid) throw new Error('A class needs an owner.');
+    const cid = push(ref(d, 'classes')).key as string;
+    const meta: ClassMeta = { name, color, ownerUid };
+    // One atomic update so the rules see meta.ownerUid (ownership) alongside the
+    // settings write, and the owner index lands with the class.
+    await update(ref(d), {
+        [`classes/${cid}/meta`]: meta,
+        [`classes/${cid}/settings`]: { ...DEFAULT_SETTINGS },
+        [`owners/${ownerUid}/${cid}`]: true,
+    });
+    return cid;
 }
 
 /** Which day of the 40-day unit "today" is (1..UNIT_LENGTH_DAYS), or the last

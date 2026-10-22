@@ -226,18 +226,29 @@ fieldset.choices legend { font-size: 13px; color: var(--muted); padding: 0 6px; 
     border-radius: 8px;
 }
 
-/* ---- Class tab + header chip ---- */
-.class-chip {
+/* ---- Class tab + header switcher ---- */
+.class-switch {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    padding: 4px 10px;
+    padding: 3px 6px 3px 10px;
     border-radius: 999px;
     background: #ffffff;
     border: 2px solid #c9c2a8;
     font-size: 13px;
     font-weight: 600;
 }
+.class-select {
+    border: none;
+    background: transparent;
+    font: inherit;
+    font-weight: 600;
+    color: inherit;
+    padding: 2px 4px;
+    max-width: 180px;
+    cursor: pointer;
+}
+.class-select:focus { outline: 2px solid #3a7afe; border-radius: 6px; }
 .class-swatch {
     width: 12px;
     height: 12px;

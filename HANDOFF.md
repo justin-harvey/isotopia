@@ -3,6 +3,49 @@
 A running summary of what this is and where it stands, so work can resume after a
 context reset. Last updated 2026-10-21.
 
+## 🆕 Shipped 2026-10-21 — Multi-class per teacher (full schema change) ⚠️ RULES NOT DEPLOYED
+A teacher can now own **several classes** (e.g. Period 1 vs Period 3), chosen from a switcher in the
+portal header. Justin picked the **full multi-class** path (generated class ids + `ownerUid`) and the
+**rename-friendly** legacy handling. Build + tsc green (Node 22); teacher.html loads with 0 console
+errors. **Justin deploys the rules himself.** NOT yet committed at time of writing — see repo state.
+
+**⚠️ ACTION REQUIRED — deploy the new Realtime Database rules before using multi-class:**
+`firebase deploy --only database` (same flow as the season-reset button). Until then the new ownership
+rules aren't live and creating a 2nd class / assigning students to it will be denied. Recommend
+spot-checking a few cases in the **Firebase console → Realtime Database → Rules → Simulator** first
+(see the trace below).
+
+- **Data model (`src/data/classConfig.ts`).** New classes get a **generated push-id**; `ownerUid` in
+  `classes/{cid}/meta` is the source of truth for ownership (was already in the type). New owner index
+  **`owners/{ownerUid}/{classId} = true`** lets a teacher list their classes without reading the
+  `/classes` root (rules forbid that). `listOwnedClassIds` (adopts a LEGACY class keyed by the owner
+  uid into the index, or returns []), `createClass` (atomic push of meta+settings+owner-index), and
+  `saveClassMeta` now **preserves the real `ownerUid`** instead of forcing it to the classId.
+  **Legacy classes (id == owner uid) remain fully valid — no migration, no data wipe.**
+- **Security rules (`firebase/database.rules.json`).**
+  - `classes/$cid` write: `teacher` (super) OR `auth.uid === $cid` (legacy self-class) OR
+    `data.meta.ownerUid === auth.uid` (owner) OR `(!data.exists() && newData.meta.ownerUid === auth.uid)`
+    (creating). Replaces the old `auth.uid === $cid` gate; **prevents hijacking an existing class**.
+  - new `owners/$ownerUid`: writable by that owner or a super.
+  - `assignments/$sid` write for admins: may assign a student to a class they **own** (or their legacy
+    self-class) and only if the student is unassigned or already in a class they own — **prevents an
+    admin stealing a student from another teacher**; unassign only from a class they own. Supers
+    unrestricted. Student read path (`assignments/{uid}` → `classes/{cid}/settings`) is UNCHANGED.
+- **Teacher portal (`src/teacher.ts` + `teacher.css`).** `myClassId()`/`myClassName()` now resolve the
+  **selected** class (state: `ownedClassIds`, `selectedClassId`, `ownedMetas`), so all the existing
+  per-class call sites (Schedule/Settings/Roster/Class) kept working. Header gained a **class
+  `<select>` switcher + "+ Class"** button; switching reloads settings+meta and drops the roster cache;
+  creating lands you on the Class tab to name it. On first load, a still-default-named class opens the
+  Class tab (the rename nudge). Saving a class name refreshes the switcher label.
+- **Rules trace (verify in the simulator):** super writes anything ✓; admin creates push-id class
+  (meta.ownerUid=self) ✓; admin edits own/legacy class ✓; admin CANNOT hijack another teacher's class
+  ✗(denied); admin assigns unassigned student to owned class ✓; admin CANNOT claim a student already in
+  another teacher's class ✗(denied); admin moves a student between two classes they both own ✓; admin
+  unassigns only from classes they own ✓.
+- **NOT verified headlessly:** the live teacher-login flow (needs real Firebase auth — no emulator in
+  the sandbox: no java/CLI/rules-unit-testing). Build + tsc + a 0-error page load are the automated
+  coverage; the rules want a simulator spot-check + a real two-account click-through after deploy.
+
 ## 🆕 Shipped 2026-10-21 — Tap-to-fly (mobile) + flight hint + water de-speckle
 Two backlog items cleared this session (build + tsc green via `nvm use 22`; both headless-verified,
 0 console errors). NOT yet committed/pushed — left on the working tree for Justin to branch/ship.
@@ -51,7 +94,11 @@ improvements (student game untouched). Files: `src/teacher.ts`, `src/teacher.css
   that's not wanted, gate the other-class names/sections to supers only and show admins an anonymous
   "in another class" instead. Low-effort change in `paintRoster`.
 
-### ▶ BACKLOG (next session) — let a teacher own MORE THAN ONE class
+### ✅ DONE (2026-10-21) — let a teacher own MORE THAN ONE class
+**Built via the full-multi-class path** (generated class ids + `ownerUid`, class switcher, reworked
+RTDB rules). See the top "Multi-class per teacher" entry — rules still need `firebase deploy`. Original
+decision notes preserved below.
+
 Today each staff member owns exactly ONE class, hardwired as **classId === their own uid**
 (`myClassId()` in teacher.ts; `classes/{uid}` in classConfig.ts; `assignments/{studentUid} = classId`).
 Justin wants to support multiple classes per teacher (e.g. Period 1 vs Period 3). Two paths —
