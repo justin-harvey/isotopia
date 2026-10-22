@@ -153,6 +153,46 @@ export async function createClass(
     return cid;
 }
 
+/** Copy one class's ROLLOUT (unlock days + unit start + the release-all override)
+ *  into another class the teacher owns, so running the same unit across periods
+ *  doesn't mean re-entering 40 unlock days. The target's game settings that are
+ *  NOT part of the rollout (questionsToCatch) are preserved. */
+export async function cloneSchedule(fromClassId: string, toClassId: string): Promise<void> {
+    const d = db();
+    if (!d) throw new Error('Firebase is not configured.');
+    if (!fromClassId || !toClassId) throw new Error('Pick a class to copy to.');
+    if (fromClassId === toClassId) throw new Error('Pick a different class to copy to.');
+    const [from, to] = await Promise.all([loadSettings(fromClassId), loadSettings(toClassId)]);
+    await saveSettings(toClassId, {
+        ...to,
+        unitStartDate: from.unitStartDate,
+        releaseAllNow: from.releaseAllNow,
+        release: { ...from.release },
+    });
+}
+
+/** Delete a class the staff member owns: atomically remove classes/{cid}, the
+ *  owner-index entry owners/{ownerUid}/{cid}, and unassign EVERY student in it
+ *  (assignments/{sid} -> null for each student whose assignment === cid) in one
+ *  update. The rules permit all of this for the owner (owner may null their own
+ *  class + owner index; an owner may unassign a student from a class they own).
+ *  Reads the /assignments root (staff-readable) to find the class's students. */
+export async function deleteClass(ownerUid: string, classId: string): Promise<void> {
+    const d = db();
+    if (!d) throw new Error('Firebase is not configured.');
+    if (!ownerUid || !classId) throw new Error('Nothing to delete.');
+    const asgSnap = await get(ref(d, 'assignments'));
+    const asg: Record<string, string> = asgSnap.exists() ? asgSnap.val() : {};
+    const updates: Record<string, unknown> = {
+        [`classes/${classId}`]: null,
+        [`owners/${ownerUid}/${classId}`]: null,
+    };
+    for (const sid of Object.keys(asg)) {
+        if (asg[sid] === classId) updates[`assignments/${sid}`] = null;
+    }
+    await update(ref(d), updates);
+}
+
 /** Which day of the 40-day unit "today" is (1..UNIT_LENGTH_DAYS), or the last
  *  day if no start date is set. */
 export function currentUnitDay(s: ClassSettings, today: Date = new Date()): number {

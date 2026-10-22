@@ -1,7 +1,68 @@
 # Isotopia — Session Handoff
 
 A running summary of what this is and where it stands, so work can resume after a
-context reset. Last updated 2026-10-21.
+context reset. Last updated 2026-10-22.
+
+## 🆕 Shipped 2026-10-22 — Per-class dashboard strip + clone schedule (teacher portal)
+Two backlog UX items, built on top of the delete/rename work below. Build + tsc green (Node 22);
+teacher.html loads with 0 console errors; new code confirmed in `dist/teacher.js`. NOT yet committed —
+on the working tree with the delete/rename work. **No rules change.**
+
+- **Per-class dashboard strip (`fillClassSummary` in `src/teacher.ts` + `.class-summary` in teacher.css).**
+  An always-on strip under the header, on every tab: `● <class name>` · **N** students · **X%** avg
+  accuracy · **Y / total** elementals live. Students + accuracy come from `loadRoster(myClassId())`
+  (in-class rows only; accuracy = Σcorrect/Σattempts), painted async with "…" placeholders so the strip
+  shows instantly. "Elementals live" counts `isElementReleased(settings, id)` and reads "all N
+  (release-all on)" when the testing override is set. Repaints on class switch (via `renderPortal`) and
+  after a schedule save (the live count can change). Guards against a late async paint after the class
+  was switched again (checks the node still exists).
+- **Clone schedule (`cloneSchedule(from, to)` in `classConfig.ts` + `renderCloneSchedule` on the Schedule
+  tab).** "Copy this schedule to another class" — a target dropdown of the teacher's OTHER owned classes
+  + a Copy button, shown only when they own ≥2 classes. Copies the ROLLOUT fields only (`release`,
+  `unitStartDate`, `releaseAllNow`) into the target and **preserves the target's `questionsToCatch`**
+  (loads target first, overwrites just the rollout). Confirm dialog names the target and warns it
+  overwrites. Current class is untouched, so no re-render of it needed.
+- **NOT verified headlessly** (needs real Firebase auth): after ship, sign in and confirm the strip shows
+  real numbers per class, and that copying a schedule from Period 1 to Period 3 carries the unlock days +
+  start date while leaving Period 3's catch-count alone.
+
+## 🆕 Shipped 2026-10-22 — Class management: DELETE + inline rename (teacher portal)
+Cleared the 2026-10-22 backlog item. Build + tsc green (Node 22); teacher.html loads with 0 console
+errors. NOT yet committed — left on the working tree for Justin to branch/ship. **No new rules deploy
+needed** — both actions use the existing ownership rules (owner may null their own class + owner-index
+entry and unassign students from a class they own).
+
+- **`deleteClass(ownerUid, classId)` (`src/data/classConfig.ts`).** Reads the staff-readable
+  `/assignments` root, then does ONE atomic `update` that nulls `classes/{cid}`, `owners/{ownerUid}/{cid}`,
+  and `assignments/{sid}` for every student whose assignment === cid. Students keep their dex/progress;
+  they just fall back to "Not in any class yet".
+- **Header controls (`src/teacher.ts` + `teacher.css`).** Next to the class `<select>`: a **✎ rename**
+  icon and a **🗑 delete** icon (plus the existing "+ Class").
+  - **Inline rename** (`renameSelectedClassInline`): `window.prompt` for a new name, writes just the meta
+    (color preserved) via `saveClassMeta`, refreshes `ownedMetas` + the switcher label, stays on the
+    current tab. The **Class** tab remains the full name+color editor.
+  - **Delete** (`deleteSelectedClass`): confirm dialog that names the class and warns how many students
+    will be unassigned (counted from `loadRoster`). **Guard rail:** the trash button is `disabled` when
+    the teacher owns only one class (a teacher always owns ≥1), with a flash fallback if invoked. On
+    success it drops the id from `ownedClassIds`/`ownedMetas`, selects another owned class, and repaints.
+- **NOT verified headlessly:** the live two-account click-through (needs real Firebase auth — no emulator
+  in the sandbox). Automated coverage = tsc + build + 0-error page load. After ship, do a real
+  click-through: create 2 classes, inline-rename one, delete one, confirm its students show under "Not in
+  any class yet" and the switcher updates.
+
+### ▶ BACKLOG (next session) — more teacher-portal UX ideas
+Fresh ideas surfaced while shipping delete/rename (none blocking; pick per Justin's priorities).
+(Per-class dashboard strip + clone schedule are now DONE — see the shipped note above.)
+- **Unsaved-changes guard** — Schedule/Settings/Class forms silently lose edits if you switch tabs or
+  classes mid-edit; track a dirty flag and confirm before discarding.
+- **Roster quick-search across ALL classes** + a "move to my class" affordance for supers (today you
+  must eyeball the grouped sections).
+- **Color picker for rename** — inline rename only sets the name; a mini swatch row in the same prompt
+  would avoid a trip to the Class tab for a recolor.
+- **Keyboard: Enter-to-save on the schedule day inputs**, and a "fill sequential days" helper (auto-number
+  elementals 1..N) to speed first-time schedule setup.
+- **Archive instead of hard-delete** — soft-archive a class (hide from switcher, keep data) as a safer
+  default than destructive delete for end-of-term.
 
 ## 🆕 Shipped 2026-10-21 — Multi-class per teacher (full schema change) ⚠️ RULES NOT DEPLOYED
 A teacher can now own **several classes** (e.g. Period 1 vs Period 3), chosen from a switcher in the
@@ -51,24 +112,6 @@ spot-checking a few cases in the **Firebase console → Realtime Database → Ru
   `database.rules.json` → published. That's correct because our file is the COMPLETE ruleset, not a
   fragment. The RTDB Rules **Simulator** denies everything when no uid is entered — that's expected,
   not a rules bug; it needs an authenticated identity to be meaningful.)
-
-### ▶ BACKLOG (next session) — class management: DELETE + inline rename
-Justin's ask (2026-10-22): with multiple classes you now need to **delete** a class and rename more
-easily. Current state: **rename already works** via the **Class** tab (names/colors the *selected*
-class), but there is **no delete**, and renaming means switching to a whole tab.
-- **Delete a class** (`src/data/classConfig.ts` + `src/teacher.ts` header). Add `deleteClass(ownerUid,
-  classId)` that atomically removes `classes/{cid}`, `owners/{ownerUid}/{cid}`, and **unassigns every
-  student in it** (`assignments/{sid}` → null for each `sid` where the value === cid). The rules already
-  permit this for the owner (owner may null `classes/{cid}`; `owners/$ownerUid` writable by owner; an
-  owner may unassign a student from a class they own). **Guard rails:** confirm dialog, refuse to delete
-  the LAST remaining class (a teacher should always own ≥1), and after delete select another owned class.
-  Add a small "🗑 Delete class" control (Class tab, or a trash icon by the header switcher).
-- **Inline rename** (nice-to-have): let the switcher rename without leaving the current tab — e.g. a
-  pencil icon next to the `class-select` that prompts for a new name and calls `saveClassMeta` +
-  refreshes `ownedMetas`/the switcher label. The Class tab stays as the full name+color editor.
-- **Verify:** build + tsc; after deploy, a real click-through (create 2 classes, rename one inline,
-  delete one, confirm its students fall back to "Not in any class yet" and the switcher updates). No new
-  rules deploy needed — delete uses the existing ownership rules.
 
 ## 🆕 Shipped 2026-10-21 — Tap-to-fly (mobile) + flight hint + water de-speckle
 Two backlog items cleared this session (build + tsc green via `nvm use 22`; both headless-verified,

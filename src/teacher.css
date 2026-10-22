@@ -249,11 +249,52 @@ fieldset.choices legend { font-size: 13px; color: var(--muted); padding: 0 6px; 
     cursor: pointer;
 }
 .class-select:focus { outline: 2px solid #3a7afe; border-radius: 6px; }
+.btn.small.icon {
+    padding: 4px 7px;
+    line-height: 1;
+    font-size: 13px;
+}
+.class-switch .btn.icon { border-color: #d7d0b6; }
 .class-swatch {
     width: 12px;
     height: 12px;
     border-radius: 50%;
     box-shadow: 0 0 0 1px rgba(0,0,0,.15);
+}
+
+/* ---- Per-class dashboard strip (under the header, on every tab) ---- */
+.class-summary { max-width: 860px; margin: 20px auto -6px; padding: 0 20px; }
+.class-summary:empty { display: none; }
+.summary-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    padding: 9px 14px;
+    background: #fbfaf5;
+    border: 1px solid #e4ddc4;
+    border-radius: 10px;
+    font-size: 13px;
+}
+.summary-inner .class-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+}
+.summary-inner .stat { color: #4a4a4a; }
+.summary-inner .stat b { font-size: 15px; color: #1c1c1c; }
+.summary-inner .stat .muted { font-weight: 400; }
+
+/* ---- Clone schedule control ---- */
+.clone-sched { border-top: 1px solid #ece6d2; margin-top: 8px; }
+.class-select-wide {
+    font: inherit;
+    padding: 6px 10px;
+    border: 1px solid #c9c2a8;
+    border-radius: 8px;
+    background: #fff;
+    min-width: 200px;
 }
 .fld { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }

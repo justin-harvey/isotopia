@@ -16,7 +16,7 @@ import {
     ClassSettings, loadSettings, saveSettings, DEFAULT_SETTINGS,
     isElementReleased, currentUnitDay, UNIT_LENGTH_DAYS,
     ClassMeta, loadClassMeta, saveClassMeta, loadClassNames, DEFAULT_CLASS_COLOR,
-    listOwnedClassIds, createClass,
+    listOwnedClassIds, createClass, deleteClass, cloneSchedule,
 } from './data/classConfig';
 import {
     StoredQuestion, loadAllQuestions, saveQuestion, deleteQuestion, importStarterQuestions,
@@ -92,6 +92,59 @@ async function newClass(): Promise<void> {
     await selectClass(cid);
     tab = 'class';
     renderPortal();
+}
+
+// Delete the selected class (with its roster assignments) after a confirm. A
+// teacher must always own at least one class, so the last one can't be deleted.
+// On success, fall back to another owned class and repaint.
+async function deleteSelectedClass(btn: HTMLButtonElement): Promise<void> {
+    const ownerUid = session?.user.uid || '';
+    const cid = selectedClassId;
+    if (!ownerUid || !cid) return;
+    if (ownedClassIds.length <= 1) {
+        flash('You need at least one class — rename this one instead of deleting it.', true);
+        return;
+    }
+    const name = (ownedMetas.get(cid)?.name || '').trim() || 'this class';
+    const inClass = await loadRoster(cid).then(rs => rs.filter(r => r.inClass).length).catch(() => 0);
+    const studentWarning = inClass
+        ? ` Its ${inClass} student${inClass === 1 ? '' : 's'} will be unassigned (they keep their progress).`
+        : '';
+    if (!confirm(`Delete "${name}"?${studentWarning} This can't be undone.`)) return;
+    const ok = await withBusy(btn, 'Deleting…', async () => {
+        await deleteClass(ownerUid, cid);
+    }, `Deleted "${name}".`);
+    if (!ok) return;
+    ownedClassIds = ownedClassIds.filter(id => id !== cid);
+    ownedMetas.delete(cid);
+    await selectClass(ownedClassIds[0]);
+    if (tab === 'class' || tab === 'students') tab = 'class';
+    renderPortal();
+}
+
+// Inline-rename the selected class without leaving the current tab: prompt for a
+// new name, write just the meta (color preserved), refresh the switcher label.
+async function renameSelectedClassInline(): Promise<void> {
+    const cid = selectedClassId;
+    const ownerUid = session?.user.uid || '';
+    if (!cid) return;
+    const current = ownedMetas.get(cid) || classMeta;
+    const next = window.prompt('Rename class', current?.name || '')?.trim();
+    if (next == null || next === '' || next === (current?.name || '')) return;
+    const meta: ClassMeta = {
+        name: next,
+        color: current?.color || DEFAULT_CLASS_COLOR,
+        ownerUid: current?.ownerUid || ownerUid,
+    };
+    try {
+        await saveClassMeta(cid, meta);
+        classMeta = meta;
+        ownedMetas.set(cid, meta);
+        flash('Class renamed.');
+        renderPortal();
+    } catch (e) {
+        flash(e instanceof Error ? e.message : 'Could not rename the class.', true);
+    }
 }
 let editing: StoredQuestion | null = null;      // question being added/edited
 let rosterRows: StudentRow[] = [];              // cached roster (filtered client-side)
@@ -228,6 +281,9 @@ function renderPortal(): void {
                         return `<option value="${esc(cid)}" ${cid === selectedClassId ? 'selected' : ''}>${esc(nm)}</option>`;
                     }).join('')}
                 </select>
+                <button id="rename-class" class="btn small icon" title="Rename this class" aria-label="Rename this class">&#9998;</button>
+                <button id="delete-class" class="btn small icon danger" title="Delete this class" aria-label="Delete this class"
+                    ${ownedClassIds.length <= 1 ? 'disabled' : ''}>&#128465;</button>
                 <button id="new-class" class="btn small" title="Create another class">+ Class</button>
             </span>
             <nav class="tabs" role="tablist">
@@ -241,6 +297,7 @@ function renderPortal(): void {
                 ${esc(session!.user.email || '')}
                 <button id="signout" class="btn small">Sign out</button></span>
         </header>
+        <div id="class-summary" class="class-summary"></div>
         <main id="panel"></main>`;
 
     app.querySelectorAll<HTMLButtonElement>('.tabs button').forEach(b =>
@@ -268,8 +325,54 @@ function renderPortal(): void {
         });
     (document.getElementById('new-class') as HTMLButtonElement | null)
         ?.addEventListener('click', () => void newClass());
+    (document.getElementById('rename-class') as HTMLButtonElement | null)
+        ?.addEventListener('click', () => void renameSelectedClassInline());
+    (document.getElementById('delete-class') as HTMLButtonElement | null)
+        ?.addEventListener('click', (e) => void deleteSelectedClass(e.currentTarget as HTMLButtonElement));
 
+    void fillClassSummary();
     renderPanel();
+}
+
+// A compact, always-on class-health strip under the header: how many students
+// are in the selected class, their average answer accuracy, and how many
+// Elementals are live right now under the current schedule. Loads the roster
+// async (same source as the Roster tab); the released count is synchronous from
+// the loaded settings. Shown on every tab so a teacher sees class health at a
+// glance without opening the Roster tab.
+async function fillClassSummary(): Promise<void> {
+    const host = document.getElementById('class-summary');
+    if (!host) return;
+    const total = ELEMENTS.length;
+    const liveNow = ELEMENTS.filter(el => isElementReleased(settings, el.id)).length;
+    const liveLabel = settings.releaseAllNow
+        ? `all ${total}<span class="muted"> (release-all on)</span>`
+        : `${liveNow}<span class="muted"> / ${total}</span>`;
+    // Paint immediately with the synchronous bits; the roster-derived numbers fill
+    // in when the async load returns (kept as "…" until then).
+    const strip = (students: string, accuracy: string): string => `
+        <div class="summary-inner">
+            <span class="class-tag"><span class="class-swatch"
+                style="background:${esc(classMeta?.color || DEFAULT_CLASS_COLOR)}"></span>${esc(myClassName())}</span>
+            <span class="stat" title="Students assigned to this class"><b>${students}</b> students</span>
+            <span class="stat" title="Average answer accuracy across in-class students"><b>${accuracy}</b> avg accuracy</span>
+            <span class="stat" title="Elementals students can catch right now, under the current schedule"><b>${liveLabel}</b> elementals live</span>
+        </div>`;
+    host.innerHTML = strip('…', '…');
+    try {
+        const rows = await loadRoster(myClassId());
+        const mine = rows.filter(r => r.inClass);
+        let att = 0, cor = 0;
+        mine.forEach(r => { const t = statTotals(r); att += t.attempts; cor += t.correct; });
+        const acc = att ? `${Math.round((cor / att) * 100)}%` : '—';
+        // The class may have been switched again before this resolved — only paint
+        // if the strip is still present (renderPortal replaces it on switch).
+        const h = document.getElementById('class-summary');
+        if (h) h.innerHTML = strip(String(mine.length), acc);
+    } catch {
+        const h = document.getElementById('class-summary');
+        if (h) h.innerHTML = strip('—', '—');
+    }
 }
 
 function renderPanel(): void {
@@ -618,7 +721,43 @@ function renderSchedule(): void {
         settings.release = release;
         // Re-render on success so the status badges + any clamped day values refresh.
         const ok = await withBusy(schedSaveBtn, 'Saving…', async () => { await saveSettings(myClassId(), settings); }, 'Schedule saved.');
-        if (ok) renderSchedule();
+        if (ok) { renderSchedule(); void fillClassSummary(); }
+    });
+
+    renderCloneSchedule(panel);
+}
+
+// "Copy this schedule to another class" — only meaningful with ≥2 owned classes.
+// Copies the current class's rollout (unlock days + start date + release-all) into
+// a sibling class the teacher owns, so the same unit across periods isn't re-entered.
+function renderCloneSchedule(panel: HTMLElement): void {
+    const others = ownedClassIds.filter(cid => cid !== selectedClassId);
+    if (others.length === 0) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'clone-sched';
+    wrap.innerHTML = `
+        <h3 style="margin-top:26px">Copy this schedule to another class</h3>
+        <p class="muted small">Running the same unit in another period? Copy
+            <b>${esc(myClassName())}</b>'s unlock days, start date, and the "release everything now"
+            setting into another class you own. It overwrites that class's rollout.</p>
+        <div class="row toolbar">
+            <select id="clone-target" class="class-select-wide" aria-label="Copy schedule to">
+                ${others.map(cid => {
+                    const nm = (ownedMetas.get(cid)?.name || '').trim() || 'Untitled class';
+                    return `<option value="${esc(cid)}">${esc(nm)}</option>`;
+                }).join('')}
+            </select>
+            <button id="clone-run" class="btn">Copy schedule</button>
+        </div>`;
+    panel.appendChild(wrap);
+    const runBtn = wrap.querySelector('#clone-run') as HTMLButtonElement;
+    runBtn.addEventListener('click', async () => {
+        const target = (wrap.querySelector('#clone-target') as HTMLSelectElement).value;
+        const targetName = (ownedMetas.get(target)?.name || '').trim() || 'that class';
+        if (!confirm(`Copy ${myClassName()}'s schedule into "${targetName}"? This overwrites its rollout.`)) return;
+        await withBusy(runBtn, 'Copying…', async () => {
+            await cloneSchedule(selectedClassId, target);
+        }, `Schedule copied to "${targetName}".`);
     });
 }
 
