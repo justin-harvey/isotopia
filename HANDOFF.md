@@ -19,13 +19,32 @@ trailing **V formation** and soar along, and every airborne bird renders **in fr
 - **`src/Scenes/GameScene.ts`.** Owns a per-scene `flock`; `S` spawns (gated on `playerCharacter.fly`
   **and** `!inDialogue` — no clash with the dog's S "sit", which is gated on `special`); `update()` drives
   the flock each frame; `applyCharacter()` clears the flock when you re-skin to a non-bird; shutdown clears it.
-- **Scope notes.** Per-scene (walk to a new area → flock resets to empty). The player sprite's own depth
-  is left to grid-engine (it y-sorts the player ~depth 1 and overrode a lift attempt), so only the
-  **companion** birds ride above the canopy; a flying player can still pass behind an overhead as before.
-  **Mobile gap:** spawning is S-key only — no touch gesture yet (iPads can't spawn birds).
-- **Verified.** tsc + `npm run build` green (Node 22). Headless E2E `tools/e2e-bird-flock.mjs` drives the
-  real game: start as gull → 7×S caps at 6, grounded birds depth 10 & milling → take flight → 6 birds
-  depth 1001–1006 in a symmetric V, 0 console errors. **PASS.**
+- **Player soars over objects too (2026-10-23 follow-up).** grid-engine re-applies a y-sorted depth to
+  the player on every UPDATE event, so a one-time lift was clobbered. Now a `postupdate` handler (fires
+  after grid-engine) forces the player to `FLY_DEPTH` while `flying`; grounded play keeps grid-engine's
+  y-sort. E2E confirms airborne `playerDepth === 1000`, grounded stays ~1.
+- **Constant bird speed (2026-10-23 follow-up).** Birds no longer lerp (distance-proportional snap =
+  silly hyperspeed). They now travel at one fixed speed, capped at **1.15× the player's current speed**
+  (`gridEngine.getSpeed × tileWidth × 1.15`, stepped by frame `dt`); if they fall out of formation they
+  just glide back at that pace.
+- **Gull gag (2026-10-23 follow-up).** Filling all six companions **as the gull** plays
+  "Mine! Mine! Mine!". **Needs an asset:** drop the clip at `src/assets/music/mine-mine-mine.mp3`
+  (loaded optionally — until it exists the load 404s harmlessly and the sound stays silent). Pigeon
+  doesn't trigger it.
+- **Scope notes.** Per-scene (walk to a new area → flock resets to empty). **Mobile gap:** spawning is
+  S-key only — no touch gesture yet (iPads can't spawn birds, and so can't fire the gull gag).
+- **Verified.** tsc + `npm run build` green (Node 22). Headless E2E `tools/e2e-bird-flock.mjs`: start as
+  gull → 7×S caps at 6, grounded birds depth 10 & milling → take flight → player depth 1000, 6 birds
+  depth 1001–1006 in a symmetric V, 0 console errors (audio 404 expected/ignored). **PASS.**
+
+## 🆕 Built 2026-10-23 — Caught Elementals never re-encountered — NOT yet committed
+Once you catch an Elemental it now disappears for good instead of re-triggering its quiz. All in
+`src/Scenes/GameScene.ts`: `spawnElemental` skips any `isCaught` id on scene entry/reload; a per-frame
+`removeCaughtElementals()` sweep whisks a just-caught Elemental off the map (destroys sprite, unregisters
+from grid-engine, drops it from `npcsAndObjectsArray` + `elementalTargets`); the proximity action is also
+guarded (`if (!isCaught) startBattle`); and `enableGrassEncounters` filters caught ids out of the wild
+pool. Regression test `tools/e2e-caught-elemental.mjs`: clean load spawns `oxygen`; with it pre-marked
+caught it's absent (no NPC, no Rad-Finder target). **PASS.**
 
 ## 🆕 Shipped 2026-10-22 — Margin "Setup guide" (teacher onboarding) + flow fixes
 A persistent, self-updating onboarding checklist that lives in the **right gutter** of the teacher
