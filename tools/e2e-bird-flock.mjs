@@ -25,8 +25,16 @@ const port = server.address().port;
 const browser = await chromium.launch({ executablePath: '/home/nah/.cache/ms-playwright/chromium_headless_shell-1181/chrome-linux/headless_shell' });
 const page = await browser.newPage();
 const errors = [];
-page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
-page.on('pageerror', e => errors.push(String(e)));
+// The "mine-mine-mine" gull gag is an OPTIONAL asset; until it's added the loader 404s, which
+// is expected, not a regression — so don't count it as a console error.
+const expected = (t) => /mine-mine-mine/i.test(t);
+page.on('console', m => {
+    if (m.type() !== 'error') return;
+    const url = (m.location && m.location().url) || '';   // for "Failed to load resource" the URL lives here
+    if (expected(m.text()) || expected(url)) return;
+    errors.push(m.text() + (url ? ` <${url}>` : ''));
+});
+page.on('pageerror', e => { if (!expected(String(e))) errors.push(String(e)); });
 
 // Pre-seed the gull avatar so the player spawns as a flyer.
 await page.addInitScript(() => { try { localStorage.setItem('isotopia:character', 'gull'); } catch {} });
@@ -71,6 +79,16 @@ const pressS = async (n) => { for (let i = 0; i < n; i++) { await page.keyboard.
 console.log('scene index:', activeIdx);
 console.log('initial    :', JSON.stringify(await readFlock()));
 
+// "Call friends" button: visible while wearing the gull, and a tap spawns a bird (routes
+// through GlobalInfo 'callFriends'). Also confirm the gull gag audio actually loaded.
+const btnVisibleGull = await page.isVisible('.iso-call-friends');
+await page.click('.iso-call-friends');
+await page.waitForTimeout(400);
+const afterBtn = await readFlock();
+console.log('after btn  :', JSON.stringify(afterBtn), 'btnVisible=', btnVisibleGull);
+const audioLoaded = await page.evaluate((i) =>
+    window.__isotopia.game.scene.scenes[i].cache.audio.exists('mineMineMine'), activeIdx);
+
 // Spawn 7 presses — should cap at 6.
 await pressS(7);
 await page.waitForTimeout(600);
@@ -92,10 +110,15 @@ console.log('airborne   :', JSON.stringify(airborne));
 // ---- assertions ----
 const fail = [];
 if (grounded.wearing !== 'gull') fail.push('player is not the gull');
+if (!btnVisibleGull) fail.push('Call friends button hidden while wearing the gull');
+if (afterBtn.count !== 1) fail.push(`Call friends tap did not spawn a bird (count ${afterBtn.count})`);
+if (!audioLoaded) fail.push('gull gag audio (mineMineMine) failed to load');
 if (grounded.count !== 6) fail.push(`flock cap wrong: ${grounded.count} (want 6)`);
 if (airborne.count !== 6) fail.push(`lost birds on takeoff: ${airborne.count}`);
 if (!airborne.flying) fail.push('flight did not engage');
 if (!airborne.birdDepths.every(d => d >= 1000)) fail.push(`airborne birds not above map art: ${airborne.birdDepths}`);
+if (airborne.playerDepth < 1000) fail.push(`player not lifted above map art while flying: ${airborne.playerDepth}`);
+if (grounded.playerDepth >= 1000) fail.push(`grounded player should use grid-engine depth, got ${grounded.playerDepth}`);
 if (!grounded.birdDepths.every(d => d === 10)) fail.push(`grounded birds not on char plane: ${grounded.birdDepths}`);
 if (!grounded.birdVisible.every(Boolean)) fail.push('some birds invisible');
 if (errors.length) fail.push(`console errors: ${errors.slice(0, 3).join(' | ')}`);

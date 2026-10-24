@@ -29,6 +29,7 @@ import { mountRadFinder } from "./ui/RadFinder";
 import { mountDevWarp } from "./ui/DevWarp";
 import { mountAvatarButton } from "./ui/AvatarPanel";
 import { mountFlightHint } from "./ui/FlightHint";
+import { mountCallFriendsButton } from "./ui/CallFriendsButton";
 import { refreshHud } from "./ui/hud";
 
 // Mount the persistent Isotopedex corner button (independent of Phaser scenes),
@@ -37,6 +38,7 @@ import { refreshHud } from "./ui/hud";
 initIsotopedex();
 mountAvatarButton();
 mountFlightHint();
+mountCallFriendsButton();
 initIntro();
 mountRadFinder();
 

@@ -8,7 +8,7 @@ import { basicMovement, clickToMove } from './components/Characters'
 import { Npc } from './components/Npc'
 import { cloakElemental } from './components/Cloak'
 import { getElement, ELEMENTS } from '../data/elements'
-import { statusOf, giveItem, hasItem, MAGIC_KEY } from '../data/progress'
+import { statusOf, isCaught, giveItem, hasItem, MAGIC_KEY } from '../data/progress'
 import { elementalArtKey, elementalArtPath } from '../data/elementalArt'
 import { elementReleased } from '../data/classConfig'
 import { elementalLocation } from '../data/elementalLocations'
@@ -18,7 +18,7 @@ import { isRadFinderEquipped, getRadTarget, setRadReading } from '../ui/RadFinde
 import { getCharacter, textureKeyFor, loadCharacterSheets, faceFlip, type CharacterDef, type WalkMap } from '../data/characters'
 import { getSelectedCharacter, onAvatarChange } from '../data/avatar'
 import { openUnlockQuiz, alreadyUnlocked } from '../ui/UnlockQuiz'
-import { BirdFlock } from './components/BirdFlock'
+import { BirdFlock, FLY_DEPTH, MAX_BIRDS } from './components/BirdFlock'
 
 // Real Elemental art is a big single image; this scale reads it down to roughly
 // character size on the grid (the placeholder NPC spritesheet uses ~0.7).
@@ -84,6 +84,10 @@ export default abstract class GameScene extends Phaser.Scene {
     bark: Phaser.Sound.BaseSound;
     sniff: Phaser.Sound.BaseSound;
     dogMeme!: Phaser.Sound.BaseSound;   // "what da dog doin" easter-egg sting
+    // "Mine! Mine! Mine!" — the seagull chorus that plays when a GULL trainer fills all six
+    // companions. Only present if the asset loaded (see preload), so it's a no-op until added.
+    private mineMineMine?: Phaser.Sound.BaseSound;
+    private gullCallCount = 0;   // "Call friends" presses as a gull; every sixth plays the gag
     private dogComboCount = 0;
     private dogComboLast = 0;
     private dogComboKey: 'S' | 'D' | null = null;   // last key, for strict S/D alternation
@@ -97,6 +101,9 @@ export default abstract class GameScene extends Phaser.Scene {
     // and the last player tile we computed a reading for (so update() only
     // recomputes on a tile change, not every frame).
     elementalTargets: { elementId: string; x: number; y: number }[] = [];
+    // The on-map Elemental NPCs spawned this scene, so a caught one can be swept off the map
+    // (see removeCaughtElementals) and never re-encountered.
+    private elementalNpcs: { name: string; elementId: string }[] = [];
     private rfLastMs = 0;
 
     // to load images
@@ -145,6 +152,9 @@ export default abstract class GameScene extends Phaser.Scene {
         this.load.audio('bark', 'assets/music/bark.wav');
         this.load.audio('sniff', 'assets/music/sniffing.wav');
         this.load.audio('whatDaDogDoin', 'assets/music/what-da-dog-doin.mp3');
+        // Gull-flock gag. Optional asset — drop it at src/assets/music/mine-mine-mine.mp3 and
+        // it starts working; until then the load simply fails and the sound stays silent.
+        this.load.audio('mineMineMine', 'assets/music/mine-mine-mine.mp3');
         // The unlockable avatar sheets (townsfolk/animals/birds) — also used as the
         // roaming quiz NPCs' art. Idempotent across scenes (guards on textures.exists).
         loadCharacterSheets(this)
@@ -164,6 +174,10 @@ export default abstract class GameScene extends Phaser.Scene {
         this.bark = this.sound.add('bark', { loop: false });
         this.sniff = this.sound.add('sniff', { loop: false });
         this.dogMeme = this.sound.add('whatDaDogDoin', { loop: false });
+        // Only wire the gull gag if its (optional) asset actually loaded.
+        if (this.cache.audio.exists('mineMineMine')) {
+            this.mineMineMine = this.sound.add('mineMineMine', { loop: false });
+        }
 
         //add special animations for actions from main player
         createSpecialAnimations(this)
@@ -175,6 +189,7 @@ export default abstract class GameScene extends Phaser.Scene {
         // Scenes are reused across switch/restart, so clear last run's targets
         // before createNpcs() (which calls spawnElemental) repopulates them.
         this.elementalTargets = [];
+        this.elementalNpcs = [];
         this.rfLastMs = 0;
         this.mirroredNpcs = [];
         this.createNpcs();
@@ -185,9 +200,29 @@ export default abstract class GameScene extends Phaser.Scene {
         // Companion-bird flock (empty until the player presses S while wearing a flyer).
         this.flock = new BirdFlock(this)
 
+        // Lift the player above all map art (canopies/overheads at ~OVERHEAD_DEPTH) while
+        // airborne, so a flying bird soars over the world like its companion flock. grid-engine
+        // re-applies a y-sorted depth to the player on every UPDATE event, so we override it in
+        // POST_UPDATE (which fires after) — otherwise the lift is clobbered before it renders.
+        // When grounded we leave the depth to grid-engine's normal y-sorting.
+        this.events.on('postupdate', () => {
+            if (this.flying && this.playerCharacter?.fly && this.gridEngine?.hasCharacter(this.playerName)) {
+                this.playerSprite.setDepth(FLY_DEPTH)
+            }
+        })
+
+        // The mobile "Call friends" button spawns a companion bird via this global event
+        // (every scene subscribes; callFriend() ignores it unless this scene is the active one).
+        const onCall = (): void => this.callFriend()
+        GlobalInfo.on('callFriends', onCall)
+
         // Re-skin the player live when the avatar is changed from the 🎨 panel.
         this.avatarUnsub = onAvatarChange(() => this.applyCharacter())
-        this.events.once('shutdown', () => { this.avatarUnsub?.(); this.avatarUnsub = undefined; this.flock?.clear() })
+        this.events.once('shutdown', () => {
+            this.avatarUnsub?.(); this.avatarUnsub = undefined
+            this.flock?.clear()
+            GlobalInfo.off('callFriends', onCall)
+        })
 
         // stop animations like bark or sniff when player starts to move
         this.gridEngine.movementStarted().subscribe(() => {
@@ -229,6 +264,7 @@ export default abstract class GameScene extends Phaser.Scene {
 
     update(): void {
         this.refreshRadFinder();
+        this.removeCaughtElementals();
 
         // Mirror 3-direction characters (hamster/birds) for the 'right' facing. Done
         // every frame from the current facing — grid-engine's directionChanged doesn't
@@ -255,17 +291,20 @@ export default abstract class GameScene extends Phaser.Scene {
 
         // Birds only: press S to spawn a companion bird (up to six). Gated on `fly`, so it
         // never collides with the dog's S "sit" action (that's gated on `special`, dog-only).
-        if (Phaser.Input.Keyboard.JustDown(this.keyS) && this.playerCharacter?.fly
-            && !GlobalInfo._gameProgress.inDialogue) {
-            this.flock.spawn(this.playerCharacter, this.playerSprite.x, this.playerSprite.y);
-        }
+        if (Phaser.Input.Keyboard.JustDown(this.keyS)) this.callFriend();
         if (this.flock.count > 0) {
+            // Cap bird travel at 1.15x the player's current speed (tiles/s → px/s) so they keep
+            // up with the formation without the old distance-proportional hyperspeed snap. If
+            // they fall behind they simply glide back in at this steady pace.
+            const speed = this.gridEngine.getSpeed(this.playerName) * this.map.tileWidth * 1.15;
             this.flock.update({
                 flying: this.flying,
                 def: this.playerCharacter,
                 px: this.playerSprite.x,
                 py: this.playerSprite.y,
                 facing: this.gridEngine.getFacingDirection(this.playerName) as unknown as string,
+                dt: this.game.loop.delta,
+                speed,
             });
         }
 
@@ -301,6 +340,25 @@ export default abstract class GameScene extends Phaser.Scene {
         if (Phaser.Input.Keyboard.JustUp(this.keyR)) {
             this.gridEngine.setSpeed(this.playerName, 4)
         };
+    }
+
+    // Once an Elemental is caught it should never be encountered again: whisk its sprite off
+    // the map and drop it from the proximity/Rad-Finder lists. Runs every frame but is a no-op
+    // until something actually gets caught (cheap: the list is only the room's Elementals).
+    private removeCaughtElementals(): void {
+        if (this.elementalNpcs.length === 0) return
+        for (let i = this.elementalNpcs.length - 1; i >= 0; i--) {
+            const e = this.elementalNpcs[i]
+            if (!isCaught(e.elementId)) continue
+            if (this.gridEngine.hasCharacter(e.name)) {
+                const sprite = this.gridEngine.getSprite(e.name)
+                this.gridEngine.removeCharacter(e.name)
+                sprite?.destroy()
+            }
+            this.npcsAndObjectsArray = this.npcsAndObjectsArray.filter(o => o.name !== e.name)
+            this.elementalTargets = this.elementalTargets.filter(t => t.elementId !== e.elementId)
+            this.elementalNpcs.splice(i, 1)
+        }
     }
 
     // Degrees to rotate the up-pointing arrow so it points from the player toward a
@@ -439,6 +497,7 @@ export default abstract class GameScene extends Phaser.Scene {
         const element = getElement(elementId)
         if (!element) return
         if (!elementReleased(elementId)) return   // hidden until its release day
+        if (isCaught(elementId)) return           // already caught → it never reappears
         const artKey = elementalArtKey(elementId)
 
         const npc = new Npc({
@@ -448,7 +507,9 @@ export default abstract class GameScene extends Phaser.Scene {
             texture: artKey ?? this.imageNames.Veterinary,
             scale: artKey ? ELEMENTAL_ART_SCALE : 0.7,
             tint: artKey ? undefined : element.tint,
-            action: () => { startBattle(elementId) },
+            // Belt-and-braces: don't re-open the quiz for one already caught (the sweep in
+            // removeCaughtElementals also whisks it off the map right after capture).
+            action: () => { if (!isCaught(elementId)) startBattle(elementId) },
             // Real art is a single frame → no walking animation mapping.
             walkingAnimationMapping: artKey ? undefined : 0,
         })
@@ -456,6 +517,7 @@ export default abstract class GameScene extends Phaser.Scene {
         npc.proximityTrigger = true
         // Register as a Rad Finder target so the tool can home in on it.
         this.elementalTargets.push({ elementId, x, y })
+        this.elementalNpcs.push({ name: npc.name, elementId })
         // Cloak it: rendered very faint so it's hard to spot by eye — the Rad Finder
         // is the way to find it (walking within a tile still auto-triggers the quiz).
         const sprite = this.gridEngine.getSprite(npc.name)
@@ -590,8 +652,8 @@ export default abstract class GameScene extends Phaser.Scene {
             const tile = this.map.getTileAt(p.x, p.y, false, LayerType.Walls)
             if (!tile || !grass.has(tile.index)) return
             if (Math.random() > chance) return
-            // Only wild Elementals that have been released can appear.
-            const available = pool.filter(elementReleased)
+            // Only wild Elementals that have been released — and not already caught — can appear.
+            const available = pool.filter(id => elementReleased(id) && !isCaught(id))
             if (available.length === 0) return
             const id = available[Math.floor(Math.random() * available.length)]
             startBattle(id)
@@ -702,6 +764,19 @@ export default abstract class GameScene extends Phaser.Scene {
     // applyCharacter() can detect a flight toggle (same id, different frames).
     private currentLook(): string {
         return `${this.playerCharacter?.id ?? ''}|${this.flying ? 'fly' : 'walk'}`
+    }
+
+    // Spawn one companion bird (up to six) — the S key and the mobile "Call friends" button
+    // both route here (the latter via GlobalInfo 'callFriends', so it works across scenes).
+    // No-op unless this scene is active and the player is wearing a flyer, and not mid-dialogue.
+    callFriend(): void {
+        if (!this.sys.isActive() || !this.playerCharacter?.fly || GlobalInfo._gameProgress.inDialogue) return
+        this.flock.spawn(this.playerCharacter, this.playerSprite.x, this.playerSprite.y)   // caps at six internally
+        // Gull gag: every sixth call (button or S) squawks "Mine! Mine! Mine!". Counting the
+        // presses rather than the flock size keeps it repeatable once the flock is full.
+        if (this.playerCharacter.id === 'gull' && ++this.gullCallCount % MAX_BIRDS === 0) {
+            this.mineMineMine?.play()
+        }
     }
 
     // Take off / land (birds only) — press F. Rebuilds the avatar with the fly/walk frames.

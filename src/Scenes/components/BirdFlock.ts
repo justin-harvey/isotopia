@@ -36,6 +36,8 @@ interface FlockState {
     px: number;             // player sprite world position
     py: number;
     facing: string;         // player facing direction ('up'|'down'|'left'|'right')
+    dt: number;             // ms since the last frame (for constant-speed travel)
+    speed: number;          // max bird travel speed in px/sec (≈1.15x the player's)
 }
 
 export class BirdFlock {
@@ -76,9 +78,12 @@ export class BirdFlock {
         const f = forward(s.facing);
         const back = { x: -f.x, y: -f.y };
         const perp = { x: -f.y, y: f.x };   // 90° from forward, for the two V arms
+        // One constant travel speed for every bird (px this frame). Birds never snap at
+        // distance-proportional speed any more; if they fall behind they glide back at this pace.
+        const maxStep = s.speed * (s.dt / 1000);
 
         this.birds.forEach((b, i) => {
-            let tx: number, ty: number, lerp: number;
+            let tx: number, ty: number;
             if (s.flying) {
                 // V formation: player is the apex, birds alternate onto the left/right arm,
                 // each rank one step further back and out. Ranks run 1,1,2,2,3,3 for six.
@@ -88,7 +93,6 @@ export class BirdFlock {
                 tx = s.px + (back.x + perp.x * side) * spacing * rank;
                 ty = s.py + (back.y + perp.y * side) * spacing * rank;
                 ty -= base * 0.45;   // ride a touch above the player's feet while airborne
-                lerp = 0.14;
             } else {
                 // Ground: drift to a fresh random offset near the player every ~1-2.5s so the
                 // group keeps milling about instead of freezing into a clump.
@@ -101,14 +105,20 @@ export class BirdFlock {
                 }
                 tx = s.px + b.wanderX;
                 ty = s.py + b.wanderY;
-                lerp = 0.045;
             }
 
             // Gentle vertical bob — faster + deeper in flight (wingbeats), subtle on the ground.
             ty += Math.sin(now / (s.flying ? 140 : 320) + b.phase) * base * (s.flying ? 0.18 : 0.07);
 
-            const nx = Phaser.Math.Linear(b.sprite.x, tx, lerp);
-            const ny = Phaser.Math.Linear(b.sprite.y, ty, lerp);
+            // Step toward the target at the fixed speed, snapping the last sub-step so a bird at
+            // rest doesn't jitter around its target.
+            const toX = tx - b.sprite.x, toY = ty - b.sprite.y;
+            const dist = Math.hypot(toX, toY);
+            let nx = tx, ny = ty;
+            if (dist > maxStep && dist > 0.001) {
+                nx = b.sprite.x + (toX / dist) * maxStep;
+                ny = b.sprite.y + (toY / dist) * maxStep;
+            }
             const dx = nx - b.sprite.x, dy = ny - b.sprite.y;
             b.sprite.setPosition(nx, ny);
             b.sprite.setDepth(s.flying ? FLY_DEPTH + 1 + i : GROUND_DEPTH);

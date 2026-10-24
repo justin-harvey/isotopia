@@ -97,6 +97,33 @@ html, body {
 .flight-hint[hidden] { display: none; }
 .flight-hint b { color: #ffd166; }
 
+/* ---- "Call friends" button (mobile companion-bird spawn; S-key equivalent) ---- */
+.iso-call-friends {
+    position: fixed;
+    /* stack just below the 🎨 Avatar FAB (top 80px, 56px tall) on the right */
+    top: calc(148px + env(safe-area-inset-top));
+    right: calc(12px + env(safe-area-inset-right));
+    z-index: 950;                 /* above HUD (900), below the quiz (1000) */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    color: #eef4ff;
+    border: 3px solid #f2f4f8;
+    border-radius: 12px;
+    background: linear-gradient(#5b8cf0, #3a5fc0);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.08s ease;
+}
+.iso-call-friends:hover { transform: translateY(-1px) scale(1.03); }
+.iso-call-friends:active { transform: scale(0.96); }
+.iso-call-friends[hidden] { display: none; }
+
 /* ---- First-fight dog reaction pop ---- */
 .dog-reaction {
     position: fixed;
