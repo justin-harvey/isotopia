@@ -28,14 +28,18 @@ trailing **V formation** and soar along, and every airborne bird renders **in fr
   (`gridEngine.getSpeed × tileWidth × 1.15`, stepped by frame `dt`); if they fall out of formation they
   just glide back at that pace.
 - **Gull gag (2026-10-23 follow-up).** Filling all six companions **as the gull** plays
-  "Mine! Mine! Mine!". **Needs an asset:** drop the clip at `src/assets/music/mine-mine-mine.mp3`
-  (loaded optionally — until it exists the load 404s harmlessly and the sound stays silent). Pigeon
-  doesn't trigger it.
-- **Scope notes.** Per-scene (walk to a new area → flock resets to empty). **Mobile gap:** spawning is
-  S-key only — no touch gesture yet (iPads can't spawn birds, and so can't fire the gull gag).
+  "Mine! Mine! Mine!" (asset shipped at `src/assets/music/mine-mine-mine.mp3`; loaded optionally so a
+  missing file would just stay silent). Pigeon doesn't trigger it.
+- **Mobile "Call friends" button (2026-10-23 follow-up).** `src/ui/CallFriendsButton.ts` — a DOM button
+  (mounted once in `game.ts`, like the 🎨 Avatar FAB + flight hint), shown ONLY while wearing a flyer.
+  A tap emits `GlobalInfo 'callFriends'`; every GameScene subscribes and the active one runs the shared
+  `callFriend()` (same path as the S key → spawn + gull gag). Closes the iPad gap (no S key). Styled to
+  stack under the Avatar FAB (`.iso-call-friends` in index.css).
+- **Scope notes.** Per-scene (walk to a new area → flock resets to empty).
 - **Verified.** tsc + `npm run build` green (Node 22). Headless E2E `tools/e2e-bird-flock.mjs`: start as
-  gull → 7×S caps at 6, grounded birds depth 10 & milling → take flight → player depth 1000, 6 birds
-  depth 1001–1006 in a symmetric V, 0 console errors (audio 404 expected/ignored). **PASS.**
+  gull → Call-friends button visible, a tap spawns a bird, gull-gag audio loads → 7×S caps at 6, grounded
+  birds depth 10 & milling → take flight → player depth 1000, 6 birds depth 1001–1006 in a symmetric V,
+  0 console errors. **PASS.**
 
 ## 🆕 Built 2026-10-23 — Caught Elementals never re-encountered — NOT yet committed
 Once you catch an Elemental it now disappears for good instead of re-triggering its quiz. All in

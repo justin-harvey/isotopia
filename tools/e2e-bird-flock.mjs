@@ -79,6 +79,16 @@ const pressS = async (n) => { for (let i = 0; i < n; i++) { await page.keyboard.
 console.log('scene index:', activeIdx);
 console.log('initial    :', JSON.stringify(await readFlock()));
 
+// "Call friends" button: visible while wearing the gull, and a tap spawns a bird (routes
+// through GlobalInfo 'callFriends'). Also confirm the gull gag audio actually loaded.
+const btnVisibleGull = await page.isVisible('.iso-call-friends');
+await page.click('.iso-call-friends');
+await page.waitForTimeout(400);
+const afterBtn = await readFlock();
+console.log('after btn  :', JSON.stringify(afterBtn), 'btnVisible=', btnVisibleGull);
+const audioLoaded = await page.evaluate((i) =>
+    window.__isotopia.game.scene.scenes[i].cache.audio.exists('mineMineMine'), activeIdx);
+
 // Spawn 7 presses — should cap at 6.
 await pressS(7);
 await page.waitForTimeout(600);
@@ -100,6 +110,9 @@ console.log('airborne   :', JSON.stringify(airborne));
 // ---- assertions ----
 const fail = [];
 if (grounded.wearing !== 'gull') fail.push('player is not the gull');
+if (!btnVisibleGull) fail.push('Call friends button hidden while wearing the gull');
+if (afterBtn.count !== 1) fail.push(`Call friends tap did not spawn a bird (count ${afterBtn.count})`);
+if (!audioLoaded) fail.push('gull gag audio (mineMineMine) failed to load');
 if (grounded.count !== 6) fail.push(`flock cap wrong: ${grounded.count} (want 6)`);
 if (airborne.count !== 6) fail.push(`lost birds on takeoff: ${airborne.count}`);
 if (!airborne.flying) fail.push('flight did not engage');

@@ -210,9 +210,18 @@ export default abstract class GameScene extends Phaser.Scene {
             }
         })
 
+        // The mobile "Call friends" button spawns a companion bird via this global event
+        // (every scene subscribes; callFriend() ignores it unless this scene is the active one).
+        const onCall = (): void => this.callFriend()
+        GlobalInfo.on('callFriends', onCall)
+
         // Re-skin the player live when the avatar is changed from the 🎨 panel.
         this.avatarUnsub = onAvatarChange(() => this.applyCharacter())
-        this.events.once('shutdown', () => { this.avatarUnsub?.(); this.avatarUnsub = undefined; this.flock?.clear() })
+        this.events.once('shutdown', () => {
+            this.avatarUnsub?.(); this.avatarUnsub = undefined
+            this.flock?.clear()
+            GlobalInfo.off('callFriends', onCall)
+        })
 
         // stop animations like bark or sniff when player starts to move
         this.gridEngine.movementStarted().subscribe(() => {
@@ -281,14 +290,7 @@ export default abstract class GameScene extends Phaser.Scene {
 
         // Birds only: press S to spawn a companion bird (up to six). Gated on `fly`, so it
         // never collides with the dog's S "sit" action (that's gated on `special`, dog-only).
-        if (Phaser.Input.Keyboard.JustDown(this.keyS) && this.playerCharacter?.fly
-            && !GlobalInfo._gameProgress.inDialogue) {
-            const spawned = this.flock.spawn(this.playerCharacter, this.playerSprite.x, this.playerSprite.y);
-            // A full gull flock (six) earns the "Mine! Mine! Mine!" seagull chorus.
-            if (spawned && this.playerCharacter.id === 'gull' && this.flock.count === MAX_BIRDS) {
-                this.mineMineMine?.play();
-            }
-        }
+        if (Phaser.Input.Keyboard.JustDown(this.keyS)) this.callFriend();
         if (this.flock.count > 0) {
             // Cap bird travel at 1.15x the player's current speed (tiles/s → px/s) so they keep
             // up with the formation without the old distance-proportional hyperspeed snap. If
@@ -761,6 +763,18 @@ export default abstract class GameScene extends Phaser.Scene {
     // applyCharacter() can detect a flight toggle (same id, different frames).
     private currentLook(): string {
         return `${this.playerCharacter?.id ?? ''}|${this.flying ? 'fly' : 'walk'}`
+    }
+
+    // Spawn one companion bird (up to six) — the S key and the mobile "Call friends" button
+    // both route here (the latter via GlobalInfo 'callFriends', so it works across scenes).
+    // No-op unless this scene is active and the player is wearing a flyer, and not mid-dialogue.
+    callFriend(): void {
+        if (!this.sys.isActive() || !this.playerCharacter?.fly || GlobalInfo._gameProgress.inDialogue) return
+        const spawned = this.flock.spawn(this.playerCharacter, this.playerSprite.x, this.playerSprite.y)
+        // A full gull flock (six) earns the "Mine! Mine! Mine!" seagull chorus.
+        if (spawned && this.playerCharacter.id === 'gull' && this.flock.count === MAX_BIRDS) {
+            this.mineMineMine?.play()
+        }
     }
 
     // Take off / land (birds only) — press F. Rebuilds the avatar with the fly/walk frames.
