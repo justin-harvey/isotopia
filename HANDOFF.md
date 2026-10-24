@@ -1,7 +1,31 @@
 # Isotopia — Session Handoff
 
 A running summary of what this is and where it stands, so work can resume after a
-context reset. Last updated 2026-10-22.
+context reset. Last updated 2026-10-23.
+
+## 🆕 Built 2026-10-23 — Silly companion-bird flock (press S) — NOT yet committed
+A toy mechanic for the flying avatars. While wearing the **gull or pigeon** (any `CharacterDef`
+with a `fly` map), press **S** to spawn a companion bird — up to **SIX**. On the ground they mill
+about in a loose group around you; the moment you take flight (F / tap-yourself) they snap into a
+trailing **V formation** and soar along, and every airborne bird renders **in front of all map art**
+(tree canopies / overheads sit at `OVERHEAD_DEPTH ≈ 20`; flying birds use `FLY_DEPTH = 1000+`).
+
+- **`src/Scenes/components/BirdFlock.ts` (new).** The flock is plain Phaser sprites moved by hand each
+  frame — deliberately **NOT** grid-engine characters, so they never touch collision/proximity and we
+  can place them with sub-tile precision + own their depth. Ground = per-bird wander offset re-picked
+  every ~1–2.5s (lerp toward it); flight = V with the player as apex, birds alternating onto left/right
+  arms at ranks 1,1,2,2,3,3, lifted off the ground, with a wingbeat bob. Walk/fly anims are built lazily
+  and keyed by `textureKey` (gull vs pigeon don't share frames), mirroring `GameScene.ensureFlapAnim`.
+- **`src/Scenes/GameScene.ts`.** Owns a per-scene `flock`; `S` spawns (gated on `playerCharacter.fly`
+  **and** `!inDialogue` — no clash with the dog's S "sit", which is gated on `special`); `update()` drives
+  the flock each frame; `applyCharacter()` clears the flock when you re-skin to a non-bird; shutdown clears it.
+- **Scope notes.** Per-scene (walk to a new area → flock resets to empty). The player sprite's own depth
+  is left to grid-engine (it y-sorts the player ~depth 1 and overrode a lift attempt), so only the
+  **companion** birds ride above the canopy; a flying player can still pass behind an overhead as before.
+  **Mobile gap:** spawning is S-key only — no touch gesture yet (iPads can't spawn birds).
+- **Verified.** tsc + `npm run build` green (Node 22). Headless E2E `tools/e2e-bird-flock.mjs` drives the
+  real game: start as gull → 7×S caps at 6, grounded birds depth 10 & milling → take flight → 6 birds
+  depth 1001–1006 in a symmetric V, 0 console errors. **PASS.**
 
 ## 🆕 Shipped 2026-10-22 — Margin "Setup guide" (teacher onboarding) + flow fixes
 A persistent, self-updating onboarding checklist that lives in the **right gutter** of the teacher
