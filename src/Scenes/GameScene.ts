@@ -18,6 +18,7 @@ import { isRadFinderEquipped, getRadTarget, setRadReading } from '../ui/RadFinde
 import { getCharacter, textureKeyFor, loadCharacterSheets, faceFlip, type CharacterDef, type WalkMap } from '../data/characters'
 import { getSelectedCharacter, onAvatarChange } from '../data/avatar'
 import { openUnlockQuiz, alreadyUnlocked } from '../ui/UnlockQuiz'
+import { BirdFlock } from './components/BirdFlock'
 
 // Real Elemental art is a big single image; this scale reads it down to roughly
 // character size on the grid (the placeholder NPC spritesheet uses ~0.7).
@@ -70,6 +71,9 @@ export default abstract class GameScene extends Phaser.Scene {
     // The look currently rendered on the player — character id + flight state. Lets
     // applyCharacter() rebuild when only flight toggles (same id, different frames).
     private appliedLook = '';
+    // Silly companion birds: press S (while wearing a flyer) to spawn up to six. They mill
+    // around you on the ground and fly in a V when you take off. Per-scene (see create()).
+    private flock!: BirdFlock;
     // Avatar NPCs that only have a side row (hamster/birds) and so must be mirrored for
     // the 'right'-vs-'left' facing. grid-engine's directionChanged doesn't fire reliably
     // for programmatic (moveRandomly) movement, so — like the player — we re-flip these
@@ -178,9 +182,12 @@ export default abstract class GameScene extends Phaser.Scene {
         clickToMove(this);
         NpcsAndObjects.interaction(this)
 
+        // Companion-bird flock (empty until the player presses S while wearing a flyer).
+        this.flock = new BirdFlock(this)
+
         // Re-skin the player live when the avatar is changed from the 🎨 panel.
         this.avatarUnsub = onAvatarChange(() => this.applyCharacter())
-        this.events.once('shutdown', () => { this.avatarUnsub?.(); this.avatarUnsub = undefined })
+        this.events.once('shutdown', () => { this.avatarUnsub?.(); this.avatarUnsub = undefined; this.flock?.clear() })
 
         // stop animations like bark or sniff when player starts to move
         this.gridEngine.movementStarted().subscribe(() => {
@@ -245,6 +252,22 @@ export default abstract class GameScene extends Phaser.Scene {
             this.toggleFlight();
         }
         this.updateFlightFlap();
+
+        // Birds only: press S to spawn a companion bird (up to six). Gated on `fly`, so it
+        // never collides with the dog's S "sit" action (that's gated on `special`, dog-only).
+        if (Phaser.Input.Keyboard.JustDown(this.keyS) && this.playerCharacter?.fly
+            && !GlobalInfo._gameProgress.inDialogue) {
+            this.flock.spawn(this.playerCharacter, this.playerSprite.x, this.playerSprite.y);
+        }
+        if (this.flock.count > 0) {
+            this.flock.update({
+                flying: this.flying,
+                def: this.playerCharacter,
+                px: this.playerSprite.x,
+                py: this.playerSprite.y,
+                facing: this.gridEngine.getFacingDirection(this.playerName) as unknown as string,
+            });
+        }
 
         // Dog-only actions (bark/sit/sniff). Their animations live on Perli's sheet, so
         // they only apply when the player is wearing the dog; other avatars skip them.
@@ -648,7 +671,7 @@ export default abstract class GameScene extends Phaser.Scene {
     applyCharacter(): void {
         if (!this.gridEngine?.hasCharacter(this.playerName)) return
         const def = getCharacter(getSelectedCharacter())
-        if (!def.fly) this.flying = false   // non-birds can't fly — land them on re-skin
+        if (!def.fly) { this.flying = false; this.flock?.clear() }   // non-birds can't fly — land + dismiss the flock
         this.playerCharacter = def          // set before currentLook() so flight maps resolve
         const look = this.currentLook()
         if (look === this.appliedLook) return
