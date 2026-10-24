@@ -87,6 +87,7 @@ export default abstract class GameScene extends Phaser.Scene {
     // "Mine! Mine! Mine!" — the seagull chorus that plays when a GULL trainer fills all six
     // companions. Only present if the asset loaded (see preload), so it's a no-op until added.
     private mineMineMine?: Phaser.Sound.BaseSound;
+    private gullCallCount = 0;   // "Call friends" presses as a gull; every sixth plays the gag
     private dogComboCount = 0;
     private dogComboLast = 0;
     private dogComboKey: 'S' | 'D' | null = null;   // last key, for strict S/D alternation
@@ -770,9 +771,10 @@ export default abstract class GameScene extends Phaser.Scene {
     // No-op unless this scene is active and the player is wearing a flyer, and not mid-dialogue.
     callFriend(): void {
         if (!this.sys.isActive() || !this.playerCharacter?.fly || GlobalInfo._gameProgress.inDialogue) return
-        const spawned = this.flock.spawn(this.playerCharacter, this.playerSprite.x, this.playerSprite.y)
-        // A full gull flock (six) earns the "Mine! Mine! Mine!" seagull chorus.
-        if (spawned && this.playerCharacter.id === 'gull' && this.flock.count === MAX_BIRDS) {
+        this.flock.spawn(this.playerCharacter, this.playerSprite.x, this.playerSprite.y)   // caps at six internally
+        // Gull gag: every sixth call (button or S) squawks "Mine! Mine! Mine!". Counting the
+        // presses rather than the flock size keeps it repeatable once the flock is full.
+        if (this.playerCharacter.id === 'gull' && ++this.gullCallCount % MAX_BIRDS === 0) {
             this.mineMineMine?.play()
         }
     }

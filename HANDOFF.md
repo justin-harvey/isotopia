@@ -27,9 +27,11 @@ trailing **V formation** and soar along, and every airborne bird renders **in fr
   silly hyperspeed). They now travel at one fixed speed, capped at **1.15× the player's current speed**
   (`gridEngine.getSpeed × tileWidth × 1.15`, stepped by frame `dt`); if they fall out of formation they
   just glide back at that pace.
-- **Gull gag (2026-10-23 follow-up).** Filling all six companions **as the gull** plays
-  "Mine! Mine! Mine!" (asset shipped at `src/assets/music/mine-mine-mine.mp3`; loaded optionally so a
-  missing file would just stay silent). Pigeon doesn't trigger it.
+- **Gull gag (2026-10-23 follow-up).** Every **6th** "Call friends"/`S` press **as the gull** squawks
+  "Mine! Mine! Mine!" — counting presses (not flock size) so it stays repeatable once the flock is
+  capped at six (the earlier "only on the 5→6 transition" version fired at most once per scene). Asset
+  shipped at `src/assets/music/mine-mine-mine.mp3` (loaded optionally; missing file just stays silent).
+  Pigeon doesn't trigger it. Regression test `tools/e2e-gull-gag.mjs` (plays @5=0 @6=1 @11=1 @12=2).
 - **Mobile "Call friends" button (2026-10-23 follow-up).** `src/ui/CallFriendsButton.ts` — a DOM button
   (mounted once in `game.ts`, like the 🎨 Avatar FAB + flight hint), shown ONLY while wearing a flyer.
   A tap emits `GlobalInfo 'callFriends'`; every GameScene subscribes and the active one runs the shared
